@@ -6,276 +6,12 @@
 // D: Iterative deepening
 // E: Iterative deepening and ProbCut
 
-inline int EvaluateGameOver(const unsigned long long P, const int NumberOfEmptyStones)
-{
-	// POP_COUNT(P) + POP_COUNT(O) == 64 - NumberOfEmptyStones
-	// OwnMinusOpponents == POP_COUNT(P) - POP_COUNT(O)
-	//                   == POP_COUNT(P) - ( 64 - NumberOfEmptyStones - POP_COUNT(P) )
-	//                   == 2 * POP_COUNT(P) + NumberOfEmptyStones - 64
-	int OwnMinusOpponents = (POP_COUNT(P) << 1) + NumberOfEmptyStones - 64;
-	if (OwnMinusOpponents > 0)
-		return OwnMinusOpponents + NumberOfEmptyStones;
-	else if (OwnMinusOpponents < 0)
-		return OwnMinusOpponents - NumberOfEmptyStones;
-	else
-		return OwnMinusOpponents;
-	//return OwnMinusOpponents + NumberOfEmptyStones * SIGN_OR_ZERO(OwnMinusOpponents);
-}
-
 bool StabilityCutoff(const unsigned long long P, const unsigned long long O, const int NumberOfEmptyStones, const int alpha)
 {
 	int OwnMinusOpponents = (POP_COUNT(P) << 1) + NumberOfEmptyStones - 64;
     if (OwnMinusOpponents <= STABILITY_CUTOFF_LIMIT(NumberOfEmptyStones)) //Worth checking stability
         return (64 - static_cast<int>(POP_COUNT(StableStones(P, O)) << 1) <= alpha);
     return false;
-}
-
-inline int LimitedDepth_0(const CActiveConfigurations & actives, const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter)
-{
-	++NodeCounter;
-	return actives.EvaluateFeatures(P, O);
-}
-int LimitedDepth_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter)
-{
-	++NodeCounter;
-	return EvaluateFeatures(P, O);
-}
-int LimitedDepth_1(const CActiveConfigurations & actives, const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, int beta)
-{
-	int value = -128;
-	unsigned char Move;
-	unsigned long long flipped;
-	unsigned long long BitBoardPossible = PossibleMoves(P, O);
-
-	++NodeCounter;
-
-	if (!BitBoardPossible)
-    {
-		BitBoardPossible = PossibleMoves(O, P);
-		if (BitBoardPossible)
-			return -LimitedDepth_1(actives, O, P, NodeCounter, -beta, -alpha);
-		else{ //Game is over
-			++NodeCounter; 
-			return BIND(EvaluateGameOver(P, NumberOfEmptyStones(P, O)), alpha, beta);
-		}
-    }
-
-	while (BitBoardPossible)
-	{
-		Move = BIT_SCAN_LS1B(BitBoardPossible);
-		REMOVE_LS1B(BitBoardPossible);
-		flipped = flip(P, O, Move);
-		value = -LimitedDepth_0(actives, O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter);
-		if (value >= beta)
-            return beta;
-		if (value > alpha)
-			alpha = value;
-	}
-	return alpha;
-}
-int LimitedDepth_1(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, int beta)
-{
-	int value = -128;
-	unsigned char Move;
-	unsigned long long flipped;
-	unsigned long long BitBoardPossible = PossibleMoves(P, O);
-
-	++NodeCounter;
-
-	if (!BitBoardPossible)
-    {
-		BitBoardPossible = PossibleMoves(O, P);
-		if (BitBoardPossible)
-			return -LimitedDepth_1(O, P, NodeCounter, -beta, -alpha);
-		else{ //Game is over
-			++NodeCounter; 
-			return BIND(EvaluateGameOver(P, NumberOfEmptyStones(P, O)), alpha, beta);
-		}
-    }
-
-	while (BitBoardPossible)
-	{
-		Move = BIT_SCAN_LS1B(BitBoardPossible);
-		REMOVE_LS1B(BitBoardPossible);
-		flipped = flip(P, O, Move);
-		value = -LimitedDepth_0(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter);
-		if (value >= beta) return beta;
-		if (value > alpha) alpha = value;
-	}
-
-	return alpha;
-}
-int LimitedDepth_2(CSearch & search, const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, int beta)
-{
-	unsigned long long E = ~(P | O);
-	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
-
-	int value = -128;
-	unsigned char BestMove = 64;
-	unsigned long long BitBoardTmp;
-	unsigned long long flipped;
-	unsigned long long BitBoardPossible = PossibleMoves(P, O);
-
-	++NodeCounter;
-
-	if (!BitBoardPossible)
-    {
-		BitBoardPossible = PossibleMoves(O, P);
-		if (BitBoardPossible)
-			return -LimitedDepth_2(search, O, P, NodeCounter, -beta, -alpha);
-		else{ //Game is over
-			++NodeCounter; 
-			return BIND(EvaluateGameOver(P, NumberOfEmptyStones), alpha, beta);
-		}
-    }
-	CActiveConfigurations actives(P, O);
-	unsigned long long LocalNodeCounter = search.NodeCounter;
-
-	CMoveList mvList(P, O, BitBoardPossible);
-
-	auto end = mvList.cend();
-	for (auto it = mvList.cbegin(); it != end; ++it)
-    {
-		value = -LimitedDepth_1(actives, it->P, it->O, search.NodeCounter, -beta, -alpha);
-        if (value >= beta)
-		{
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 2, 0, beta, 64, it->move, 64, false, true, true);
-            return beta;
-        }
-		if (value > alpha)
-		{
-			BestMove = it->move;
-			alpha = value;
-		}
-    }
-	if (BestMove != 64)
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 2, 0, alpha, alpha, BestMove, 64, true, true, true);
-	else
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 2, 0, -64, alpha, 64, 64, false, false, true);
-	return alpha;
-}
-
-int PVS_LimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, int depth, unsigned char * pline)
-{
-	//if (depth == 0)
-	//	return LimitedDepth_0(P, O, search.NodeCounter);
-	//if (depth == 1)
-	//	return LimitedDepth_1(P, O, search.NodeCounter, alpha, beta);
-	if (depth == 2)
-		return LimitedDepth_2(search, P, O, search.NodeCounter, alpha, beta);
-
-	unsigned long long E = ~(P | O);
-	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
-
-	bool SearchPV = true;
-	int value;
-	unsigned long long flipped;
-	unsigned long long BitBoardPossible = PossibleMoves(P, O);
-
-	++search.NodeCounter;
-
-	if (!BitBoardPossible)
-    {
-		BitBoardPossible = PossibleMoves(O, P);
-		if (BitBoardPossible)
-			return -PVS_LimitedDepth(search, O, P, -beta, -alpha, depth, pline);
-		else{ //Game is over
-			++search.NodeCounter;
-			return BIND(EvaluateGameOver(P, NumberOfEmptyStones), alpha, beta);
-		}
-    }
-	
-	unsigned long long LocalNodeCounter = search.NodeCounter;
-	unsigned char line[60];
-
-	std::pair<bool, HashTableValueType> HashTableReturn = search.HashTableLookUp(P, O);
-	if (HashTableReturn.first)
-	{
-		if (HashTableReturn.second.depth >= NumberOfEmptyStones)
-		{
-			if (HashTableReturn.second.alpha >= beta)
-				return beta;
-			if (HashTableReturn.second.beta <= alpha)
-				return alpha;
-			if (HashTableReturn.second.alpha == HashTableReturn.second.beta)
-				return HashTableReturn.second.alpha;
-			alpha = MAX(alpha, static_cast<int>(HashTableReturn.second.alpha));
-		}
-
-		if (HashTableReturn.second.PV != 64)
-		{
-			if ((BitBoardPossible & (1ULL << HashTableReturn.second.PV)) == 0ULL)
-				std::cerr << "!" << (int)HashTableReturn.second.PV << " ";
-			BitBoardPossible ^= (1ULL << HashTableReturn.second.PV);
-			flipped = flip(P, O, HashTableReturn.second.PV);
-			value = -PVS_LimitedDepth(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.PV) ^ flipped, -beta, -alpha, depth-1, line);
-			if (value >= beta)
-			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV, false, true, true);
-				return beta;
-			}
-			if (value > alpha)
-			{
-				pline[0] = HashTableReturn.second.PV;
-				memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char));
-				alpha = value;
-				SearchPV = false;
-			}
-		}
-
-		if (HashTableReturn.second.AV != 64)
-		{
-			if ((BitBoardPossible & (1ULL << HashTableReturn.second.AV)) == 0ULL)
-				std::cerr << "!" << (int)HashTableReturn.second.AV << " ";
-			BitBoardPossible ^= (1ULL << HashTableReturn.second.AV);
-			flipped = flip(P, O, HashTableReturn.second.AV);
-			value = -PVS_LimitedDepth(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.AV) ^ flipped, -beta, -alpha, depth-1, line);
-			if (value >= beta)
-			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV, false, true, true);
-				return beta;
-			}
-			if (value > alpha)
-			{
-				pline[0] = HashTableReturn.second.AV;
-				memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char));
-				alpha = value;
-				SearchPV = false;
-			}
-		}
-	}
-
-	CMoveList mvList(P, O, BitBoardPossible);
-
-	auto end = mvList.cend();
-	for (auto it = mvList.cbegin(); it != end; ++it)
-    {
-		if (SearchPV)
-			value = -PVS_LimitedDepth(search, it->P, it->O, -beta, -alpha, depth-1, line);
-		else
-		{
-			value = -PVS_LimitedDepth(search, it->P, it->O, -alpha-1, -alpha, depth-1, line);
-			if (value > alpha)
-				value = -PVS_LimitedDepth(search, it->P, it->O, -beta, -alpha, depth-1, line);
-		}
-        if (value >= beta)
-		{
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, it->move, 64, false, true, true);
-            return beta;
-        }
-		if (value > alpha)
-		{
-			pline[0] = it->move;
-			memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char));
-			alpha = value;
-			SearchPV = false;
-		}
-    }
-	if (!SearchPV)
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, alpha, alpha, pline[0], 64, true, true, true);
-	else
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, -64, alpha, 64, 64, false, false, true);
-	return alpha;
 }
 
 //int MPC(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, int depth, unsigned char * pline)
@@ -980,13 +716,7 @@ int ZWS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 	unsigned long long E = ~(P | O);
 	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
 	if (NumberOfEmptyStones == 8)
-	{
-		const unsigned char parity = (POP_COUNT(E & 0xF0F0F0F000000000ULL) & 1) << 3 
-								   | (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
-								   | (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
-								   |  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-		return ZWS_Exact_B(P, O, search.NodeCounter, parity, NumberOfEmptyStones, alpha);
-	}
+		return ZWS_Exact_B(P, O, search.NodeCounter, parity(E), NumberOfEmptyStones, alpha);
 
 	unsigned long long flipped;
 	unsigned long long BitBoardPossible = PossibleMoves(P, O);
@@ -1031,7 +761,7 @@ int ZWS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 			flipped = flip(P, O, HashTableReturn.second.PV);
 			if (-ZWS_Exact_C(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.PV) ^ flipped, -alpha-1) > alpha)
 			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, alpha+1, 64, HashTableReturn.second.PV, HashTableReturn.second.AV, false, true, true);
+				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, alpha+1, 64, HashTableReturn.second.PV, HashTableReturn.second.AV);
 				return alpha+1;
 			}
 		}
@@ -1044,7 +774,7 @@ int ZWS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 			flipped = flip(P, O, HashTableReturn.second.AV);
 			if (-ZWS_Exact_C(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.AV) ^ flipped, -alpha-1) > alpha)
 			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, alpha+1, 64, HashTableReturn.second.AV, HashTableReturn.second.PV, false, true, true);
+				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, alpha+1, 64, HashTableReturn.second.AV, HashTableReturn.second.PV);
 				return alpha+1;
 			}
 		}
@@ -1057,11 +787,11 @@ int ZWS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
     {
         if (-ZWS_Exact_C(search, it->P, it->O, -alpha-1) > alpha)
 		{
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, alpha+1, 64, it->move, 64, false, true, true);
+			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, alpha+1, 64, it->move, 64);
             return alpha+1;
         }
     }
-	search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, -64, alpha, 64, 64, false, false, true);
+	search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, -64, alpha, 64, 64);
 	return alpha;
 }
 
@@ -1647,13 +1377,7 @@ int PVS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 	const unsigned long long E = ~(P | O);
 	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
 	if (NumberOfEmptyStones == 8)
-	{
-		const unsigned char parity = (POP_COUNT(E & 0xF0F0F0F000000000ULL) & 1) << 3 
-								   | (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
-								   | (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
-								   |  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-		return AlphaBeta_Exact_B(P, O, search.NodeCounter, parity, NumberOfEmptyStones, alpha, beta);
-	}
+		return AlphaBeta_Exact_B(P, O, search.NodeCounter, parity(E), NumberOfEmptyStones, alpha, beta);
 
 	bool SearchPV = true;
 	int value;
@@ -1705,13 +1429,12 @@ int PVS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 				value = -PVS_Exact_C(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.PV) ^ flipped, -beta, -alpha, line);
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV, false, true, true);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV);
 					return beta;
 				}
 				if (value > alpha)
 				{
 					pline[0] = HashTableReturn.second.PV;
-					memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
 					alpha = value;
 					SearchPV = false;
 				}
@@ -1726,13 +1449,12 @@ int PVS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 				value = -PVS_Exact_C(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.AV) ^ flipped, -beta, -alpha, line);
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV, false, true, true);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV);
 					return beta;
 				}
 				if (value > alpha)
 				{
 					pline[0] = HashTableReturn.second.AV;
-					memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
 					alpha = value;
 					SearchPV = false;
 				}
@@ -1755,21 +1477,22 @@ int PVS_Exact_C(CSearch & search, const unsigned long long P, const unsigned lon
 		}
         if (value >= beta)
 		{
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, beta, 64, it->move, 64, false, true, true);
+			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, beta, 64, it->move, 64);
             return beta;
         }
 		if (value > alpha)
 		{
 			pline[0] = it->move;
-			memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
 			alpha = value;
 			SearchPV = false;
 		}
     }
-	if (!SearchPV)
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, alpha, alpha, pline[0], 64, true, true, true);
+	if (!SearchPV){
+		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, alpha, alpha, pline[0], 64);
+		memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
+	}
 	else
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 0, -64, alpha, 64, 64, false, false, true);
+		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 0, -64, alpha, 64, 64);
 	return alpha;
 }
 
@@ -1777,25 +1500,29 @@ int PVS_EndCut(CSearch & search, const unsigned long long P, const unsigned long
 {
 	const unsigned long long E = ~(P | O);
 	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
-	//if (NumberOfEmptyStones == 8)
-	//{
-	//	float sigma = 2.0f * 7.24f;
-	//	int bound;
-	//	
-	//	bound = static_cast<int>(static_cast<float>(beta) + sigma + 0.5f);
-	//	if (LimitedDepth_1(P, O, search.NodeCounter, bound-1, bound) >= bound)
-	//		return beta;
+	if (NumberOfEmptyStones == 11)
+	{
+		float sigma = 1.8f * 7.24f;
+		int bound;
+		
+		//bound = static_cast<int>(static_cast<float>(beta) + sigma + 0.5f);
+		//if (LimitedDepth_1(P, O, search.NodeCounter, bound-1, bound) >= bound)
+		//	return beta;
 
-	//	bound = static_cast<int>(static_cast<float>(alpha) - sigma + 0.5f);
-	//	if (LimitedDepth_1(P, O, search.NodeCounter, bound, bound+1) <= bound)
-	//		return alpha;
+		//bound = static_cast<int>(static_cast<float>(alpha) - sigma + 0.5f);
+		//if (LimitedDepth_1(P, O, search.NodeCounter, bound, bound+1) <= bound)
+		//	return alpha;
 
-	//	const unsigned char parity = (POP_COUNT(E & 0xF0F0F0F000000000ULL) & 1) << 3 
-	//							   | (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
-	//							   | (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
-	//							   |  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-	//	return AlphaBeta_Exact_B(P, O, search.NodeCounter, parity, NumberOfEmptyStones, alpha, beta);
-	//}
+		bound = static_cast<int>(static_cast<float>(beta) + sigma + 0.5f);
+		if (PVS_LimitedDepth(search, P, O, bound-1, bound, 3, pline) >= bound)
+			return beta;
+
+		bound = static_cast<int>(static_cast<float>(alpha) - sigma + 0.5f);
+		if (PVS_LimitedDepth(search, P, O, bound, bound+1, 3, pline) <= bound)
+			return alpha;
+
+		return PVS_Exact_C(search, P, O, alpha, beta, pline);
+	}
 
 	bool SearchPV = true;
 	int value;
@@ -1847,7 +1574,7 @@ int PVS_EndCut(CSearch & search, const unsigned long long P, const unsigned long
 				value = -PVS_EndCut(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.PV) ^ flipped, -beta, -alpha, line);
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 1, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV, false, true, true);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 1, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV);
 					return beta;
 				}
 				if (value > alpha)
@@ -1868,7 +1595,7 @@ int PVS_EndCut(CSearch & search, const unsigned long long P, const unsigned long
 				value = -PVS_EndCut(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.AV) ^ flipped, -beta, -alpha, line);
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 1, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV, false, true, true);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 1, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV);
 					return beta;
 				}
 				if (value > alpha)
@@ -1897,7 +1624,7 @@ int PVS_EndCut(CSearch & search, const unsigned long long P, const unsigned long
 		}
         if (value >= beta)
 		{
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 1, beta, 64, it->move, 64, false, true, true);
+			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 1, beta, 64, it->move, 64);
             return beta;
         }
 		if (value > alpha)
@@ -1909,156 +1636,11 @@ int PVS_EndCut(CSearch & search, const unsigned long long P, const unsigned long
 		}
     }
 	if (!SearchPV)
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 1, alpha, alpha, pline[0], 64, true, true, true);
+		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 1, alpha, alpha, pline[0], 64);
 	else
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, NumberOfEmptyStones, 1, -64, alpha, 64, 64, false, false, true);
+		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, 1, -64, alpha, 64, 64);
 	return alpha;
 }
-
-//int PVS_LimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, const int depth, unsigned char * pline)
-//{
-//	if (depth == 0)
-//		return EvaluateFeatures(P, O);
-//
-//	//if (depth == 10)
-//	//{
-//	//	int bound;
-//	//	
-//	//	bound = (int)(beta + 14.0 + 0.5);
-//	//	if (PVS_LimitedDepth(search, Position, bound-1, bound, 4) >= bound)
-//	//		return beta;
-//
-//	//	bound = (int)(alpha - 14.0 + 0.5);
-//	//	if (PVS_LimitedDepth(search, Position, bound, bound+1, 4) <= bound)
-//	//		return alpha;
-//	//}
-//
-//	//if (depth == 8)
-//	//{
-//	//	int bound;
-//	//	
-//	//	bound = (int)(beta + 11.0 + 0.5);
-//	//	if (PVS_LimitedDepth(search, Position, bound-1, bound, 4) >= bound)
-//	//		return beta;
-//
-//	//	bound = (int)(alpha - 11.0 + 0.5);
-//	//	if (PVS_LimitedDepth(search, Position, bound, bound+1, 4) <= bound)
-//	//		return alpha;
-//	//}
-//
-//	const unsigned long long E = ~(P | O);
-//	const unsigned char NumberOfEmptyStones = POP_COUNT(E);
-//	bool SearchPV = true;
-//	int value;
-//	unsigned long long flipped;
-//	unsigned long long BitBoardPossible = PossibleMoves(P, O);
-//
-//	++search.NodeCounter;
-//
-//	if (!BitBoardPossible)
-//    {
-//		BitBoardPossible = PossibleMoves(O, P);
-//		if (BitBoardPossible)
-//			return -PVS_LimitedDepth(search, O, P, -beta, -alpha, depth, pline);
-//		else{ //Game is over
-//			++search.NodeCounter;
-//			return BIND(EvaluateGameOver(P, NumberOfEmptyStones), alpha, beta);
-//		}
-//    }
-//	
-//	unsigned long long LocalNodeCounter = search.NodeCounter;
-//	unsigned char line[60];
-//	memset(line, static_cast<unsigned char>(64), 60 * sizeof(unsigned char));
-//
-//	std::pair<bool, HashTableValueType> HashTableReturn = search.HashTableLookUp(P, O);
-//	if (HashTableReturn.first)
-//	{
-//		if (HashTableReturn.second.depth >= NumberOfEmptyStones)
-//		{
-//			if (HashTableReturn.second.alpha >= beta)
-//				return beta;
-//			if (HashTableReturn.second.beta <= alpha)
-//				return alpha;
-//			if (HashTableReturn.second.alpha == HashTableReturn.second.beta)
-//				return HashTableReturn.second.alpha;
-//			alpha = MAX(alpha, static_cast<int>(HashTableReturn.second.alpha));
-//		}
-//
-//		if (HashTableReturn.second.PV != 64)
-//		{
-//			if ((BitBoardPossible & (1ULL << HashTableReturn.second.PV)) == 0ULL)
-//				std::cerr << "!" << (int)HashTableReturn.second.PV << " ";
-//			BitBoardPossible ^= (1ULL << HashTableReturn.second.PV);
-//			flipped = flip(P, O, HashTableReturn.second.PV);
-//			value = -PVS_LimitedDepth(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.PV) ^ flipped, -beta, -alpha, depth-1, line);
-//			if (value >= beta)
-//			{
-//				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, HashTableReturn.second.PV, HashTableReturn.second.AV, false, true, true);
-//				return beta;
-//			}
-//			if (value > alpha)
-//			{
-//				pline[0] = HashTableReturn.second.PV;
-//				memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
-//				alpha = value;
-//				SearchPV = false;
-//			}
-//		}
-//
-//		if (HashTableReturn.second.AV != 64)
-//		{
-//			if ((BitBoardPossible & (1ULL << HashTableReturn.second.AV)) == 0ULL)
-//				std::cerr << "!" << (int)HashTableReturn.second.AV << " ";
-//			BitBoardPossible ^= (1ULL << HashTableReturn.second.AV);
-//			flipped = flip(P, O, HashTableReturn.second.AV);
-//			value = -PVS_LimitedDepth(search, O ^ flipped, P ^ (1ULL << HashTableReturn.second.AV) ^ flipped, -beta, -alpha, depth-1, line);
-//			if (value >= beta)
-//			{
-//				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, HashTableReturn.second.AV, HashTableReturn.second.PV, false, true, true);
-//				return beta;
-//			}
-//			if (value > alpha)
-//			{
-//				pline[0] = HashTableReturn.second.AV;
-//				memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
-//				alpha = value;
-//				SearchPV = false;
-//			}
-//		}
-//	}
-//
-//	CMoveList mvList(search, P, O, BitBoardPossible);
-//
-//	auto end = mvList.cend();
-//	for (auto it = mvList.cbegin(); it != end; ++it)
-//    {
-//		if (SearchPV)
-//			value = -PVS_LimitedDepth(search, it->P, it->O, -beta, -alpha, depth-1, line);
-//		else
-//		{
-//			value = -ZWS_Exact_C(search, it->P, it->O, -alpha-1);
-//			if (value > alpha)
-//				value = -PVS_LimitedDepth(search, it->P, it->O, -beta, -alpha, depth-1, line);
-//		}
-//        if (value >= beta)
-//		{
-//			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, beta, 64, it->move, 64, false, true, true);
-//            return beta;
-//        }
-//		if (value > alpha)
-//		{
-//			pline[0] = it->move;
-//			memcpy(pline+1, line, NumberOfEmptyStones * sizeof(unsigned char) - 1);
-//			alpha = value;
-//			SearchPV = false;
-//		}
-//    }
-//	if (!SearchPV)
-//		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, alpha, alpha, pline[0], 64, true, true, true);
-//	else
-//		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, NumberOfEmptyStones, depth, 0, -64, alpha, 64, 64, false, false, true);
-//	return alpha;
-//}
 
 int LimitedDepth(CSearch & search, const int depth)
 {
@@ -2066,7 +1648,7 @@ int LimitedDepth(CSearch & search, const int depth)
 	{
 	case 0: return LimitedDepth_0(search.P, search.O, search.NodeCounter);
 	case 1: return LimitedDepth_1(search.P, search.O, search.NodeCounter, search.alpha, search.beta);
-	case 2: return LimitedDepth_2(search, search.P, search.O, search.NodeCounter, search.alpha, search.beta);
+	case 2: return LimitedDepth_2(search, search.P, search.O, search.alpha, search.beta);
 	default: return PVS_LimitedDepth(search, search.P, search.O, search.alpha, search.beta, depth, search.PV);
 	}
 }

@@ -40,8 +40,8 @@ public:
 
 	inline double RelativeError() const{return sigma()/mu();}
 
-	inline double min() const{return _min;}
-	inline double max() const{return _max;}
+	inline double Min() const{return _min;}
+	inline double Max() const{return _max;}
 
 	CRunningStatistic& operator+=(const CRunningStatistic & rhs)
 	{

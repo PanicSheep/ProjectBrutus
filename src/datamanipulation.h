@@ -85,10 +85,10 @@ void read_vector(const char * const filename, std::vector<T>& vector)
 	}
 
 	const int N = 10000;
-	int ValidData;
+	std::size_t ValidData;
 	T DataArray[N];
 	while (ValidData = fread(&DataArray, sizeof(T), N, file))
-		for (int i = 0; i < ValidData; ++i)
+		for (std::size_t i = 0; i < ValidData; ++i)
 			vector.push_back(DataArray[i]);
 
 	fclose(file);

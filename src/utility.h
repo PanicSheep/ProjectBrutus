@@ -342,11 +342,13 @@ static const unsigned long long affectable[64] = { // Fields that could be affec
 	#else
 		inline unsigned long BIT_SCAN_LS1B(const unsigned long long Input){
 			unsigned long index;
+			assert(Input != 0);
 			_BitScanForward64(&index, Input);
 			return index;
 		}
 		inline unsigned long BIT_SCAN_MS1B(const unsigned long long Input){
 			unsigned long index;
+			assert(Input != 0);
 			_BitScanReverse64(&index, Input);
 			return index;
 		}
@@ -390,18 +392,5 @@ std::string SCIENTIFIC_NOTATION(double Number);
 std::string time_format(const std::chrono::milliseconds duration);
 std::string short_time_format(std::chrono::duration<long long, std::pico> duration);
 void print_board(const unsigned long long, const unsigned long long);
-inline void print_progressbar(const int width, const float fraction)
-{
-	const char done = 219;
-	const char togo = 177;
-	const int d = fraction * width;
-	printf("%s%s", std::string(d, done).c_str(), std::string(width - d, togo).c_str());
-	//std::cout << std::string(d, done) << std::string(width - d, togo);
-}
-inline void print_progressbar_percentage(const int width, const float fraction)
-{
-	const char done = 219;
-	const char togo = 177;
-	const int d = fraction * width;
-	printf("%s%s %5.1f%%", std::string(d, done).c_str(), std::string(width - d, togo).c_str(), static_cast<int>(fraction * 1000)/10.0f);
-}
+void print_progressbar(const int width, const float fraction);
+void print_progressbar_percentage(const int width, const float fraction);

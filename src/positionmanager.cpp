@@ -93,13 +93,13 @@ void DisplayCharacteristics(const CRunningStatistic<signed char>& stats, const u
 
 	cout << "arithmetic mean: " << stats.mu() << "\n"
 		 << "standard deviation: " << stats.sigma() << "\n"
-		 << "min: " << static_cast<int>(stats.min()) << "\n"
+		 << "min: " << static_cast<int>(stats.Min()) << "\n"
 		 << "lowest decile: " << static_cast<int>(D1) << "\n"
 		 << "lower quartile: " << static_cast<int>(Q1) << "\n"
 		 << "median: " << static_cast<int>(median) << "\n"
 		 << "upper quartile: " << static_cast<int>(Q3) << "\n"
 		 << "uppest decile: " << static_cast<int>(D9) << "\n"
-		 << "max: " << static_cast<int>(stats.max()) << "\n"
+		 << "max: " << static_cast<int>(stats.Max()) << "\n"
 		 << "mode: " << static_cast<int>(mode) << "\n";
 }
 

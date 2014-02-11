@@ -3,7 +3,7 @@
 #include "utility.h"
 
 // Edax          can do it in 40.6 clock cycles
-// ProjectBrutus can do it in 45.1 clock cycles
+// ProjectBrutus can do it in 44.9 clock cycles
 
 namespace Flip
 {
@@ -426,4 +426,4 @@ namespace Flip
 	void PrintArrays();
 }
 
-inline unsigned long long flip(const unsigned long long P, const unsigned long long O, const unsigned char c) { return Flip::flip_fp[c](P, O); }
+FORCE_INLINE unsigned long long flip(const unsigned long long P, const unsigned long long O, const unsigned char c) { return Flip::flip_fp[c](P, O); }

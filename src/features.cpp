@@ -754,7 +754,6 @@ namespace Features
 void LoadFeatureWeights()
 {
 	std::vector<double> weights;
-	FILE* file;
 	std::stringstream ss;
 	for (int j = 0; j < Features::NumberOfFiles; ++j)
 	{
@@ -1123,31 +1122,26 @@ int EvaluateFeatures(const unsigned long long P, const unsigned long long O)
 	for (int i = 0; i < Features::Symmetries; ++i)
 		sum += Features::Weights[BoxIndex][Array[i]];
 	
-	return std::floorf(sum + 0.5f);
+	return static_cast<int>(std::floorf(sum + 0.5f));
 }
 
-CActiveConfigurations::CActiveConfigurations(const unsigned long long P, const unsigned long long O) : m_P(P), m_O(O)
-{
-	unsigned char index = Features::BoxIndex[NumberOfEmptyStones(P, O)];
-	// ############ Remove safety
-	if (index >= Features::NumberOfFiles)
-		index = Features::NumberOfFiles - 1;
-	// ############ Remove safety
-
-	FillConfigurationArray(P, O, m_Array);
-}
-
-int CActiveConfigurations::EvaluateFeatures() const
+CActiveConfigurations::CActiveConfigurations(const unsigned long long P, const unsigned long long O) : m_P(O), m_O(P)
 {
 	unsigned char index = Features::BoxIndex[NumberOfEmptyStones(m_P, m_O)];
 	// ############ Remove safety
 	if (index >= Features::NumberOfFiles)
 		index = Features::NumberOfFiles - 1;
+	// ############ Remove safety
 
+	FillConfigurationArray(m_P, m_O, m_Array);
+}
+
+int CActiveConfigurations::EvaluateFeatures() const
+{
 	float sum = 0.0f;
-	for (int i = 0; i < Features::Symmetries; ++i)
-		sum += Features::Weights[index][m_Array[i]];
-	return std::floorf(sum + 0.5f);
+	//for (int i = 0; i < Features::Symmetries; ++i)
+	//	sum += m_weights[i];
+	return static_cast<int>(std::floorf(sum + 0.5f));
 }
 
 int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const unsigned long long O) const
@@ -1157,114 +1151,123 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 	unsigned long long BitBoardPossible;
 	int Index = 0;
 	int Offset = 0;
-	int Array[Features::Symmetries];
+
+	int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	// ############ Remove safety
+	if (BoxIndex >= Features::NumberOfFiles)
+		BoxIndex = Features::NumberOfFiles - 1;
+	// ############ Remove safety
+
+	float * weights = Features::Weights[BoxIndex];
+
+	float sum = 0.0f;
 
 	if (Feature_C){
-		Array[Index++] = (diff & Pattern_LowerC) ? Feature_LowerC(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperC) ? Feature_UpperC(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftC ) ? Feature_LeftC (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightC) ? Feature_RightC(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_LowerC) ? Feature_LowerC(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperC) ? Feature_UpperC(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftC ) ? Feature_LeftC (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightC) ? Feature_RightC(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_C;
 	}
 	if (Feature_L1){
-		Array[Index++] = (diff & Pattern_LowerL1) ? Offset + Feature_LowerL1(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperL1) ? Offset + Feature_UpperL1(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftL1 ) ? Offset + Feature_LeftL1 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightL1) ? Offset + Feature_RightL1(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_LowerL1) ? Offset + Feature_LowerL1(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperL1) ? Offset + Feature_UpperL1(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftL1 ) ? Offset + Feature_LeftL1 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightL1) ? Offset + Feature_RightL1(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_L1;
 	}
 	if (Feature_L2){
-		Array[Index++] = (diff & Pattern_LowerL2) ? Offset + Feature_LowerL2(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperL2) ? Offset + Feature_UpperL2(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftL2 ) ? Offset + Feature_LeftL2 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightL2) ? Offset + Feature_RightL2(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_LowerL2) ? Offset + Feature_LowerL2(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperL2) ? Offset + Feature_UpperL2(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftL2 ) ? Offset + Feature_LeftL2 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightL2) ? Offset + Feature_RightL2(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_L2;
 	}
 	if (Feature_L3){
-		Array[Index++] = (diff & Pattern_LowerL3) ? Offset + Feature_LowerL3(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperL3) ? Offset + Feature_UpperL3(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftL3 ) ? Offset + Feature_LeftL3 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightL3) ? Offset + Feature_RightL3(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_LowerL3) ? Offset + Feature_LowerL3(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperL3) ? Offset + Feature_UpperL3(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftL3 ) ? Offset + Feature_LeftL3 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightL3) ? Offset + Feature_RightL3(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_L3;
 	}
 	if (Feature_A){
-		Array[Index++] = (diff & Pattern_RightLowerA) ? Offset + Feature_RightLowerA(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperA ) ? Offset + Feature_LeftUpperA (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerA ) ? Offset + Feature_LeftLowerA (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperA) ? Offset + Feature_RightUpperA(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerA) ? Offset + Feature_RightLowerA(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperA ) ? Offset + Feature_LeftUpperA (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerA ) ? Offset + Feature_LeftLowerA (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperA) ? Offset + Feature_RightUpperA(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_A;
 	}
 	if (Feature_Sq){
-		Array[Index++] = (diff & Pattern_RightLowerSq) ? Offset + Feature_RightLowerSq(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperSq ) ? Offset + Feature_LeftUpperSq (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerSq ) ? Offset + Feature_LeftLowerSq (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperSq) ? Offset + Feature_RightUpperSq(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerSq) ? Offset + Feature_RightLowerSq(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperSq ) ? Offset + Feature_LeftUpperSq (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerSq ) ? Offset + Feature_LeftLowerSq (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperSq) ? Offset + Feature_RightUpperSq(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_Sq;
 	}
 	if (Feature_B){
-		Array[Index++] = (diff & Pattern_LowerRightB) ? Offset + Feature_LowerRightB(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LowerLeftB ) ? Offset + Feature_LowerLeftB (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerB ) ? Offset + Feature_LeftLowerB (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperB ) ? Offset + Feature_LeftUpperB (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperLeftB ) ? Offset + Feature_UpperLeftB (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_UpperRightB) ? Offset + Feature_UpperRightB(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperB) ? Offset + Feature_RightUpperB(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightLowerB) ? Offset + Feature_RightLowerB(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_LowerRightB) ? Offset + Feature_LowerRightB(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LowerLeftB ) ? Offset + Feature_LowerLeftB (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerB ) ? Offset + Feature_LeftLowerB (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperB ) ? Offset + Feature_LeftUpperB (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperLeftB ) ? Offset + Feature_UpperLeftB (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_UpperRightB) ? Offset + Feature_UpperRightB(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperB) ? Offset + Feature_RightUpperB(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightLowerB) ? Offset + Feature_RightLowerB(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_B;
 	}
 	if (Feature_D3){
-		Array[Index++] = (diff & Pattern_RightLowerD3) ? Offset + Feature_RightLowerD3(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperD3 ) ? Offset + Feature_LeftUpperD3 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerD3 ) ? Offset + Feature_LeftLowerD3 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperD3) ? Offset + Feature_RightUpperD3(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerD3) ? Offset + Feature_RightLowerD3(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperD3 ) ? Offset + Feature_LeftUpperD3 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerD3 ) ? Offset + Feature_LeftLowerD3 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperD3) ? Offset + Feature_RightUpperD3(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_D3;
 	}
 	if (Feature_D4){
-		Array[Index++] = (diff & Pattern_RightLowerD4) ? Offset + Feature_RightLowerD4(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperD4 ) ? Offset + Feature_LeftUpperD4 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerD4 ) ? Offset + Feature_LeftLowerD4 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperD4) ? Offset + Feature_RightUpperD4(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerD4) ? Offset + Feature_RightLowerD4(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperD4 ) ? Offset + Feature_LeftUpperD4 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerD4 ) ? Offset + Feature_LeftLowerD4 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperD4) ? Offset + Feature_RightUpperD4(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_D4;
 	}
 	if (Feature_D5){
-		Array[Index++] = (diff & Pattern_RightLowerD5) ? Offset + Feature_RightLowerD5(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperD5 ) ? Offset + Feature_LeftUpperD5 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerD5 ) ? Offset + Feature_LeftLowerD5 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperD5) ? Offset + Feature_RightUpperD5(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerD5) ? Offset + Feature_RightLowerD5(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperD5 ) ? Offset + Feature_LeftUpperD5 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerD5 ) ? Offset + Feature_LeftLowerD5 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperD5) ? Offset + Feature_RightUpperD5(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_D5;
 	}
 	if (Feature_D6){
-		Array[Index++] = (diff & Pattern_RightLowerD6) ? Offset + Feature_RightLowerD6(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperD6 ) ? Offset + Feature_LeftUpperD6 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerD6 ) ? Offset + Feature_LeftLowerD6 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperD6) ? Offset + Feature_RightUpperD6(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerD6) ? Offset + Feature_RightLowerD6(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperD6 ) ? Offset + Feature_LeftUpperD6 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerD6 ) ? Offset + Feature_LeftLowerD6 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperD6) ? Offset + Feature_RightUpperD6(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_D6;
 	}
 	if (Feature_D7){
-		Array[Index++] = (diff & Pattern_RightLowerD7) ? Offset + Feature_RightLowerD7(P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftUpperD7 ) ? Offset + Feature_LeftUpperD7 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_LeftLowerD7 ) ? Offset + Feature_LeftLowerD7 (P, O) : m_Array[Index];
-		Array[Index++] = (diff & Pattern_RightUpperD7) ? Offset + Feature_RightUpperD7(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_RightLowerD7) ? Offset + Feature_RightLowerD7(P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftUpperD7 ) ? Offset + Feature_LeftUpperD7 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_LeftLowerD7 ) ? Offset + Feature_LeftLowerD7 (P, O) : m_Array[Index]]; Index++;
+		sum += weights[(diff & Pattern_RightUpperD7) ? Offset + Feature_RightUpperD7(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_D7;
 	}
 	if (Feature_X){
-		Array[Index++] = (diff & Pattern_CenterX) ? Offset + Feature_CenterX(P, O) : m_Array[Index];
+		sum += weights[(diff & Pattern_CenterX) ? Offset + Feature_CenterX(P, O) : m_Array[Index]]; Index++;
 		Offset += Size_X;
 	}
 	if (Feature_PlayersBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersBoarder(P, O));
+		sum += weights[Offset + (int)POP_COUNT(PlayersBoarder(P, O))];
 		Offset += Size_PlayersBoarder;
 	}
 	if (Feature_OpponentsBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsBoarder(P, O));
+		sum += weights[Offset + (int)POP_COUNT(OpponentsBoarder(P, O))];
 		Offset += Size_OpponentsBoarder;
 	}
 	if (Feature_PlayersExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersExposed(P, O));
+		sum += weights[Offset + (int)POP_COUNT(PlayersExposed(P, O))];
 		Offset += Size_PlayersExposeds;
 	}
 	if (Feature_OpponentsExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsExposed(P, O));
+		sum += weights[Offset + (int)POP_COUNT(OpponentsExposed(P, O))];
 		Offset += Size_OpponentsExposeds;
 	}
 
@@ -1272,15 +1275,15 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 		BitBoardPossible = PossibleMoves(P, O);
 
 	if (Feature_Possible){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible);
+		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible)];
 		Offset += Size_Possible;
 	}
 	if (Feature_Possible_E){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x8100000000000081UL);
+		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible & 0x8100000000000081UL)];
 		Offset += Size_Possible_E;
 	}
 	if (Feature_Possible_XC){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x42C300000000C342UL);
+		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible & 0x42C300000000C342UL)];
 		Offset += Size_Possible_XC;
 	}
 	if (Feature_Parity){
@@ -1289,31 +1292,23 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 										| (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
 										| (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
 										|  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-		Array[Index++] = Offset + (int)POP_COUNT(parity);
+		sum += weights[Offset + (int)POP_COUNT(parity)];
 		Offset += Size_Parity;
 	}
 	if (Feature_Quadrants){
 		const unsigned long long E = ~(P | O);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0x0F0F0F0F00000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0x000000000F0F0F0FULL);
+		sum += weights[Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL)];
+		sum += weights[Offset + (int)POP_COUNT(E & 0x0F0F0F0F00000000ULL)];
+		sum += weights[Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL)];
+		sum += weights[Offset + (int)POP_COUNT(E & 0x000000000F0F0F0FULL)];
 		Offset += Size_Quadrants;
 	}
 	if (Feature_NumberOfOwnStones){
-		Array[Index++] = Offset + (int)POP_COUNT(P);
+		sum += weights[Offset + (int)POP_COUNT(P)];
 		Offset += Size_NumberOfOwnStones;
 	}
 
-	unsigned char BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
-	// ############ Remove safety
-	if (BoxIndex >= Features::NumberOfFiles)
-		BoxIndex = Features::NumberOfFiles - 1;
-
-	float sum = 0.0f;
-	for (int i = 0; i < Features::Symmetries; ++i)
-		sum += Features::Weights[BoxIndex][Array[i]];
-	return std::floorf(sum + 0.5f);
+	return static_cast<int>(std::floorf(sum + 0.5f));
 }
 
 bool Congruent(const unsigned long long P1, const unsigned long long P2)

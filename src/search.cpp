@@ -3,20 +3,13 @@
 std::pair<bool, HashTableValueType> CSearch::HashTableLookUp(const unsigned long long P, const unsigned long long O) const
 {
 	HashTableValueType HashValue;
-	bool tmp = /*(hashTablePV->LookUp(_mm_set_epi64x(P, O), HashValue))
-			|| (hashTableL1->LookUp(_mm_set_epi64x(P, O), HashValue))
-			|| */(hashTableL2->LookUp(_mm_set_epi64x(P, O), HashValue));
+	bool tmp = hashTable->LookUp(P, O, HashValue);
 	return std::pair<bool, HashTableValueType>(tmp, HashValue);
 }
 
-void CSearch::HashTableUpdate(const unsigned long long P, const unsigned long long O, const unsigned long long NodeCounter, unsigned char empties, signed char depth, unsigned char selectivity, signed char alpha, signed char beta, unsigned char PV, unsigned char AV, bool b_PV, bool b_L1, bool b_L2)
+void CSearch::HashTableUpdate(const unsigned long long P, const unsigned long long O, const unsigned long long NodeCounter, signed char depth, unsigned char selectivity, signed char alpha, signed char beta, unsigned char PV, unsigned char AV)
 {
-	//if (b_PV)
-	//	hashTablePV->Update(_mm_set_epi64x(P, O), HashTableValueType(NodeCounter, empties, depth, selectivity, alpha, beta, PV, AV));
-	//if (b_L1)
-	//	hashTableL1->Update(_mm_set_epi64x(P, O), HashTableValueType(NodeCounter, empties, depth, selectivity, alpha, beta, PV, AV));
-	//if (b_L2)
-		hashTableL2->Update(_mm_set_epi64x(P, O), HashTableValueType(NodeCounter, empties, depth, selectivity, alpha, beta, PV, AV));
+	hashTable->Update(P, O, HashTableValueType(NodeCounter,depth, selectivity, alpha, beta, PV, AV));
 }
 
 const char * const CSearch::GetPV(const int depth) const

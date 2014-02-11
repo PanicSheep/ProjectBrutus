@@ -18,10 +18,15 @@ static const unsigned long long START_POSITION_ETH_O = 0x0000000018000000ULL; //
 inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return POP_COUNT(~(P | O)); }
 inline unsigned char parity(const unsigned long long E)
 {
-	return ((POP_COUNT(E & 0xF0F0F0F000000000ULL) << 3) & 8) 
-		 | ((POP_COUNT(E & 0x0F0F0F0F00000000ULL) << 2) & 4) 
-		 | ((POP_COUNT(E & 0x00000000F0F0F0F0ULL) << 1) & 2) 
-		 |   POP_COUNT(E & 0x000000000F0F0F0FULL)       & 1;
+	unsigned long long p = E;
+	p ^= (p & 0xCCCCCCCCCCCCCCCCULL) >>  2;
+	p ^= (p & 0x2222222222222222ULL) >>  1;
+	p ^= (p & 0x1111000011110000ULL) >> 16;
+	p ^= (p & 0x0000110000001100ULL) >>  8;
+	p = p & 0x0000001100000011ULL;
+	p |= (p >>  3);
+	p |= (p >> 30);
+	return p & 0xFULL;
 }
 inline unsigned char parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
 unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);

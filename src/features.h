@@ -206,8 +206,8 @@ namespace Features
 class CActiveConfigurations
 {
 private:
-	unsigned long long m_P, m_O;
 	int m_Array[Features::Symmetries];
+	unsigned long long m_P, m_O;
 public:
 	CActiveConfigurations(const unsigned long long P, const unsigned long long O);
 	int EvaluateFeatures() const;

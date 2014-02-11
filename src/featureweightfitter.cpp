@@ -1,4 +1,3 @@
-#include <intrin.h>
 #include "featureweightfitter.h"
 
 using namespace std;
@@ -624,6 +623,8 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 	}
+
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	//if (b_c){
 	//	Compare(file_end_x, FileNames);

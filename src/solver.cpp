@@ -1,13 +1,10 @@
 #include "solver.h"
 
-CSearch::HashTablePV * HashTablePV;
-CSearch::HashTableL1 * HashTableL1;
-CSearch::HashTableL2 * HashTableL2; 
-unsigned long long NodeCounter;
+std::atomic<unsigned long long> NodeCounter;
 std::atomic<std::size_t> PositionCounter;
 std::atomic_flag Spinlock;
 
-void CPositionManager::LoopOverSolvedPositions(const unsigned char depth)
+void CPositionManager::LoopOverSolvedPositions(const signed char depth)
 {
 	size_t LoopedPosition = 0;
 	const int N = 10000;
@@ -35,6 +32,7 @@ void CPositionManager::LoopOverSolvedPositions(const unsigned char depth)
 void CPositionManager::LoadPositions(const std::size_t Size)
 {
 	DATASET_POSITON_SCORE* DataArray = new DATASET_POSITON_SCORE[Size];
+	fgetpos(m_file, &m_pos);
 	std::size_t ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), Size, m_file);
 	for (std::size_t i = 0; i < ValidData; ++i)
 		m_Positions.push_back(DataArray[i]);
@@ -62,13 +60,15 @@ DATASET_POSITON_SCORE * CPositionManager::TryGetWork()
 		return NULL;
 }
 
-void Work(CPositionManager& PositionManager, const int depth)
+void Work(CPositionManager& PositionManager, const int depth, CHashTable * HashTable)
 {
+	unsigned long long NumSolved;
 	DATASET_POSITON_SCORE * data;
 	while (data = PositionManager.TryGetWork())
 	{
-		CSearch search(data->P, data->O, -64, 64, HashTablePV, HashTableL1, HashTableL2);
+		CSearch search(data->P, data->O, -64, 64, depth, 0, HashTable, CSearch::NodeType::PV_Node);
 		search.Evaluate();
+		HashTable->AdvanceDate();
 		data->depth = depth;
 		//if (data->score != search.score)
 		//{
@@ -77,46 +77,53 @@ void Work(CPositionManager& PositionManager, const int depth)
 		//	Spinlock.clear();
 		//}
 		data->score = search.score;
-		NodeCounter += search.NodeCounter;
-		PositionCounter.fetch_add(1, std::memory_order_relaxed);
+		NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
+		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
+		while (Spinlock.test_and_set());
+			std::cout << "\r";
+			print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+		Spinlock.clear();
 	}
 }
 
 void Solve(const char* Filename, const int n, const int depth, const int nthreads)
 {
-	HashTablePV = new CSearch::HashTablePV();
-	HashTableL1 = new CSearch::HashTableL1();
-	HashTableL2 = new CSearch::HashTableL2();
 	NodeCounter = 0;
 
 	std::cout << nthreads << " threads in total.\n";
 
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	std::vector<std::thread> threads(nthreads-1);
+	std::vector<CHashTable*> HashTables(nthreads);
 	CPositionManager PositionManager(Filename, n, depth);
+
+	for (auto& ht : HashTables)
+		ht = new CHashTable(24);
 
 	startTime = std::chrono::high_resolution_clock::now(); //Start Time
 
 	// Start workers
 	for (int i = 0; i < nthreads-1; ++i)
-		threads[i] = std::thread(Work, std::ref(PositionManager), depth);
-	Work(PositionManager, depth);
+		threads[i] = std::thread(Work, std::ref(PositionManager), depth, HashTables[i]);
+	Work(PositionManager, depth, HashTables[nthreads-1]);
   
 	// Join workers
-	for (int i = 0; i < nthreads-1; ++i)
-		threads[i].join();
+	for (auto& t : threads)
+		t.join();
 
 	endTime = std::chrono::high_resolution_clock::now(); //Stop Time
+
+	std::cout << "\r";
+	print_progressbar_percentage(50, 1); std::cout << std::endl;
+
+	for (auto& ht : HashTables)
+		delete ht;
 
 	PositionManager.SavePositions();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	std::cout << PositionCounter.load(std::memory_order_acquire) << " positions solved in: " << time_format(duration) << std::endl;
 	std::cout << PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;
 	std::cout << NodeCounter * 1000 / duration.count() << " nodes per second." << std::endl;
-
-	delete HashTablePV;
-	delete HashTableL1;
-	delete HashTableL2;
 }
 
 int main(int argc, char* argv[])
@@ -125,7 +132,7 @@ int main(int argc, char* argv[])
 	Spinlock.clear(std::memory_order_release);
 	bool b_file = false;
 	int d = CSearch::END;
-	int n = 100;
+	int n = 10;
 	int t = 4;
 	char* Filename;
 
@@ -151,7 +158,9 @@ int main(int argc, char* argv[])
 					"-h\tDisplays help." << std::endl;
 	}
 
-	//Solve(std::string("G:\\Reversi\\pos\\rnd_d5_100M.b").c_str(), n, d, t);
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+
+	//Solve(std::string("G:\\Reversi\\pos\\rnd_d19_10M.b").c_str(), n, d, t);
 	
 	if (b_file)
 		Solve(Filename, n, d, t);
