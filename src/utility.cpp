@@ -1,5 +1,15 @@
 #include "utility.h"
 
+void REVERSE_BITORDER(unsigned long long & v)
+{
+	v = ((v >>  1) & 0x5555555555555555ULL) | ((v & 0x5555555555555555ULL) <<  1);
+	v = ((v >>  2) & 0x3333333333333333ULL) | ((v & 0x3333333333333333ULL) <<  2);
+	v = ((v >>  4) & 0x0F0F0F0F0F0F0F0FULL) | ((v & 0x0F0F0F0F0F0F0F0FULL) <<  4);
+	v = ((v >>  8) & 0x00FF00FF00FF00FFULL) | ((v & 0x00FF00FF00FF00FFULL) <<  8);
+	v = ((v >> 16) & 0x0000FFFF0000FFFFULL) | ((v & 0x0000FFFF0000FFFFULL) << 16);
+	v = ( v >> 32                         ) | ( v                          << 32);
+}
+
 unsigned long long NEIGHBOUR(unsigned long long BitBoard)
 {
     unsigned long long BitBoardNeighbour = 0;
@@ -9,28 +19,6 @@ unsigned long long NEIGHBOUR(unsigned long long BitBoard)
         REMOVE_LS1B(BitBoard);
     }
     return BitBoardNeighbour;
-}
-
-unsigned long long LINES(unsigned long long BitBoard)
-{
-    unsigned long long BitBoardLines = 0;
-    while (BitBoard)
-    {
-        BitBoardLines |= lines[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
-    }
-    return BitBoardLines;
-}
-
-unsigned long long TO_CHECK(unsigned long long BitBoard)
-{
-    unsigned long long BitBoardToCheck = 0;
-    while (BitBoard)
-    {
-        BitBoardToCheck |= to_check[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
-    }
-    return BitBoardToCheck;
 }
 
 unsigned long long AFFECTABLE(unsigned long long BitBoard)

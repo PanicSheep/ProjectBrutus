@@ -126,7 +126,7 @@ void Stats(const vector<string>& FileNames, bool b_Progress, bool b_Distribution
 				//if (!Position.PossibleMoves()){
 				//	Position.PlayPass();
 				//	if (Position.PossibleMoves()){
-						/*if (b_Progress)*/ ++depth[DataArray[i].depth];
+						/*if (b_Progress)*/ ++depth[DataArray[i].depth - SCHAR_MIN];
 						/*if (b_Distribution || b_Characteristics)*/ ++value[DataArray[i].score - SCHAR_MIN];
 						/*if (b_Characteristics)*/ stats.Add(DataArray[i].score);
 				//	}
@@ -140,7 +140,7 @@ void Stats(const vector<string>& FileNames, bool b_Progress, bool b_Distribution
 		cout << "Progress:\n";
 		for (int i = 0; i < 255; ++i){
 			if (depth[i])
-				cout << i << "\t" << depth[i] << "\n";
+				cout << i+SCHAR_MIN << "\t" << depth[i] << "\n";
 		}
 		if (depth[255])
 			cout << "Exact\t" << depth[255] << "\n";
@@ -247,6 +247,9 @@ int main(int argc, char* argv[])
 	bool b_Unique = false;
 	bool b_Reset = false;
 	bool b_Characteristics = false;
+	bool b_GeneratePositions = false;
+	int Empties;
+	int N;
 	vector<string> FileNames;
 
 	for(int i = 0; i < argc; ++i) 
@@ -273,6 +276,12 @@ int main(int argc, char* argv[])
 			b_Distribution = true;
 			b_Characteristics = true;
 		}
+		else if (string(argv[i]) == "-g")
+			b_GeneratePositions = true;
+		else if (string(argv[i]) == "-e")
+			Empties = atoi(argv[++i]);
+		else if (string(argv[i]) == "-N")
+			N = atoi(argv[++i]);
 		else if (string(argv[i]) == "-h"){
 			cout << "Calculates statistics for given file of positions.\n" <<
 					"Arguments:\n" <<
@@ -283,9 +292,18 @@ int main(int argc, char* argv[])
 					"-r\tResets the score and depth of all positions.\n" <<
 					"-c\tShows the characteristic parameters of the distribution.\n" << 
 					"-all\tShows all stats.\n" <<
+					"-g\tGenerate positions using -e and -N.\n" <<
+					"-e\tNumber of empty fields in each position.\n" <<
+					"-N\tNumber of positions to generate.\n" <<
 					"-h\tDisplays help." << endl;
 			return 0;
 		}
+	}
+
+	if (b_GeneratePositions){
+		for (int i = 0; i < FileNames.size(); i++)
+			GeneratePositions<DATASET_POSITON_SCORE>(N, Empties, true, FileNames[i]);
+		return 0;
 	}
 
 	if (!b_FileName){

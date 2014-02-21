@@ -95,6 +95,52 @@ void read_vector(const char * const filename, std::vector<T>& vector)
 }
 
 template<class T>
+void read_vector(const std::string filename, std::vector<T>& vector)
+{
+	assert(vector.size() == 0);
+	FILE* file;
+	fopen_s(&file, filename.c_str(), "rb");
+	if(!file){
+		std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+		throw "File could not be opened.";
+		return;
+	}
+
+	const std::size_t N = 10000;
+	std::size_t ValidData;
+	T DataArray[N];
+	while (ValidData = fread(&DataArray, sizeof(T), N, file))
+		for (std::size_t i = 0; i < ValidData; ++i)
+			vector.push_back(DataArray[i]);
+
+	fclose(file);
+}
+
+template<class T>
+void read_vector(const std::string filename, std::vector<T>& vector, std::size_t size)
+{
+	assert(vector.size() == 0);
+	FILE* file;
+	fopen_s(&file, filename.c_str(), "rb");
+	if(!file){
+		std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+		throw "File could not be opened.";
+		return;
+	}
+
+	const std::size_t N = 10000;
+	std::size_t ValidData;
+	T DataArray[N];
+	while (ValidData = fread(&DataArray, sizeof(T), (std::min)(N, size), file)){
+		for (int i = 0; i < ValidData; ++i)
+			vector.push_back(DataArray[i]);
+		size -= ValidData;
+	}
+
+	fclose(file);
+}
+
+template<class T>
 void read_vector(const char * const filename, std::vector<T>& vector, std::size_t size)
 {
 	assert(vector.size() == size);
@@ -114,6 +160,19 @@ void read_vector(const char * const filename, std::vector<T>& vector, std::size_
 			*(it++) = DataArray[i];
 		size -= ValidData;
 	}
+
+	fclose(file);
+}
+
+template<class T>
+void write_vector(const std::string filename, std::vector<T>& vector)
+{
+	FILE* file;
+	fopen_s(&file, filename.c_str(), "wb");
+	
+	const std::vector<T>::const_iterator end = vector.cend();
+	for (std::vector<T>::const_iterator it = vector.cbegin(); it != end; ++it)
+		fwrite(&(*it), sizeof(T), 1, file);
 
 	fclose(file);
 }

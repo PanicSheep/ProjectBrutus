@@ -1,13 +1,15 @@
 #pragma once
+#include "configfile.h"
 #include "count_last_flip.h"
 #include "datamanipulation.h"
-#include "endgame.h"
 #include "flip.h"
+#include "game.h"
 #include "position.h"
+#include "solverbenchmark.h"
 #include "utility.h"
 #include <chrono>
-#include <random>
 #include <functional>
 #include <iostream>
+#include <random>
 #include <vector>
 #include <windows.h>

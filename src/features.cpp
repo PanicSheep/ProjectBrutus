@@ -1,17 +1,19 @@
 #include "features.h"
 
 /**
-	DiagLookUp  =    32 Byte
-	Index       =    49 Byte
+	DiagLookUp2 =     8 Byte
+	BosIndex    =    52 Byte
 	PowerOf3    =   512 Byte
 	PowerOf3inv =   512 Byte
 	Weights     = NumberOfFiles * Size * sizeof(float) Byte
 	----------------------
-	              1'105 Byte
+	              1'084 Byte
 **/
 
 namespace Features
 {
+	int NumberOfFiles;
+
 	//const unsigned short DiagLookUp[4][4] = {
 	//	{0xFFFF, 0xFFFF, 0xFFFF,      0},
 	//	{0xFFFF, 0xFFFF,      1, 0xFFFF},
@@ -21,10 +23,10 @@ namespace Features
 
 	const unsigned short DiagLookUp2[4] = {0, 729, 1458, 2187};
 
-	const unsigned char BoxIndex[49] = {
+	const unsigned char BoxIndex[52] = {
 		99,         //  0
 		99, 99, 99, //  1,  2,  3
-		99, 99, 99, //  4,  5,  6
+		99, 99,  0, //  4,  5,  6
 		 0,  0,  0, //  7,  8,  9
 		 1,  1,  1, // 10, 11, 12
 		 2,  2,  2, // 13, 14, 15
@@ -39,6 +41,7 @@ namespace Features
 		11, 11, 11, // 40, 41, 42
 		12, 12, 12, // 43, 44, 45
 		13, 13, 13, // 46, 47, 48
+		14, 14, 14, // 49, 50, 51
 	};
 
 	const unsigned short PowerOf3[256] = {
@@ -78,6 +81,8 @@ namespace Features
 		POWER_OF_3_INV<0xE0>(), POWER_OF_3_INV<0xE1>(), POWER_OF_3_INV<0xE2>(), POWER_OF_3_INV<0xE3>(), POWER_OF_3_INV<0xE4>(), POWER_OF_3_INV<0xE5>(), POWER_OF_3_INV<0xE6>(), POWER_OF_3_INV<0xE7>(), POWER_OF_3_INV<0xE8>(), POWER_OF_3_INV<0xE9>(), POWER_OF_3_INV<0xEA>(), POWER_OF_3_INV<0xEB>(), POWER_OF_3_INV<0xEC>(), POWER_OF_3_INV<0xED>(), POWER_OF_3_INV<0xEE>(), POWER_OF_3_INV<0xEF>(),
 		POWER_OF_3_INV<0xF0>(), POWER_OF_3_INV<0xF1>(), POWER_OF_3_INV<0xF2>(), POWER_OF_3_INV<0xF3>(), POWER_OF_3_INV<0xF4>(), POWER_OF_3_INV<0xF5>(), POWER_OF_3_INV<0xF6>(), POWER_OF_3_INV<0xF7>(), POWER_OF_3_INV<0xF8>(), POWER_OF_3_INV<0xF9>(), POWER_OF_3_INV<0xFA>(), POWER_OF_3_INV<0xFB>(), POWER_OF_3_INV<0xFC>(), POWER_OF_3_INV<0xFD>(), POWER_OF_3_INV<0xFE>(), POWER_OF_3_INV<0xFF>()
 	};
+
+	float (*Weights)[Size];
 
 	const unsigned long long Pattern_LowerC = 0x00000000000042FFULL;
 	const unsigned long long Pattern_UpperC = 0xFF42000000000000ULL;
@@ -133,8 +138,6 @@ namespace Features
 	const unsigned long long Pattern_RightUpperD7 = 0x4020100804020100ULL;
 	const unsigned long long Pattern_CenterX = 0x0000241818240000ULL;
 
-	float Weights[NumberOfFiles][Size];
-
 	int Feature_LowerC(const unsigned long long P, const unsigned long long O)
 	{
 		int sym1, sym2;
@@ -151,10 +154,16 @@ namespace Features
 	int Feature_UpperC(const unsigned long long P, const unsigned long long O)
 	{
 		int sym1, sym2;
-		sym1 = PowerOf3[(((P & 0xF040000000000000ULL) >> 1) * 0x0000000000000401ULL) >> 59] * 2
-			 + PowerOf3[(((O & 0xF040000000000000ULL) >> 1) * 0x0000000000000401ULL) >> 59];
+		sym1 = PowerOf3[((P & 0xF000000000000000ULL) >> 60) | ((P & 0x0040000000000000ULL) >> 50)] * 2
+			 + PowerOf3[((O & 0xF000000000000000ULL) >> 60) | ((O & 0x0040000000000000ULL) >> 50)];
+		//sym2 = PowerOf3inv[((P & 0x0F00000000000000ULL) >> 52) | ((P & 0x0002000000000000ULL) >> 41)] * 2
+		//	 + PowerOf3inv[((O & 0x0F00000000000000ULL) >> 52) | ((O & 0x0002000000000000ULL) >> 41)];
+
+		//sym1 = PowerOf3[(((P & 0xF040000000000000ULL) >> 1) * 0x0000000000000401ULL) >> 59] * 2
+		//	 + PowerOf3[(((O & 0xF040000000000000ULL) >> 1) * 0x0000000000000401ULL) >> 59];
 		sym2 = PowerOf3inv[((P & 0x0F02000000000000ULL) * 0x0000000000000410ULL) >> 56] * 2
 			 + PowerOf3inv[((O & 0x0F02000000000000ULL) * 0x0000000000000410ULL) >> 56];
+
 		//if (sym1 > sym2)
 		//	return 243*sym2+sym1 - (((sym2+1)*sym2) >> 1);
 		//else
@@ -749,29 +758,39 @@ namespace Features
 			 + PowerOf3[((O & 0x0000240000240000ULL) * 0x00000A0000040000ULL) >> 60] * 16
 			 + (((P & 0x0000001818000000ULL) * 0x0000000802000000ULL) >> 60);
 	}
-}
 
-void LoadFeatureWeights()
-{
-	std::vector<double> weights;
-	std::stringstream ss;
-	for (int j = 0; j < Features::NumberOfFiles; ++j)
+	void Initialize()
 	{
-		ss.str(std::string());
-		#ifdef _MSC_VER
-			ss << "G://Reversi//inuse//weights_" << j << ".b";
-		#else
-			ss << "weights_" << j << ".b";
-		#endif
-		read_vector(ss.str().c_str(), weights);
-		for (int i = 0; i < Features::Size; ++i)
+		std::vector<std::string> Filenames;
+		std::string s;
+		for (int i = 0; i < 15; ++i)
 		{
-			//if (std::abs(weights[i]) >= 0.01f)
-				Features::Weights[j][i] = static_cast<float>(weights[i]);
-			//else if (j-1 >= 0)
-			//	Features::Weights[j][i] = Features::Weights[j-1][i];
+			s = "weights range " + std::to_string(i);
+			if (ConfigFile::Configurations.count(s))
+				Filenames.push_back(ConfigFile::Configurations[s]);
 		}
-		weights.clear();
+
+		NumberOfFiles = Filenames.size();
+		Weights = new float[NumberOfFiles][Size]();
+		std::vector<double> weights;
+		for (int j = 0; j < NumberOfFiles; ++j)
+		{
+			read_vector(Filenames[j], weights);
+			for (int i = 0; i < Size; ++i)
+			{
+				//if (std::abs(weights[i]) >= 0.01f)
+					Weights[j][i] = static_cast<float>(weights[i]);
+				//else if (j-1 >= 0)
+				//	Weights[j][i] = Weights[j-1][i];
+			}
+			weights.clear();
+		}
+
+	}
+
+	void Finalize()
+	{
+		delete[] Weights;
 	}
 }
 

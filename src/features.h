@@ -1,4 +1,5 @@
 #pragma once
+#include "configfile.h"
 #include "datamanipulation.h"
 #include "position.h"
 #include "utility.h"
@@ -38,6 +39,8 @@ namespace Features
 		return sum;
 	}
 
+	extern int NumberOfFiles;
+
 	const bool Feature_C = true; 
 	const bool Feature_L1 = true; 
 	const bool Feature_L2 = true; 
@@ -61,7 +64,6 @@ namespace Features
 	const bool Feature_Parity = false; 
 	const bool Feature_Quadrants = false; 
 	const bool Feature_NumberOfOwnStones = false;
-	const int NumberOfFiles = 3;
 
 	const int Size_C = 29646;
 	const int Size_L1 = 3321;
@@ -201,6 +203,9 @@ namespace Features
 	}
 	inline void Sort4(int* const Array, const int Index) { Sort(Array[Index], Array[Index+1], Array[Index+2], Array[Index+3]); }
 	inline void Sort8(int* const Array, const int Index) { Sort(Array[Index], Array[Index+1], Array[Index+2], Array[Index+3], Array[Index+4], Array[Index+5], Array[Index+6], Array[Index+7]); }
+
+	void Initialize();
+	void Finalize();
 }
 
 class CActiveConfigurations
@@ -213,8 +218,6 @@ public:
 	int EvaluateFeatures() const;
 	int EvaluateFeatures(const unsigned long long P, const unsigned long long O) const;
 };
-
-void LoadFeatureWeights();
 
 void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int* const Array);
 void FillConfigurationArraySorted(const unsigned long long P, const unsigned long long O, int* const Array);

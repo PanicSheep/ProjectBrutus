@@ -143,12 +143,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\flip.cpp" />
+    <ClCompile Include="..\src\generatepositions.cpp" />
+    <ClCompile Include="..\src\position.cpp" />
     <ClCompile Include="..\src\positionmanager.cpp" />
+    <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\datamanipulation.h" />
+    <ClInclude Include="..\src\flip.h" />
+    <ClInclude Include="..\src\generatepositions.h" />
     <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\positionmanager.h" />
     <ClInclude Include="..\src\statistics.h" />
+    <ClInclude Include="..\src\utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

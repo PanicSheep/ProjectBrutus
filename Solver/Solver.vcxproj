@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\configfile.cpp" />
     <ClCompile Include="..\src\count_last_flip.cpp" />
     <ClCompile Include="..\src\endgame.cpp" />
     <ClCompile Include="..\src\features.cpp" />
@@ -160,6 +161,7 @@
     <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\configfile.h" />
     <ClInclude Include="..\src\count_last_flip.h" />
     <ClInclude Include="..\src\datamanipulation.h" />
     <ClInclude Include="..\src\endgame.h" />

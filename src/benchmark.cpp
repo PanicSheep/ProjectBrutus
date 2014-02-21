@@ -738,7 +738,7 @@ void ReadInFile(const char * const filename, DATASET_POSITON_SCORE * DataArray, 
 	fclose(file);
 }
 
-unsigned long long HugeBenchmak(const int UpperLimit, const int BLOW_UP)
+unsigned long long HugeBenchmak(const int LowerLimit, const int UpperLimit, const int seconds)
 {
 	unsigned long long NodeCounter = 0;
 	DATASET_POSITON_SCORE* DataArray;
@@ -771,12 +771,12 @@ unsigned long long HugeBenchmak(const int UpperLimit, const int BLOW_UP)
 	printf(" d |       time (s) |      nodes (N) |    N/s    |    P/s    | time/P \n");
 	printf("---+----------------+----------------+-----------+-----------+--------\n");
 
-	for (int d = 0; d <= UpperLimit; ++d)
+	for (int d = LowerLimit; d <= UpperLimit; ++d)
 	{
-		DataArray = new DATASET_POSITON_SCORE[size[d] * BLOW_UP];
+		DataArray = new DATASET_POSITON_SCORE[size[d] * seconds];
 		sprintf_s(buffer, "G:\\Reversi\\pos\\rnd_d%d_100M.b", d);
-		ReadInFile(buffer, DataArray, size[d] * BLOW_UP);
-		NodeCounter += Solve(d, DataArray, size[d] * BLOW_UP);
+		ReadInFile(buffer, DataArray, size[d] * seconds);
+		NodeCounter += Solve(d, DataArray, size[d] * seconds);
 		delete [] DataArray;
 	}
 	printf("%16llu nodes.\n", NodeCounter);
@@ -788,12 +788,16 @@ int main(int argc, char* argv[])
 {
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
-	CHashTable* hashTable = new CHashTable(24);
-	LoadFeatureWeights();
-	FForum_Benchmark( 1, 19, true, hashTable);
-	FForum_Benchmark(20, 39, true, hashTable);
-	FForum_Benchmark(40, 59, true, hashTable);
-	return 0;
+	//CHashTable* hashTable = new CHashTable(24);
+	ConfigFile::Initialize(std::string("F:\\Reversi\\ProjectBrutus.ini"));
+	Features::Initialize();
+
+	SolverBenchmarkEmpties(10, 20, 10, CSearch::END, 0, 1, 24);
+	//SolverBenchmarkDepth(24/*Empties*/, 5/*Secounds*/, 0/*Lowerdepth*/, 14/*Upperdepth*/, 0/*selectivity*/, 1/*nthreads*/, 24/*HashTableBits*/);
+	//HugeBenchmak(0, 20, 20);
+	//FForum_Benchmark( 1, 19, true, hashTable);
+	//FForum_Benchmark(20, 39, true, hashTable);
+	//FForum_Benchmark(40, 59, true, hashTable);
 
 	//HugeBenchmak(20, 20);
 
@@ -829,29 +833,29 @@ int main(int argc, char* argv[])
 	//HugeBenchmak(10, 20);
 	//return 0;
 
-	printf("   Routine     |  [ns]  |   Runtime [s] \n");
-	printf("---------------+--------+---------------\n");
-	PossibleMoves_Benchmark(8000000);
-	PossibleMoves_Benchmark(8000000);
-	PossibleMoves_Benchmark(8000000);
-	PossibleMoves_Benchmark(8000000);
-	PossibleMoves_Benchmark(8000000);
+	//printf("   Routine     |  [ns]  |   Runtime [s] \n");
+	//printf("---------------+--------+---------------\n");
+	//PossibleMoves_Benchmark(8000000);
+	//PossibleMoves_Benchmark(8000000);
+	//PossibleMoves_Benchmark(8000000);
+	//PossibleMoves_Benchmark(8000000);
+	//PossibleMoves_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PlayStone_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Parity_Benchmark(10000000);
-	Parity_Benchmark(10000000);
-	Parity_Benchmark(10000000);
-	Parity_Benchmark(10000000);
-	Parity_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
 	//Count_last_flip_Benchmark(20000000);
 	//POP_COUNT_Benchmark(30000000);
 	//POP_COUNT_MAX15_Benchmark(30000000);
@@ -865,11 +869,14 @@ int main(int argc, char* argv[])
 	//StableStones_skyline_Benchmark(10000000);
 	//StableStones_Benchmark(3000000);
 	//EvaluateFeatures_Benchmark(800000);
+	//EvaluateFeatures_Benchmark(800000);
+	//EvaluateFeatures_Benchmark(800000);
 	
 	//FForum_Benchmark( 1, 19, true, hashTable);
 	//FForum_Benchmark(20, 39, true, hashTable);
 	//FForum_Benchmark(40, 59, true, hashTable);
 
-	delete hashTable;
+	//delete hashTable;
+	Features::Finalize();
 	return 0;
 }
