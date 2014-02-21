@@ -96,7 +96,7 @@
 	FORCE_INLINE unsigned __int64 POP_COUNT(unsigned long long Input) { return _mm_popcnt_u64(Input); }
 #endif
 
-static const char field_name[65][3] = {
+static const std::string field_name[65] = {
 	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
 	"A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",
 	"A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3",
@@ -118,6 +118,16 @@ static const char field_name[65][3] = {
 		44, 24, 15,  8, 23,  7,  6,  5
 	};
 #endif
+static const unsigned char field_type[64] = {   
+	0, 1, 2, 3, 3, 2, 1, 0,
+	1, 4, 5, 6, 6, 5, 4, 1,
+	2, 5, 7, 8, 8, 7, 5, 2,
+	3, 6, 8, 9, 9, 8, 6, 3,
+	3, 6, 8, 9, 9, 8, 6, 3,
+	2, 5, 7, 8, 8, 7, 5, 2,
+	1, 4, 5, 6, 6, 5, 4, 1,
+	0, 1, 2, 3, 3, 2, 1, 0
+};
 static const unsigned char quadrant_id_2_bit[64] = {   
 	0, 0, 0, 0, 1, 1, 1, 1,
 	0, 0, 0, 0, 1, 1, 1, 1,
@@ -156,26 +166,6 @@ static const unsigned char quadrant_id_4_bit[64] = {
 	4, 4, 4, 4, 8, 8, 8, 8,
 	4, 4, 4, 4, 8, 8, 8, 8
 };
-static const char trivial_evaluation[64] = {
-	 18, -10,  16, 12, 12, 16, -10,  18,
-	-10, -10,   6,  8,  8,  6, -10, -10,
-	 16,   6,  14, 10, 10, 14,   6,  16,
-	 12,   8,  10,  0,  0, 10,   8,  12,
-	 12,   8,  10,  0,  0, 10,   8,  12,
-	 16,   6,  14, 10, 10, 14,   6,  16,
-	-10, -10,   6,  8,  8,  6, -10, -10,
-	 18, -10,  16, 12, 12, 16, -10,  18
-};
-static const char evaluation_order[64] = {
-	10,  3,  7,  6,  6,  7,  3, 10,
-	 3,  2,  4,  5,  5,  4,  2,  3,
-	 7,  4,  8,  9,  9,  8,  4,  7,
-	 6,  5,  9,  1,  1,  9,  5,  6,
-	 6,  5,  9,  1,  1,  9,  5,  6,
-	 7,  4,  8,  9,  9,  8,  4,  7,
-	 3,  2,  4,  5,  5,  4,  2,  3,
-	10,  3,  7,  6,  6,  7,  3, 10
-};
 static const unsigned char max_difference_1[64] = {   
 	37, 33, 31, 29, 29, 31, 33, 37, 
 	33, 31, 29, 27, 27, 29, 31, 33, 
@@ -185,25 +175,6 @@ static const unsigned char max_difference_1[64] = {
 	31, 29, 31, 29, 29, 31, 29, 31, 
 	33, 31, 29, 27, 27, 29, 31, 33, 
 	37, 33, 31, 29, 29, 31, 33, 37
-};
-
-static const char stability_cutoff_limits[64] = {   
-	//-99, -99, -99, -99, -99,  -2,  22,   0,
-	// 26,   3,  31,  11,  31,  14,  28,  -3,
-	// 25, -99, -99, -99, -99, -99, -99, -99,
-	//-99, -99, -99, -99, -99, -99, -99, -99,
-	//-99, -99, -99, -99, -99, -99, -99, -99,
-	//-99, -99, -99, -99, -99, -99, -99, -99,
-	//-99, -99, -99, -99, -99, -99, -99, -99,
-	//-99, -99, -99, -99, -99, -99, -99, -99
-	-99, -99, -99, -99, -99, -15, -16, -15,
-	-16, -17, -18, -17, -18, -19, -20, -19,
-	-20, -99, -99, -99, -99, -99, -99, -99,
-	-99, -99, -99, -99, -99, -99, -99, -99,
-	-99, -99, -99, -99, -99, -99, -99, -99,
-	-99, -99, -99, -99, -99, -99, -99, -99,
-	-99, -99, -99, -99, -99, -99, -99, -99,
-	-99, -99, -99, -99, -99, -99, -99, -99
 };
 
 CACHE_LINE_ALIGNMENT
@@ -217,26 +188,6 @@ static const unsigned long long neighbour[64] = { // Neighbours to the input-fie
 	0x0003020300000000ULL, 0x0007050700000000ULL, 0x000e0a0e00000000ULL, 0x001c141c00000000ULL,	0x0038283800000000ULL, 0x0070507000000000ULL, 0x00e0a0e000000000ULL, 0x00c040c000000000ULL,
 	0x0302030000000000ULL, 0x0705070000000000ULL, 0x0e0a0e0000000000ULL, 0x1c141c0000000000ULL,	0x3828380000000000ULL, 0x7050700000000000ULL, 0xe0a0e00000000000ULL, 0xc040c00000000000ULL,
 	0x0203000000000000ULL, 0x0507000000000000ULL, 0x0a0e000000000000ULL, 0x141c000000000000ULL,	0x2838000000000000ULL, 0x5070000000000000ULL, 0xa0e0000000000000ULL, 0x40c0000000000000ULL
-};
-static const unsigned long long lines[64] = { // Lines into all directions origin the input-field
-	0x81412111090503FEULL, 0x02824222120A07FDULL, 0x0404844424150EFBULL, 0x08080888492A1CF7ULL,	0x10101011925438EFULL, 0x2020212224A870DFULL, 0x404142444850E0BFULL, 0x8182848890A0C07FULL,
-	0x412111090503FE03ULL, 0x824222120A07FD07ULL, 0x04844424150EFB0EULL, 0x080888492A1CF71CULL,	0x101011925438EF38ULL, 0x20212224A870DF70ULL, 0x4142444850E0BFE0ULL, 0x82848890A0C07FC0ULL,
-	0x2111090503FE0305ULL, 0x4222120A07FD070AULL, 0x844424150EFB0E15ULL, 0x0888492A1CF71C2AULL,	0x1011925438EF3854ULL, 0x212224A870DF70A8ULL, 0x42444850E0BFE050ULL, 0x848890A0C07FC0A0ULL,
-	0x11090503FE030509ULL, 0x22120A07FD070A12ULL, 0x4424150EFB0E1524ULL, 0x88492A1CF71C2A49ULL,	0x11925438EF385492ULL, 0x2224A870DF70A824ULL, 0x444850E0BFE05048ULL, 0x8890A0C07FC0A090ULL,
-	0x090503FE03050911ULL, 0x120A07FD070A1222ULL, 0x24150EFB0E152444ULL, 0x492A1CF71C2A4988ULL,	0x925438EF38549211ULL, 0x24A870DF70A82422ULL, 0x4850E0BFE0504844ULL, 0x90A0C07FC0A09088ULL,
-	0x0503FE0305091121ULL, 0x0A07FD070A122242ULL, 0x150EFB0E15244484ULL, 0x2A1CF71C2A498808ULL,	0x5438EF3854921110ULL, 0xA870DF70A8242221ULL, 0x50E0BFE050484442ULL, 0xA0C07FC0A0908884ULL,
-	0x03FE030509112141ULL, 0x07FD070A12224282ULL, 0x0EFB0E1524448404ULL, 0x1CF71C2A49880808ULL,	0x38EF385492111010ULL, 0x70DF70A824222120ULL, 0xE0BFE05048444241ULL, 0xC07FC0A090888482ULL,
-	0xFE03050911214181ULL, 0xFD070A1222428202ULL, 0xFB0E152444840404ULL, 0xF71C2A4988080808ULL,	0xEF38549211101010ULL, 0xDF70A82422212020ULL, 0xBFE0504844424140ULL, 0x7FC0A09088848281ULL
-};
-static const unsigned long long to_check[64] = { // Fields that have to be checked to find out if the input-field could be played
-	0x81412111090500FCULL, 0x02824222120A00F8ULL, 0x04048444241500F1ULL, 0x08080888492A00E3ULL,	0x10101011925400C7ULL, 0x2020212224A8008FULL, 0x404142444850001FULL, 0x8182848890A0003FULL,
-	0x412111090500FC00ULL, 0x824222120A00F800ULL, 0x048444241500F100ULL, 0x080888492A00E300ULL,	0x101011925400C700ULL, 0x20212224A8008F00ULL, 0x4142444850001F00ULL, 0x82848890A0003F00ULL,
-	0x2111090500FC0005ULL, 0x4222120A00F8000AULL, 0x8444241500F00011ULL, 0x0888492A00E30022ULL,	0x1011925400C70044ULL, 0x212224A8000F0088ULL, 0x42444850001F0050ULL, 0x848890A0003F00A0ULL,
-	0x11090500FC000509ULL, 0x22120A00F8000A12ULL, 0x44241500F0001524ULL, 0x88492A00E3002A49ULL,	0x11925400C7005492ULL, 0x2224A8000F00A824ULL, 0x444850001F005048ULL, 0x8890A0003F00A090ULL,
-	0x090500FC00050911ULL, 0x120A00F8000A1222ULL, 0x241500F000152444ULL, 0x492A00E3002A4988ULL,	0x925400C700549211ULL, 0x24A8000F00A82422ULL, 0x4850001F00504844ULL, 0x90A0003F00A09088ULL,
-	0x0500FC0005091121ULL, 0x0A00F8000A122242ULL, 0x1100F00015244484ULL, 0x2200E3002A498808ULL,	0x4400C70054921110ULL, 0x88000F00A8242221ULL, 0x50001F0050484442ULL, 0xA0003F00A0908884ULL,
-	0x00FC000509112141ULL, 0x00F8000A12224282ULL, 0x00F1001524448404ULL, 0x00E3002A49880808ULL,	0x00C7005492111010ULL, 0x008F00A824222120ULL, 0x001F005048444241ULL, 0x003F00A090888482ULL,
-	0xFC00050911214181ULL, 0xF8000A1222428202ULL, 0xF100152444840404ULL, 0xE3002A4988080808ULL,	0xC700549211101010ULL, 0x8F00A82422212020ULL, 0x1F00504844424140ULL, 0x3F00A09088848281ULL
 };
 static const unsigned long long affectable[64] = { // Fields that could be affected by playing the input-field
 	0x004121110905037EULL, 0x00024222120A067CULL, 0x0004044424140E7AULL, 0x00080808482A1C76ULL,	0x001010101254386EULL, 0x002020222428705EULL, 0x004042444850603EULL, 0x0082848890A0C07EULL,
@@ -342,11 +293,13 @@ static const unsigned long long affectable[64] = { // Fields that could be affec
 	#else
 		inline unsigned long BIT_SCAN_LS1B(const unsigned long long Input){
 			unsigned long index;
+			assert(Input != 0);
 			_BitScanForward64(&index, Input);
 			return index;
 		}
 		inline unsigned long BIT_SCAN_MS1B(const unsigned long long Input){
 			unsigned long index;
+			assert(Input != 0);
 			_BitScanReverse64(&index, Input);
 			return index;
 		}
@@ -356,30 +309,14 @@ static const unsigned long long affectable[64] = { // Fields that could be affec
 inline void REMOVE_LS1B(unsigned long long & Input){ Input &= (Input - 1); }
 inline unsigned long long GET_LS1B(const unsigned long long Input){ return Input & -Input; }
 
-inline void REVERSE_BITORDER(unsigned long long & v)
-{
-	v = ((v >>  1) & 0x5555555555555555ULL) | ((v & 0x5555555555555555ULL) <<  1);
-	v = ((v >>  2) & 0x3333333333333333ULL) | ((v & 0x3333333333333333ULL) <<  2);
-	v = ((v >>  4) & 0x0F0F0F0F0F0F0F0FULL) | ((v & 0x0F0F0F0F0F0F0F0FULL) <<  4);
-	v = ((v >>  8) & 0x00FF00FF00FF00FFULL) | ((v & 0x00FF00FF00FF00FFULL) <<  8);
-	v = ((v >> 16) & 0x0000FFFF0000FFFFULL) | ((v & 0x0000FFFF0000FFFFULL) << 16);
-	v = ( v >> 32                         ) | ( v                          << 32);
-}
-
-inline const char * const FIELD_NAME(const char Index) { return field_name[Index]; }
+void REVERSE_BITORDER(unsigned long long & v);
+inline const std::string FIELD_NAME(const char Index) { return field_name[Index]; }
 inline unsigned char QUADRANT_ID(const char Index) { return quadrant_id_4_bit[Index]; }
 inline unsigned char QUADRANT_ID_2_BIT(const char Index) { return quadrant_id_2_bit[Index]; }
 inline unsigned long long QUADRANT(const char Index) { return quadrant[Index]; }
-inline int TRIVIAL_EVALUATION(const char Index) { return trivial_evaluation[Index]; }
-inline char EVALUATION_ORDER(const char Index) { return evaluation_order[Index]; }
-inline char STABILITY_CUTOFF_LIMIT(const char Index) { return stability_cutoff_limits[Index]; }
 inline int MAX_DIFFERENCE_GAIN(const int Index) { return max_difference_1[Index]; }
 inline unsigned long long NEIGHBOUR(const int Index) { return neighbour[Index]; }
 unsigned long long NEIGHBOUR(const unsigned long long BitBoard);
-inline unsigned long long LINES(const int Index){ return lines[Index]; }
-unsigned long long LINES(unsigned long long BitBoard);
-inline unsigned long long TO_CHECK(const int Index){ return to_check[Index]; }
-unsigned long long TO_CHECK(unsigned long long BitBoard);
 inline unsigned long long AFFECTABLE(const int Index){ return affectable[Index]; }
 unsigned long long AFFECTABLE(unsigned long long BitBoard);
 unsigned long long diagonal_flip(unsigned long long b);
@@ -390,18 +327,5 @@ std::string SCIENTIFIC_NOTATION(double Number);
 std::string time_format(const std::chrono::milliseconds duration);
 std::string short_time_format(std::chrono::duration<long long, std::pico> duration);
 void print_board(const unsigned long long, const unsigned long long);
-inline void print_progressbar(const int width, const float fraction)
-{
-	const char done = 219;
-	const char togo = 177;
-	const int d = fraction * width;
-	printf("%s%s", std::string(d, done).c_str(), std::string(width - d, togo).c_str());
-	//std::cout << std::string(d, done) << std::string(width - d, togo);
-}
-inline void print_progressbar_percentage(const int width, const float fraction)
-{
-	const char done = 219;
-	const char togo = 177;
-	const int d = fraction * width;
-	printf("%s%s %5.1f%%", std::string(d, done).c_str(), std::string(width - d, togo).c_str(), static_cast<int>(fraction * 1000)/10.0f);
-}
+void print_progressbar(const int width, const float fraction);
+void print_progressbar_percentage(const int width, const float fraction);

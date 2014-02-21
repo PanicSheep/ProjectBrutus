@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 
 template<class T>
 class CRunningStatistic
@@ -9,10 +10,13 @@ public:
 		_E_of_X(0),
 		_E_of_X_sq(0),
 		_min(0),
-		_max(0){}
+		_max(0)
+	{ spinlock.clear(); }
 
 	void Add(T value)
 	{
+		while (spinlock.test_and_set(std::memory_order_acquire)) ;
+
 		if (_N == 0){
 			_min = value;
 			_max = value;
@@ -24,24 +28,26 @@ public:
 			_max = value;
 		_E_of_X += (static_cast<double>(value) - _E_of_X) / static_cast<double>(_N);
 		_E_of_X_sq += (static_cast<double>(value)*static_cast<double>(value) - _E_of_X_sq) / static_cast<double>(_N);
+
+		spinlock.clear(std::memory_order_release);
 	}
 
-	inline unsigned long long N() const{return _N;}
-	inline unsigned long long size() const{return N();}
+	inline unsigned long long N() const { return _N; }
+	inline unsigned long long size() const { return N(); }
 
-	inline double mu() const{return _E_of_X;}
-	inline double Average() const{return mu();}
+	inline double mu() const { return _E_of_X; }
+	inline double Average() const { return mu(); }
 
-	inline double Var() const{return _E_of_X_sq - _E_of_X*_E_of_X;}
-	inline double Variance() const{return Var();}
+	inline double Var() const { return _E_of_X_sq - _E_of_X*_E_of_X; }
+	inline double Variance() const { return Var(); }
 
-	inline double sigma() const{return std::sqrt(Var());}
-	inline double StandardDeviation() const{return sigma();}
+	inline double sigma() const { return std::sqrt(Var()); }
+	inline double StandardDeviation() const { return sigma(); }
 
-	inline double RelativeError() const{return sigma()/mu();}
+	inline double RelativeError() const { return sigma()/mu(); }
 
-	inline double min() const{return _min;}
-	inline double max() const{return _max;}
+	inline double Min() const { return _min; }
+	inline double Max() const { return _max; }
 
 	CRunningStatistic& operator+=(const CRunningStatistic & rhs)
 	{
@@ -73,6 +79,7 @@ public:
 	}
 
 private:
+	std::atomic_flag spinlock;
 	unsigned long long _N;
 	double _E_of_X;
 	double _E_of_X_sq;

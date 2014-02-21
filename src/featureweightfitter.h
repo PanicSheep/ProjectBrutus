@@ -2,12 +2,14 @@
 #include <atomic>
 #include <algorithm>
 #include <array>
+#include <intrin.h>
 #include <iostream>
 #include <memory.h>
 #include <numeric>
 #include <omp.h>
 #include <stdio.h>
 #include <vector>
+#include <windows.h>
 #include "datamanipulation.h"
 #include "features.h"
 #include "position.h"

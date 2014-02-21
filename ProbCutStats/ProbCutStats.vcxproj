@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{321B278C-9B4B-4210-A5C7-81C20863F6C2}</ProjectGuid>
+    <ProjectGuid>{15D95746-8E4A-4C6D-8D03-67919A152DB8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>FeatureWeightFitter</RootNamespace>
+    <RootNamespace>ProbCutStats</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -126,18 +126,11 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>../src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OmitFramePointers>true</OmitFramePointers>
-      <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,22 +140,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\configfile.cpp" />
-    <ClCompile Include="..\src\features.cpp" />
-    <ClCompile Include="..\src\featureweightfitter.cpp" />
-    <ClCompile Include="..\src\flip.cpp" />
-    <ClCompile Include="..\src\position.cpp" />
-    <ClCompile Include="..\src\utility.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\src\configfile.h" />
+    <ClInclude Include="..\src\count_last_flip.h" />
     <ClInclude Include="..\src\datamanipulation.h" />
     <ClInclude Include="..\src\features.h" />
-    <ClInclude Include="..\src\featureweightfitter.h" />
     <ClInclude Include="..\src\flip.h" />
+    <ClInclude Include="..\src\game.h" />
+    <ClInclude Include="..\src\hashtable.h" />
+    <ClInclude Include="..\src\move.h" />
     <ClInclude Include="..\src\position.h" />
+    <ClInclude Include="..\src\search.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\configfile.cpp" />
+    <ClCompile Include="..\src\count_last_flip.cpp" />
+    <ClCompile Include="..\src\endgame.cpp" />
+    <ClCompile Include="..\src\features.cpp" />
+    <ClCompile Include="..\src\flip.cpp" />
+    <ClCompile Include="..\src\game.cpp" />
+    <ClCompile Include="..\src\hashtable.cpp" />
+    <ClCompile Include="..\src\midgame.cpp" />
+    <ClCompile Include="..\src\move.cpp" />
+    <ClCompile Include="..\src\position.cpp" />
+    <ClCompile Include="..\src\probcutstats.cpp" />
+    <ClCompile Include="..\src\search.cpp" />
+    <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

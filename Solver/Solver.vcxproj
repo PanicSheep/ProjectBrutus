@@ -147,11 +147,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\configfile.cpp" />
     <ClCompile Include="..\src\count_last_flip.cpp" />
     <ClCompile Include="..\src\endgame.cpp" />
     <ClCompile Include="..\src\features.cpp" />
     <ClCompile Include="..\src\flip.cpp" />
     <ClCompile Include="..\src\hashtable.cpp" />
+    <ClCompile Include="..\src\midgame.cpp" />
     <ClCompile Include="..\src\move.cpp" />
     <ClCompile Include="..\src\position.cpp" />
     <ClCompile Include="..\src\search.cpp" />
@@ -159,12 +161,14 @@
     <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\configfile.h" />
     <ClInclude Include="..\src\count_last_flip.h" />
     <ClInclude Include="..\src\datamanipulation.h" />
     <ClInclude Include="..\src\endgame.h" />
     <ClInclude Include="..\src\features.h" />
     <ClInclude Include="..\src\flip.h" />
     <ClInclude Include="..\src\hashtable.h" />
+    <ClInclude Include="..\src\midgame.h" />
     <ClInclude Include="..\src\move.h" />
     <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\search.h" />

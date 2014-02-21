@@ -1,5 +1,15 @@
 #include "utility.h"
 
+void REVERSE_BITORDER(unsigned long long & v)
+{
+	v = ((v >>  1) & 0x5555555555555555ULL) | ((v & 0x5555555555555555ULL) <<  1);
+	v = ((v >>  2) & 0x3333333333333333ULL) | ((v & 0x3333333333333333ULL) <<  2);
+	v = ((v >>  4) & 0x0F0F0F0F0F0F0F0FULL) | ((v & 0x0F0F0F0F0F0F0F0FULL) <<  4);
+	v = ((v >>  8) & 0x00FF00FF00FF00FFULL) | ((v & 0x00FF00FF00FF00FFULL) <<  8);
+	v = ((v >> 16) & 0x0000FFFF0000FFFFULL) | ((v & 0x0000FFFF0000FFFFULL) << 16);
+	v = ( v >> 32                         ) | ( v                          << 32);
+}
+
 unsigned long long NEIGHBOUR(unsigned long long BitBoard)
 {
     unsigned long long BitBoardNeighbour = 0;
@@ -9,28 +19,6 @@ unsigned long long NEIGHBOUR(unsigned long long BitBoard)
         REMOVE_LS1B(BitBoard);
     }
     return BitBoardNeighbour;
-}
-
-unsigned long long LINES(unsigned long long BitBoard)
-{
-    unsigned long long BitBoardLines = 0;
-    while (BitBoard)
-    {
-        BitBoardLines |= lines[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
-    }
-    return BitBoardLines;
-}
-
-unsigned long long TO_CHECK(unsigned long long BitBoard)
-{
-    unsigned long long BitBoardToCheck = 0;
-    while (BitBoard)
-    {
-        BitBoardToCheck |= to_check[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
-    }
-    return BitBoardToCheck;
 }
 
 unsigned long long AFFECTABLE(unsigned long long BitBoard)
@@ -144,18 +132,18 @@ std::string short_time_format(std::chrono::duration<long long, std::pico> durati
 	long long nanoss = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
 	long long picos = duration.count();
 		
-		 if (millis >= 100) sprintf(buff, "%4ums", millis);
-	else if (millis >=  10) sprintf(buff, "%2.1fms", static_cast<double>(micros) / 1000.0);
-	else if (millis >=   1) sprintf(buff, "%1.2fms", static_cast<double>(micros) / 1000.0);
-	else if (micros >= 100) sprintf(buff, "%4uus", micros);
-	else if (micros >=  10) sprintf(buff, "%2.1fus", static_cast<double>(nanoss) / 1000.0);
-	else if (micros >=   1) sprintf(buff, "%1.2fus", static_cast<double>(nanoss) / 1000.0);
-	else if (nanoss >= 100) sprintf(buff, "%4uns", nanoss);
-	else if (nanoss >=  10) sprintf(buff, "%2.1fns", static_cast<double>(picos) / 1000.0);
-	else if (nanoss >=   1) sprintf(buff, "%1.2fns", static_cast<double>(picos) / 1000.0);
-	else if (picos        ) sprintf(buff, "%4ups", picos);
+		 if (millis >= 100) sprintf_s(buff, "%4ums", millis);
+	else if (millis >=  10) sprintf_s(buff, "%2.1fms", static_cast<double>(micros) / 1000.0);
+	else if (millis >=   1) sprintf_s(buff, "%1.2fms", static_cast<double>(micros) / 1000.0);
+	else if (micros >= 100) sprintf_s(buff, "%4uus", micros);
+	else if (micros >=  10) sprintf_s(buff, "%2.1fus", static_cast<double>(nanoss) / 1000.0);
+	else if (micros >=   1) sprintf_s(buff, "%1.2fus", static_cast<double>(nanoss) / 1000.0);
+	else if (nanoss >= 100) sprintf_s(buff, "%4uns", nanoss);
+	else if (nanoss >=  10) sprintf_s(buff, "%2.1fns", static_cast<double>(picos) / 1000.0);
+	else if (nanoss >=   1) sprintf_s(buff, "%1.2fns", static_cast<double>(picos) / 1000.0);
+	else if (picos        ) sprintf_s(buff, "%4ups", picos);
 	else
-		sprintf(buff, "Error!");
+		sprintf_s(buff, "Error!");
 
 	return std::string(buff);
 }
@@ -166,13 +154,29 @@ void print_board(const unsigned long long P, const unsigned long long O)
 	{
 		for (int j = 0; j < 8; j++)
 		{
-			if (P & (0x8000000000000000ULL >> i*8+j))
+			if (P & (0x8000000000000000ULL >> (i*8+j)))
 				std::cout << "X";
-			else if (O & (0x8000000000000000ULL >> i*8+j))
+			else if (O & (0x8000000000000000ULL >> (i*8+j)))
 				std::cout << "O";
 			else
 				std::cout << ".";
 		}
 		std::cout << std::endl;
 	}
+}
+
+void print_progressbar(const int width, const float fraction)
+{
+	const unsigned char done = 219;
+	const unsigned char togo = 177;
+	const int d = static_cast<const int>(fraction * width);
+	printf("%s%s", std::string(d, done).c_str(), std::string(width - d, togo).c_str());
+	//std::cout << std::string(d, done) << std::string(width - d, togo);
+}
+void print_progressbar_percentage(const int width, const float fraction)
+{
+	const unsigned char done = 219;
+	const unsigned char togo = 177;
+	const int d = static_cast<const int>(fraction * width);
+	printf("%s%s %5.1f%%", std::string(d, done).c_str(), std::string(width - d, togo).c_str(), static_cast<int>(fraction * 1000)/10.0f);
 }

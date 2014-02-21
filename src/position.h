@@ -15,13 +15,30 @@ static const unsigned long long START_POSITION_O = 0x0000001008000000ULL; // Ori
 static const unsigned long long START_POSITION_ETH_P = 0x0000001800000000ULL; // ETH
 static const unsigned long long START_POSITION_ETH_O = 0x0000000018000000ULL; // ETH
 
+inline void ResetPosition(unsigned long long & P, unsigned long long & O, const bool ETH)
+{
+	if (ETH){
+		P = START_POSITION_ETH_P;
+		O = START_POSITION_ETH_O;
+	}
+	else {
+		P = START_POSITION_P;
+		O = START_POSITION_O;
+	}
+}
+
 inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return POP_COUNT(~(P | O)); }
 inline unsigned char parity(const unsigned long long E)
 {
-	return ((POP_COUNT(E & 0xF0F0F0F000000000ULL) << 3) & 8) 
-		 | ((POP_COUNT(E & 0x0F0F0F0F00000000ULL) << 2) & 4) 
-		 | ((POP_COUNT(E & 0x00000000F0F0F0F0ULL) << 1) & 2) 
-		 |   POP_COUNT(E & 0x000000000F0F0F0FULL)       & 1;
+	unsigned long long p = E;
+	p ^= p >>  1;
+	p ^= p >>  2;
+	p ^= p >>  8;
+	p ^= p >> 16;
+	p &= 0x0000001100000011ULL;
+	p |= p >>  3;
+	p |= p >> 30;
+	return p & 0xFULL;
 }
 inline unsigned char parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
 unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);
@@ -33,8 +50,8 @@ inline unsigned long long StableStones_corner_and_co(const unsigned long long O)
 	return (
 			((O & 0x0100000000000001ULL) << 1) |
 			((O & 0x8000000000000080ULL) >> 1) |
-			((O & 0x0000000000000081ULL) << 8) |
-			((O & 0x8100000000000000ULL) >> 8) |
+			((O & 0x8100000000000081ULL) << 8) |
+			((O & 0x8100000000000081ULL) >> 8) |
 				  0x8100000000000081ULL
 			) & O;
 }

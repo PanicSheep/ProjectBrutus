@@ -28,6 +28,7 @@ public:
 	static const int w_Parity = 5;
 	
 	CMoveList(const unsigned long long P, const unsigned long long O, unsigned long long BitBoardPossible);
+	CMoveList(const unsigned long long P, const unsigned long long O, unsigned long long BitBoardPossible, const int depth);
 
 	inline std::vector<Move>::iterator begin() { return m_Moves.begin(); }
 	inline std::vector<Move>::const_iterator cbegin() const { return m_Moves.cbegin(); }

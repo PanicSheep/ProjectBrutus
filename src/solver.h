@@ -9,6 +9,7 @@
 #include "utility.h"
 #include "search.h"
 #include "endgame.h"
+#include <windows.h>
 
 class CPositionManager
 {
@@ -30,7 +31,7 @@ public:
 	}
 	~CPositionManager() { fclose(m_file); }
 
-	void LoopOverSolvedPositions(const unsigned char depth);
+	void LoopOverSolvedPositions(const signed char depth);
 	void LoadPositions(const std::size_t Size);
 	void SavePositions();
 	DATASET_POSITON_SCORE * TryGetWork();

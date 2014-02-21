@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PositionManager", "Position
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MetaFlips", "MetaFlips\MetaFlips.vcxproj", "{96EEA7C3-4078-4AA5-90D4-FB46EBB48E52}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProbCutStats", "ProbCutStats\ProbCutStats.vcxproj", "{15D95746-8E4A-4C6D-8D03-67919A152DB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -95,6 +97,18 @@ Global
 		{96EEA7C3-4078-4AA5-90D4-FB46EBB48E52}.Release|Win32.Build.0 = Release|Win32
 		{96EEA7C3-4078-4AA5-90D4-FB46EBB48E52}.Release|x64.ActiveCfg = Release|x64
 		{96EEA7C3-4078-4AA5-90D4-FB46EBB48E52}.Release|x64.Build.0 = Release|x64
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|Win32.Build.0 = Debug|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|x64.ActiveCfg = Debug|x64
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Debug|x64.Build.0 = Debug|x64
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|Win32.ActiveCfg = Release|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|Win32.Build.0 = Release|Win32
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|x64.ActiveCfg = Release|x64
+		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

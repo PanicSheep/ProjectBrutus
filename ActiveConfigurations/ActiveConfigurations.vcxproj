@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\activeconfigurations.cpp" />
+    <ClCompile Include="..\src\configfile.cpp" />
     <ClCompile Include="..\src\features.cpp" />
     <ClCompile Include="..\src\flip.cpp" />
     <ClCompile Include="..\src\position.cpp" />
@@ -156,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\activeconfigurations.h" />
+    <ClInclude Include="..\src\configfile.h" />
     <ClInclude Include="..\src\features.h" />
     <ClInclude Include="..\src\flip.h" />
     <ClInclude Include="..\src\position.h" />

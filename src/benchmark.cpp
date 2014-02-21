@@ -1,6 +1,6 @@
 #include "benchmark.h"
 
-void FForum_Benchmark(int begin, int end, bool verbose, CSearch::HashTablePV* hashTablePV, CSearch::HashTableL1* hashTableL1, CSearch::HashTableL2* hashTableL2)
+void FForum_Benchmark(int begin, int end, bool verbose, CHashTable* hashTable)
 {
 	struct CFForum
 	{
@@ -76,7 +76,7 @@ void FForum_Benchmark(int begin, int end, bool verbose, CSearch::HashTablePV* ha
 	std::chrono::high_resolution_clock::time_point startTime, endTime, OverallStartTime, OverallEndTime;
 
 	for (int i = begin; i <= end; i++)
-		SearchVector.push_back(CSearch(FForum[i-1].P, FForum[i-1].O, -64, 64, hashTablePV, hashTableL1, hashTableL2));
+		SearchVector.push_back(CSearch(FForum[i-1].P, FForum[i-1].O, -64, 64, hashTable));
 
 	int i = begin;
 	if (verbose)
@@ -89,6 +89,7 @@ void FForum_Benchmark(int begin, int end, bool verbose, CSearch::HashTablePV* ha
 		startTime = std::chrono::high_resolution_clock::now(); //Start Time
 		it->Evaluate();
 		endTime = std::chrono::high_resolution_clock::now(); //Stop Time
+		hashTable->AdvanceDate();
 		if (it->score != FForum[i-1].Score)
 			printf("%3u was miscalculated. It's score should be %+2.2d.\n", i, FForum[i-1].Score);
 		if (verbose)
@@ -391,6 +392,37 @@ void POP_COUNT_PLUS_Benchmark(const int N)
 		printf("POP_COUNT_PLUS | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
+void Parity_Benchmark(const int N)
+{
+	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
+	unsigned long long b[64];
+	unsigned long long a = 0;
+	std::chrono::high_resolution_clock::time_point startTime, endTime;
+
+	for (int i = 0; i < 64; i++) b[i] = rnd();
+
+	startTime = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < N; i++)
+	{
+		a = parity(b[a]);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+		a = parity(a);
+	}
+	endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+	if (a) //Prevent dead code elimination.
+		printf("Parity         | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+	else
+		printf("Parity         | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+}
+
 void BIT_SCAN_LS1B_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(1ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
@@ -663,9 +695,7 @@ void EvaluateFeatures_Benchmark(const int N)
 
 unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const unsigned long long size)
 {
-	CSearch::HashTablePV * HashTablePV = new CSearch::HashTablePV();
-	CSearch::HashTableL1 * HashTableL1 = new CSearch::HashTableL1();
-	CSearch::HashTableL2 * HashTableL2 = new CSearch::HashTableL2(); 
+	CHashTable * HashTable = new CHashTable(24);
 	unsigned long long NodeCounter = 0;
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 
@@ -681,7 +711,7 @@ unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const un
 		startTime = std::chrono::high_resolution_clock::now();
 		for (unsigned long long i = 0; i < size; i++)
 		{
-			CSearch search(DataArray[i].P, DataArray[i].O, -64, 64, HashTablePV, HashTableL1, HashTableL2);
+			CSearch search(DataArray[i].P, DataArray[i].O, -64, 64, HashTable);
 			search.Evaluate();
 			NodeCounter += search.NodeCounter;
 		}
@@ -692,9 +722,7 @@ unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const un
 	printf("%3u| %14s | %14llu | %9d | %9d | %s\n", d, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(duration)), 
 		NodeCounter, NodeCounter*1000/duration.count(), size*1000/duration.count(), short_time_format(std::chrono::duration_cast<std::chrono::duration<long long, std::pico>>(duration)/size));
 
-	delete HashTablePV;
-	delete HashTableL1;
-	delete HashTableL2;
+	delete HashTable;
 	return NodeCounter;
 }
 
@@ -710,7 +738,7 @@ void ReadInFile(const char * const filename, DATASET_POSITON_SCORE * DataArray, 
 	fclose(file);
 }
 
-unsigned long long HugeBenchmak(const int UpperLimit, const int BLOW_UP)
+unsigned long long HugeBenchmak(const int LowerLimit, const int UpperLimit, const int seconds)
 {
 	unsigned long long NodeCounter = 0;
 	DATASET_POSITON_SCORE* DataArray;
@@ -743,12 +771,12 @@ unsigned long long HugeBenchmak(const int UpperLimit, const int BLOW_UP)
 	printf(" d |       time (s) |      nodes (N) |    N/s    |    P/s    | time/P \n");
 	printf("---+----------------+----------------+-----------+-----------+--------\n");
 
-	for (int d = 0; d <= UpperLimit; ++d)
+	for (int d = LowerLimit; d <= UpperLimit; ++d)
 	{
-		DataArray = new DATASET_POSITON_SCORE[size[d] * BLOW_UP];
+		DataArray = new DATASET_POSITON_SCORE[size[d] * seconds];
 		sprintf_s(buffer, "G:\\Reversi\\pos\\rnd_d%d_100M.b", d);
-		ReadInFile(buffer, DataArray, size[d] * BLOW_UP);
-		NodeCounter += Solve(d, DataArray, size[d] * BLOW_UP);
+		ReadInFile(buffer, DataArray, size[d] * seconds);
+		NodeCounter += Solve(d, DataArray, size[d] * seconds);
 		delete [] DataArray;
 	}
 	printf("%16llu nodes.\n", NodeCounter);
@@ -758,55 +786,20 @@ unsigned long long HugeBenchmak(const int UpperLimit, const int BLOW_UP)
 
 int main(int argc, char* argv[])
 {
-	//std::cout << "Size of hash table node: " << sizeof(CTwoNode) << " bytes" << std::endl;
-	
-	//print_board(Flip::MULT_853<7,2>() * Flip::lambda_line<7,2>(),0); std::cout << std::endl;
-	//print_board(Flip::MULT_853<7,3>() * Flip::lambda_line<7,3>(),0); std::cout << std::endl;
-	//print_board(Flip::MULT_853<7,4>() * Flip::lambda_line<7,4>(),0); std::cout << std::endl;
-	//print_board(Flip::MULT_853<7,5>() * Flip::lambda_line<7,5>(),0); std::cout << std::endl;
-
-	//print_board(Flip::lambda_line<0,2>() * Flip::MULT_851<2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,3>() * Flip::MULT_851<3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,4>() * Flip::MULT_851<4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,5>() * Flip::MULT_851<5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<1,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<2,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<3,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<4,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<5,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<6,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<7,2>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<1,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<2,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<3,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<4,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<5,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<6,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<7,3>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<1,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<2,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<3,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<4,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<5,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<6,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<7,4>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<0,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<1,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<2,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<3,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<4,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<5,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<6,5>(),0); std::cout << std::endl;
-	//print_board(Flip::lambda_line<7,5>(),0); std::cout << std::endl;
-	//return 0;
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-	LoadFeatureWeights();
-	CSearch::HashTablePV* hashTablePV = new CSearch::HashTablePV();
-	CSearch::HashTableL1* hashTableL1 = new CSearch::HashTableL1();
-	CSearch::HashTableL2* hashTableL2 = new CSearch::HashTableL2();
+
+	//CHashTable* hashTable = new CHashTable(24);
+	ConfigFile::Initialize(std::string("F:\\Reversi\\ProjectBrutus.ini"));
+	Features::Initialize();
+
+	SolverBenchmarkEmpties(10, 20, 10, CSearch::END, 0, 1, 24);
+	//SolverBenchmarkDepth(24/*Empties*/, 5/*Secounds*/, 0/*Lowerdepth*/, 14/*Upperdepth*/, 0/*selectivity*/, 1/*nthreads*/, 24/*HashTableBits*/);
+	//HugeBenchmak(0, 20, 20);
+	//FForum_Benchmark( 1, 19, true, hashTable);
+	//FForum_Benchmark(20, 39, true, hashTable);
+	//FForum_Benchmark(40, 59, true, hashTable);
+
+	//HugeBenchmak(20, 20);
 
 	//printf(" d |   Runtime [s] \n");
 	//printf("---+----------------\n");
@@ -826,11 +819,8 @@ int main(int argc, char* argv[])
 	//for (std::vector<DATASET_POSITON_SCORE>::const_iterator it = Data.cbegin(); it != end; ++it)
 	//	std::cout << EvaluateFeatures(it->P, it->O) << "\t" << (int)it->score << std::endl;
 	//return 0;
-	HugeBenchmak(20, 20);
+	//HugeBenchmak(20, 20);
 
-	FForum_Benchmark( 1, 19, true, hashTablePV, hashTableL1, hashTableL2);
-	FForum_Benchmark(20, 39, true, hashTablePV, hashTableL1, hashTableL2);
-	FForum_Benchmark(40, 59, true, hashTablePV, hashTableL1, hashTableL2);
 	//if (Test_All())
 	//	std::cout << "Test successful!" << std::endl;
 	//else
@@ -843,8 +833,8 @@ int main(int argc, char* argv[])
 	//HugeBenchmak(10, 20);
 	//return 0;
 
-	printf("   Routine     |  [ns]  |   Runtime [s] \n");
-	printf("---------------+--------+---------------\n");
+	//printf("   Routine     |  [ns]  |   Runtime [s] \n");
+	//printf("---------------+--------+---------------\n");
 	//PossibleMoves_Benchmark(8000000);
 	//PossibleMoves_Benchmark(8000000);
 	//PossibleMoves_Benchmark(8000000);
@@ -856,11 +846,16 @@ int main(int argc, char* argv[])
 	//PossibleMoves2_Benchmark(8000000);
 	//PossibleMoves2_Benchmark(8000000);
 	//PlayStone_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
-	Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Flip_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
+	//Parity_Benchmark(10000000);
 	//Count_last_flip_Benchmark(20000000);
 	//POP_COUNT_Benchmark(30000000);
 	//POP_COUNT_MAX15_Benchmark(30000000);
@@ -874,13 +869,14 @@ int main(int argc, char* argv[])
 	//StableStones_skyline_Benchmark(10000000);
 	//StableStones_Benchmark(3000000);
 	//EvaluateFeatures_Benchmark(800000);
+	//EvaluateFeatures_Benchmark(800000);
+	//EvaluateFeatures_Benchmark(800000);
 	
-	FForum_Benchmark( 1, 19, true, hashTablePV, hashTableL1, hashTableL2);
-	FForum_Benchmark(20, 39, true, hashTablePV, hashTableL1, hashTableL2);
-	FForum_Benchmark(40, 59, true, hashTablePV, hashTableL1, hashTableL2);
+	//FForum_Benchmark( 1, 19, true, hashTable);
+	//FForum_Benchmark(20, 39, true, hashTable);
+	//FForum_Benchmark(40, 59, true, hashTable);
 
-	delete hashTablePV;
-	delete hashTableL1;
-	delete hashTableL2;
+	//delete hashTable;
+	Features::Finalize();
 	return 0;
 }
