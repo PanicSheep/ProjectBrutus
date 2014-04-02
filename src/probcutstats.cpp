@@ -9,211 +9,189 @@
 #include "statistics.h"
 #include "utility.h"
 #include <atomic>
+#include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <omp.h>
+#include <Windows.h>
 
-struct CScores
+class CComparisonPair
 {
-	std::atomic<unsigned long long> score[129][129];
-	CScores(){
+public:
+	std::vector<std::string> FileNames;
+	int d, s, D, S;
+	std::atomic<unsigned long long> occurences[129][129];
+	CSimpleLinearRegression<int> LinReg;
+
+	CComparisonPair() = delete;
+	CComparisonPair(const CComparisonPair& that) = delete;
+	CComparisonPair(int d, const int s, const int D, const int S) : FileNames(FileNames), d(d), s(s), D(D), S(S)
+	{
 		for (int i = 0; i < 129; ++i)
 			for (int j = 0; j < 129; ++j)
-				score[i][j] = 0;
+				occurences[i][j].store(0);
+	}
+
+	void Add(const std::string & FileName) { FileNames.push_back(FileName); }
+
+	bool Contains(const std::string & FileName) const
+	{
+		for (auto& filename : FileNames)
+			if (FileName.compare(filename))
+				return true;
+		return false;
 	}
 };
 
-void CompareToExactNumEmpty(const std::vector<std::string> FileNames, const int Empties, const int size, const bool contour_plot_data)
+struct CSearchDepths
 {
-	CHashTable* hashTable = new CHashTable(24);
-	ConfigFile::Initialize(std::string("G:\\Reversi\\ProjectBrutus.ini"));
-	Features::Initialize();
-
-	CRunningStatistic<int> Stats = CRunningStatistic<int>();
-	CScores stats = CScores();
-	std::vector<DATASET_POSITON_SCORE> data;
-	CSearch search;
-	std::atomic<unsigned long long> counter;
-	
-
-	for (auto& filename : FileNames)
+	bool depth[128][7];
+	int score[128][7];
+	CSearchDepths()
 	{
-		std::cout << "Processing file: " << filename << std::endl;
-		counter = 0;
-		data.clear();
-		read_vector(filename, data);
-		#pragma omp parallel for private(search)
-		for (int i = 0; i < size; ++i)
-		{
-			search = CSearch(data[i].P, data[i].O, -64, 64, NumberOfEmptyStones(data[i].P, data[i].O)-Empties, 0, hashTable, CSearch::NodeType::PV_Node);
-			search.Evaluate();
-			stats.score[search.score+64][data[i].score+64]++;
-			Stats.Add(search.score - data[i].score);
-
-			hashTable->AdvanceDate();
-			
-			if ((counter.fetch_add(1, std::memory_order_relaxed) & 0x3FF) == 0)
+		for (int d = 0; d < 128; ++d)
+			for (int s = 0; s < 7; ++s)
+				depth[d][s] = false;
+	}
+	CSearchDepths(std::vector<CComparisonPair*>& ComparisonPairs, std::string FileName)
+	{
+		for (int d = 0; d < 128; ++d)
+			for (int s = 0; s < 7; ++s)
+				depth[d][s] = false;
+		for (CComparisonPair* Pair : ComparisonPairs)
+			if (Pair->Contains(FileName))
 			{
-				#pragma omp critical
-				{
-					std::cout << "\r"; print_progressbar_percentage(50, counter / static_cast<double>(size));
-				}
+				depth[Pair->d][Pair->s] = true;
+				depth[Pair->D][Pair->S] = true;
 			}
-		}
-		std::cout << "\r"; print_progressbar_percentage(50, 1); std::cout << std::endl;
 	}
 
-	std::cout << std::endl;
-	std::cout << "Depth: " << Empties << std::endl;
-	std::cout << "Average: " << Stats.mu() << std::endl;
-	std::cout << "Sigma:   " << Stats.sigma() << std::endl;
-	if (contour_plot_data)
+	void Distribute(std::vector<CComparisonPair*>& ComparisonPairs, std::string FileName)
 	{
-		for (int l = 0; l <= 128; ++l)
-		{
-			for (int m = 0; m <= 128; ++m)
-				std::cout << stats.score[l][m] << "\t";
-			std::cout << std::endl;
-		}
+		for (CComparisonPair* Pair : ComparisonPairs)
+			if (Pair->Contains(FileName))
+			{
+				Pair->occurences[score[Pair->D][Pair->S]+64][score[Pair->d][Pair->s]+64].fetch_add(1, std::memory_order_relaxed);
+				Pair->LinReg.Add(score[Pair->d][Pair->s], score[Pair->D][Pair->S]);
+			}
 	}
+};
 
-	Features::Finalize();
+std::vector<std::string> FileNames(std::vector<CComparisonPair*>& ComparisonPairs)
+{
+	std::vector<std::string> tmp;
+	for (CComparisonPair* Pair : ComparisonPairs)
+		tmp.insert(tmp.end(), Pair->FileNames.begin(), Pair->FileNames.end());
+	std::sort(tmp.begin(), tmp.end());
+	tmp.erase(std::unique(tmp.begin(), tmp.end()), tmp.end());
+	return tmp;
 }
 
-void CompareToExact(const std::vector<std::string> FileNames, const int d, const int size, const bool contour_plot_data)
+void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, const int size, const bool contour_plot_data)
 {
 	CHashTable* hashTable = new CHashTable(24);
 	ConfigFile::Initialize(std::string("G:\\Reversi\\ProjectBrutus.ini"));
 	Features::Initialize();
 
-	CRunningStatistic<int> * Stats = new CRunningStatistic<int>[d+1];
-	CScores * stats = new CScores[d+1];
 	std::vector<DATASET_POSITON_SCORE> data;
 	CSearch search;
 	std::atomic<unsigned long long> counter;
-	
+	std::chrono::high_resolution_clock::time_point TimePoint;
 
-	for (auto& filename : FileNames)
+	std::vector<std::string> filenames = FileNames(ComparisonPairs);
+
+	for (auto& filename : filenames)
 	{
 		std::cout << "Processing file: " << filename << std::endl;
+		std::cout << "\r"; print_progressbar_percentage(50, 0);
+		TimePoint = std::chrono::high_resolution_clock::now();
 		counter = 0;
 		data.clear();
 		read_vector(filename, data);
-		#pragma omp parallel for private(search)
+		#pragma omp parallel for private(search) schedule(static, 1)
 		for (int i = 0; i < size; ++i)
 		{
-			for (int j = 0; j <= d; ++j)
+			CSearchDepths searchdepths(ComparisonPairs, filename);
+
+			for (int d = 0; d < 127; ++d)
 			{
-				search = CSearch(data[i].P, data[i].O, -64, 64, j, 0, hashTable, CSearch::NodeType::PV_Node);
-				search.Evaluate();
-				stats[j].score[search.score+64][data[i].score+64]++;
-				Stats[j].Add(search.score - data[i].score);
+				for (int s = 6; s >= 0; --s)
+				{
+					if (searchdepths.depth[d][s])
+					{
+						search = CSearch(data[i].P, data[i].O, -64, 64, d, s, hashTable, CSearch::NodeType::PV_Node);
+						search.Evaluate();
+						searchdepths.score[d][s] = search.score;
+					}
+				}
 			}
+			if (searchdepths.depth[CSearch::END][0])
+				searchdepths.score[CSearch::END][0] = data[i].score;
 			hashTable->AdvanceDate();
-			
-			if ((counter.fetch_add(1, std::memory_order_relaxed) & 0x3FF) == 0)
+
+			searchdepths.Distribute(ComparisonPairs, filename);
+
+			counter.fetch_add(1, std::memory_order_relaxed);
+			#pragma omp critical
 			{
-				#pragma omp critical
+				if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - TimePoint).count() > 1000)
 				{
 					std::cout << "\r"; print_progressbar_percentage(50, counter / static_cast<double>(size));
+					TimePoint = std::chrono::high_resolution_clock::now();
 				}
 			}
 		}
 		std::cout << "\r"; print_progressbar_percentage(50, 1); std::cout << std::endl;
 	}
 
-	for (int j = 0; j <= d; ++j)
+	std::cout << std::endl << "############" << std::endl;
+	
+	unsigned long long N;
+	double a, b, value, Sum_X, Sum_X_sq;
+	for (auto& Pair : ComparisonPairs)
 	{
+		Sum_X = 0;
+		Sum_X_sq = 0;
+		N = 0;
+		a = Pair->LinReg.a();
+		b = Pair->LinReg.b();
 		std::cout << std::endl;
-		std::cout << "Depth: " << j << std::endl;
-		std::cout << "Average: " << Stats[j].mu() << std::endl;
-		std::cout << "Sigma:   " << Stats[j].sigma() << std::endl;
-		if (contour_plot_data)
+		std::cout << "Depths: " << Pair->d << "(" << Pair->s << ")" << " " << Pair->D << "(" << Pair->S << ")" << std::endl;
+		std::cout << "a:    " << a << std::endl;
+		std::cout << "b:    " << b << std::endl;
+		std::cout << "R_sq: " << Pair->LinReg.R_sq() << std::endl;
+		for (int i = 0; i < 129; i++){
+			for (int j = 0; j < 129; j++)
+			{
+				value = a + b * (j-64) - (i-64);
+				N += Pair->occurences[i][j];
+				Sum_X += Pair->occurences[i][j] * value;
+				Sum_X_sq += Pair->occurences[i][j] * value * value;
+			}
+		}
+		Sum_X /= static_cast<double>(N);
+		Sum_X_sq /= static_cast<double>(N);
+		std::cout << "sigma: " << std::sqrt(Sum_X_sq - Sum_X * Sum_X) << std::endl;
+	}
+
+	std::cout << std::endl << "############" << std::endl;
+
+	if (contour_plot_data)
+	{
+		for (auto& Pair : ComparisonPairs)
 		{
+			std::cout << std::endl;
+			std::cout << "Depths: " << Pair->d << "(" << Pair->s << ")" << " " << Pair->D << "(" << Pair->S << ")" << std::endl;
 			for (int l = 0; l <= 128; ++l)
 			{
 				for (int m = 0; m <= 128; ++m)
-					std::cout << stats[j].score[l][m] << "\t";
+					std::cout << Pair->occurences[l][m] << "\t";
 				std::cout << std::endl;
 			}
 		}
 	}
-
-	delete stats;
-	Features::Finalize();
-}
-
-void CalcStats(const std::vector<std::string> FileNames, const int d, const int size, const bool contour_plot_data)
-{
-	CHashTable* hashTable = new CHashTable(24);
-	ConfigFile::Initialize(std::string("G:\\Reversi\\ProjectBrutus.ini"));
-	Features::Initialize();
-
-	CRunningStatistic<int> * Stats = new CRunningStatistic<int>[(d+1)*(d+1)];
-	CScores * stats = new CScores[(d+1)*(d+1)];
-	std::vector<DATASET_POSITON_SCORE> data;
-	CSearch search;
-	std::atomic<unsigned long long> counter;
-	
-
-	for (auto& filename : FileNames)
-	{
-		std::cout << "Processing file: " << filename << std::endl;
-		counter = 0;
-		data.clear();
-		read_vector(filename, data);
-		#pragma omp parallel for private(search)
-		for (int i = 0; i < size; ++i)
-		{
-			unsigned long long * score = new unsigned long long[d+1];
-
-			for (int j = 0; j <= d; ++j)
-			{
-				search = CSearch(data[i].P, data[i].O, -64, 64, j, 0, hashTable, CSearch::NodeType::PV_Node);
-				search.Evaluate();
-				score[j] = search.score;
-			}
-			hashTable->AdvanceDate();
-
-			for (int j = 0; j <= d; ++j)
-				for (int k = j+1; k <= d; ++k){
-					stats[j*(d+1) + k].score[score[j]+64][score[k]+64]++;
-					Stats[j*(d+1) + k].Add(score[j] - score[k]);
-				}
-
-			if ((counter.fetch_add(1, std::memory_order_relaxed) & 0x3FF) == 0)
-			{
-				#pragma omp critical
-				{
-					std::cout << "\r"; print_progressbar_percentage(50, counter / static_cast<double>(size));
-				}
-			}
-
-			delete[] score;
-		}
-		std::cout << "\r"; print_progressbar_percentage(50, 1); std::cout << std::endl;
-	}
-
-	for (int j = 0; j <= d; ++j)
-		for (int k = j+1; k <= d; ++k)
-		{
-			std::cout << std::endl;
-			std::cout << "Depths: " << j << " " << k << std::endl;
-			std::cout << "Average: " << Stats[j*(d+1) + k].mu() << std::endl;
-			std::cout << "Sigma:   " << Stats[j*(d+1) + k].sigma() << std::endl;
-			if (contour_plot_data)
-			{
-				for (int l = 0; l <= 128; ++l)
-				{
-					for (int m = 0; m <= 128; ++m)
-						std::cout << stats[j*(d+1) + k].score[l][m] << "\t";
-					std::cout << std::endl;
-				}
-			}
-		}
-
-	delete stats;
 	Features::Finalize();
 }
 
@@ -229,10 +207,12 @@ void Print_help()
 
 int main(int argc, char* argv[])
 {
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+
 	std::vector<std::string> FileNames;
 	int d, n;
 
-	for(int i = 0; i < argc; ++i) 
+	for (int i = 0; i < argc; ++i)
 	{
 		if (std::string(argv[i]) == "-f"){
 			++i;
@@ -251,7 +231,7 @@ int main(int argc, char* argv[])
 	}
 
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d9_1M.b"));
-	
+
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d13_1M.b"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d14_1M.b"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d15_1M.b"));
@@ -262,12 +242,55 @@ int main(int argc, char* argv[])
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d20_1M.b"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d21_1M.b"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d22_1M.b"));
-	//d = 3;
-	//n = 10000;
+	//d = 8;
+	//n = 100000;
+	std::vector<CComparisonPair*> ComparisonPairs;
+	CComparisonPair* tmp;
+
+	//for (int s = 6; s >= 0; s--)
+	//	for (int S = s - 1; S >= 0; S--)
+	//	{
+	//		tmp = new CComparisonPair(16/*d*/, s/*s*/, 16/*D*/, S/*S*/);
+	//		tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d19_1M.b"));
+	//		tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d20_1M.b"));
+	//		tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d21_1M.b"));
+	//		tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d22_1M.b"));
+	//		ComparisonPairs.push_back(tmp);
+	//	}
+
+	tmp = new CComparisonPair(16/*d*/, 6/*s*/, 16/*D*/, 0/*S*/);
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d23_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d24_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d25_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d26_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d27_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d28_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d29_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d30_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d31_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d32_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d33_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d34_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d35_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d36_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d37_1M.b"));
+	ComparisonPairs.push_back(tmp);
+
+	//tmp = new CComparisonPair(10/*d*/, 6/*s*/, 10/*D*/, 0/*S*/);
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d19_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d20_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d21_1M.b"));
+	//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d22_1M.b"));
+	//ComparisonPairs.push_back(tmp);
 
 	//CompareToExactNumEmpty(FileNames, d, n, false);
-	CompareToExact(FileNames, d, n, false);
-	//CalcStats(FileNames, d, n, false);
+	//CompareToExact(FileNames, d, n, false);
+	std::chrono::high_resolution_clock::time_point startTime, endTime;
+	startTime = std::chrono::high_resolution_clock::now();
+	CalcStats(ComparisonPairs, 10, true);
+	endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+	std::cout << time_format(duration) << std::endl;
 
 	return 0;
 }

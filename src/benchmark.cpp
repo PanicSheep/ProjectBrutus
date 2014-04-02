@@ -173,7 +173,7 @@ void PossibleMoves2_Benchmark(const int N)
 
 void PlayStone_Benchmark(const int N)
 {
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned char>(0, 63), std::mt19937_64(N));
+	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
 	std::vector<unsigned char> c(N+9);
 	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
 	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
@@ -205,7 +205,7 @@ void PlayStone_Benchmark(const int N)
 
 //void TryPlayStone_Benchmark(const int N)
 //{
-//	auto rnd = std::bind(std::uniform_int_distribution<unsigned char>(0, 63), std::mt19937_64(N));
+//	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
 //	std::vector<unsigned char> c(N+9);
 //	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
 //	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
@@ -237,7 +237,7 @@ void PlayStone_Benchmark(const int N)
 
 void Flip_Benchmark(const int N)
 {
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned char>(0, 63), std::mt19937_64(N));
+	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
 	std::vector<unsigned char> c(N+9);
 	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
 	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
@@ -269,7 +269,7 @@ void Flip_Benchmark(const int N)
 
 void Count_last_flip_Benchmark(const int N)
 {
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned char>(0, 63), std::mt19937_64(N));
+	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
 	std::vector<unsigned char> c(N+9);
 	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
 	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
@@ -703,7 +703,7 @@ unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const un
 	{
 		startTime = std::chrono::high_resolution_clock::now();
 		for (unsigned long long i = 0; i < size; i++)
-			EvaluateExact(DataArray[i].P, DataArray[i].O, NodeCounter, d);
+			EvaluateEnd(DataArray[i].P, DataArray[i].O, NodeCounter, d);
 		endTime = std::chrono::high_resolution_clock::now();
 	}
 	else
@@ -788,30 +788,14 @@ int main(int argc, char* argv[])
 {
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
-	//CHashTable* hashTable = new CHashTable(24);
 	ConfigFile::Initialize(std::string("F:\\Reversi\\ProjectBrutus.ini"));
 	Features::Initialize();
 
-	SolverBenchmarkEmpties(10, 20, 10, CSearch::END, 0, 1, 24);
-	//SolverBenchmarkDepth(24/*Empties*/, 5/*Secounds*/, 0/*Lowerdepth*/, 14/*Upperdepth*/, 0/*selectivity*/, 1/*nthreads*/, 24/*HashTableBits*/);
+	SolverBenchmarkEmpties(0, 20, 5, CSearch::END, 0, 1, 24);
+	//SolverBenchmarkDepth(25/*Empties*/, 30/*Secounds*/, 10/*Lowerdepth*/, 18/*Upperdepth*/, 6/*selectivity*/, 4/*nthreads*/, 23/*HashTableBits*/);
 	//HugeBenchmak(0, 20, 20);
-	//FForum_Benchmark( 1, 19, true, hashTable);
-	//FForum_Benchmark(20, 39, true, hashTable);
-	//FForum_Benchmark(40, 59, true, hashTable);
 
 	//HugeBenchmak(20, 20);
-
-	//printf(" d |   Runtime [s] \n");
-	//printf("---+----------------\n");
-	//std::chrono::high_resolution_clock::time_point startTime, endTime;
-	//for (int d = 0; d < 20; ++d){
-	//	CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, d, 0, hashTablePV, hashTableL1, hashTableL2, CSearch::NodeType::PV_Node);
-	//	startTime = std::chrono::high_resolution_clock::now();
-	//	search.Evaluate();
-	//	endTime = std::chrono::high_resolution_clock::now();
-	//	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	//	printf("%3u| %14s\n", d, time_format(duration).c_str());
-	//}
 
 	//std::vector<DATASET_POSITON_SCORE> Data;
 	//read_vector("G:\\Reversi\\pos\\rnd_d5_10M.b", Data);
@@ -871,12 +855,27 @@ int main(int argc, char* argv[])
 	//EvaluateFeatures_Benchmark(800000);
 	//EvaluateFeatures_Benchmark(800000);
 	//EvaluateFeatures_Benchmark(800000);
+
+	//CHashTable* hashTable = new CHashTable(24);
+	//printf(" d |   Runtime [s] \n");
+	//printf("---+----------------\n");
+	//std::chrono::high_resolution_clock::time_point startTime, endTime;
+	//for (int d = 0; d < 60; ++d){
+	//	CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, d, 6, hashTable, CSearch::NodeType::PV_Node);
+	//	startTime = std::chrono::high_resolution_clock::now();
+	//	search.Evaluate();
+	//	endTime = std::chrono::high_resolution_clock::now();
+	//	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+	//	printf("%3u| %14s\n", d, time_format(duration).c_str());
+	//}
+	//delete hashTable;
 	
+	//CHashTable* hashTable = new CHashTable(24);
 	//FForum_Benchmark( 1, 19, true, hashTable);
 	//FForum_Benchmark(20, 39, true, hashTable);
 	//FForum_Benchmark(40, 59, true, hashTable);
-
 	//delete hashTable;
+
 	Features::Finalize();
 	return 0;
 }

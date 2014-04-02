@@ -13,12 +13,10 @@
 class CSearch;
 
 // For benchmarking purposes
-int EvaluateExact(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned long long NumberOfEmptyStones);
+int EvaluateEnd(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned long long NumberOfEmptyStones);
 
-void EvaluateExact(CSearch & search);
-void EvaluateEndCut(CSearch & search);
+void EvaluateEnd(CSearch & search);
 void EvaluateLimitedDepth(CSearch & search);
-void EvaluateMPC(CSearch & search);
 
 
 inline int EvaluateGameOver(const unsigned long long P, const int NumberOfEmptyStones)
@@ -37,11 +35,12 @@ inline int EvaluateGameOver(const unsigned long long P, const int NumberOfEmptyS
 }
 
 bool UseHashTableValue(HashTableValueType htValue, int alpha, int beta, signed char depth, unsigned char selectivity, int & value);
+bool UseHashTableValue(HashTableValueType htValue, int alpha, int beta, signed char depth, unsigned char selectivity, int & value, bool & GotProbCut);
 
 namespace Endgame
 {
-	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity);
-	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline);
+	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity, bool & GotProbCut);
+	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline, bool & GotProbCut);
 
 	int       ZWS_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha);
 	int AlphaBeta_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha, int beta);

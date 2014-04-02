@@ -642,7 +642,7 @@ namespace Endgame
 
 		return alpha;
 	}
-	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity)
+	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity, bool & GotProbCut)
 	{
 		const unsigned char Empties = NumberOfEmptyStones(P, O);
 		if (Empties == 8)
@@ -650,6 +650,7 @@ namespace Endgame
 
 		unsigned char BestMove = 64;
 		int value;
+		bool GetsProbCut;
 		unsigned long long flipped;
 		unsigned long long BitBoardPossible = PossibleMoves(P, O);
 
@@ -658,7 +659,7 @@ namespace Endgame
 		if (!BitBoardPossible){
 			BitBoardPossible = PossibleMoves(O, P);
 			if (BitBoardPossible)
-				return -ZWS(search, O, P, -alpha-1, selectivity);
+				return -ZWS(search, O, P, -alpha-1, selectivity, GotProbCut);
 			else{ //Game is over
 				++search.NodeCounter;
 				return BIND(EvaluateGameOver(P, Empties), alpha, alpha+1);
@@ -668,7 +669,7 @@ namespace Endgame
 		if (StabilityCutoff(P, O, Empties, alpha))
 			return alpha;
 
-		if (MPC(search, P, O, alpha, Empties, selectivity, value))
+		if (GotProbCut = MPC(search, P, O, alpha, Empties, selectivity, value))
 			return value;
 	
 		unsigned long long LocalNodeCounter = search.NodeCounter;
@@ -676,7 +677,7 @@ namespace Endgame
 		HashTableValueType htValue;
 		if (search.HashTableLookUp(P, O, htValue))
 		{
-			if (UseHashTableValue(htValue, alpha, alpha+1, Empties, 0, value))
+			if (UseHashTableValue(htValue, alpha, alpha+1, Empties, 0, value, GotProbCut))
 				return value;
 
 			if (htValue.PV != 64)
@@ -684,9 +685,12 @@ namespace Endgame
 				assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
 				BitBoardPossible ^= (1ULL << htValue.PV);
 				flipped = flip(P, O, htValue.PV);
-				if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -alpha-1, selectivity) > alpha)
+				GetsProbCut = false;
+				value = -ZWS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -alpha-1, selectivity, GetsProbCut);
+				GotProbCut |= GetsProbCut;
+				if (value > alpha)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, alpha+1, 64, htValue.PV, htValue.AV);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, alpha+1, 64, htValue.PV, htValue.AV);
 					return alpha+1;
 				}
 			}
@@ -696,9 +700,12 @@ namespace Endgame
 				assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
 				BitBoardPossible ^= (1ULL << htValue.AV);
 				flipped = flip(P, O, htValue.AV);
-				if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -alpha-1, selectivity) > alpha)
+				GetsProbCut = false;
+				value = -ZWS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -alpha-1, selectivity, GetsProbCut);
+				GotProbCut |= GetsProbCut;
+				if (value > alpha)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, alpha+1, 64, htValue.AV, htValue.PV);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, alpha+1, 64, htValue.AV, htValue.PV);
 					return alpha+1;
 				}
 			}
@@ -707,13 +714,16 @@ namespace Endgame
 		CMoveList mvList(P, O, BitBoardPossible);
 		for (auto& mv : mvList)
 		{
-			if (-ZWS(search, mv.P, mv.O, -alpha-1, selectivity) > alpha)
+			GetsProbCut = false;
+			value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity, GetsProbCut);
+			GotProbCut |= GetsProbCut;
+			if (value > alpha)
 			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, alpha+1, 64, mv.move, 64);
+				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, alpha+1, 64, mv.move, 64);
 				return alpha+1;
 			}
 		}
-		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, -64, alpha, 64, 64);
+		search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, -64, alpha, 64, 64);
 		return alpha;
 	}
 
@@ -1294,7 +1304,7 @@ namespace Endgame
 		return alpha;
 	}
 
-	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline)
+	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline, bool & GotProbCut)
 	{
 		const unsigned char Empties = NumberOfEmptyStones(P, O);
 		if (Empties == 8)
@@ -1302,6 +1312,7 @@ namespace Endgame
 
 		bool SearchPV = true;
 		int value;
+		bool GetsProbCut;
 		unsigned long long flipped;
 		unsigned long long BitBoardPossible = PossibleMoves(P, O);
 
@@ -1311,7 +1322,7 @@ namespace Endgame
 		{
 			BitBoardPossible = PossibleMoves(O, P);
 			if (BitBoardPossible)
-				return -PVS(search, O, P, -beta, -alpha, selectivity, pline);
+				return -PVS(search, O, P, -beta, -alpha, selectivity, pline, GotProbCut);
 			else{ //Game is over
 				++search.NodeCounter;
 				return BIND(EvaluateGameOver(P, Empties), alpha, beta);
@@ -1328,7 +1339,7 @@ namespace Endgame
 		HashTableValueType htValue;
 		if (search.HashTableLookUp(P, O, htValue))
 		{
-			if (UseHashTableValue(htValue, alpha, beta, Empties, selectivity, value))
+			if (UseHashTableValue(htValue, alpha, beta, Empties, selectivity, value, GotProbCut))
 				return value;
 
 			if (htValue.PV != 64)
@@ -1336,10 +1347,12 @@ namespace Endgame
 				assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
 				BitBoardPossible ^= (1ULL << htValue.PV);
 				flipped = flip(P, O, htValue.PV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, selectivity, line);
+				GetsProbCut = false;
+				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, selectivity, line, GetsProbCut);
+				GotProbCut |= GetsProbCut;
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, beta, 64, htValue.PV, htValue.AV);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, beta, 64, htValue.PV, htValue.AV);
 					return beta;
 				}
 				if (value > alpha)
@@ -1356,10 +1369,12 @@ namespace Endgame
 				assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
 				BitBoardPossible ^= (1ULL << htValue.AV);
 				flipped = flip(P, O, htValue.AV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, selectivity, line);
+				GetsProbCut = false;
+				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, selectivity, line, GetsProbCut);
+				GotProbCut |= GetsProbCut;
 				if (value >= beta)
 				{
-					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, beta, 64, htValue.AV, htValue.PV);
+					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, beta, 64, htValue.AV, htValue.PV);
 					return beta;
 				}
 				if (value > alpha)
@@ -1376,16 +1391,26 @@ namespace Endgame
 		for (auto& mv : mvList)
 		{
 			if (SearchPV)
-				value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line);
+			{
+				GetsProbCut = false;
+				value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line, GetsProbCut);
+				GotProbCut |= GetsProbCut;
+			}
 			else
 			{
-				value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity);
+				GetsProbCut = false;
+				value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity, GetsProbCut);
+				GotProbCut |= GetsProbCut;
 				if (value > alpha)
-					value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line);
+				{
+					GetsProbCut = false;
+					value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line, GetsProbCut);
+					GotProbCut |= GetsProbCut;
+				}
 			}
 			if (value >= beta)
 			{
-				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, beta, 64, mv.move, 64);
+				search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, beta, 64, mv.move, 64);
 				return beta;
 			}
 			if (value > alpha)
@@ -1397,9 +1422,9 @@ namespace Endgame
 			}
 		}
 		if (SearchPV)
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, -64, alpha, 64, 64);
+			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, -64, alpha, 64, 64);
 		else
-			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, selectivity, alpha, alpha, pline[0], 64);
+			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, Empties, GotProbCut ? selectivity : 0, alpha, alpha, pline[0], 64);
 		return alpha;
 	}
 
@@ -1442,23 +1467,36 @@ namespace Endgame
 	inline void Exact_4(CSearch & search) { search.score = AlphaBeta_4(search.P, search.O, search.NodeCounter, parity(search.P, search.O), search.alpha, search.beta); }
 	inline void Exact_A(CSearch & search) { search.score = AlphaBeta_A(search.P, search.O, search.NodeCounter, parity(search.P, search.O), NumberOfEmptyStones(search.P, search.O), search.alpha, search.beta); }
 	inline void Exact_B(CSearch & search) { search.score = AlphaBeta_B(search.P, search.O, search.NodeCounter, parity(search.P, search.O), NumberOfEmptyStones(search.P, search.O), search.alpha, search.beta); }
-	inline void Exact_C(CSearch & search) { search.score = PVS(search, search.P, search.O, search.alpha, search.beta, search.selectivity, search.PV); }
+	inline void Exact_C(CSearch & search) { bool GotProbCut = false; search.score = PVS(search, search.P, search.O, search.alpha, search.beta, 0, search.PV, GotProbCut); }
 	inline void Exact_D(CSearch & search)
 	{
+		bool GotProbCut = false;
 		const int Empties = NumberOfEmptyStones(search.P, search.O);
+		int d;
 		
-		for (int d = 4; d < Empties-11; d++)
-			Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 3, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties-11, 3, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties-10, 4, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties- 9, 5, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties- 8, 6, search.PV);
+		if (Empties % 2 == 0)
+			d = 6;
+		else
+			d = 5;
+
+		for (int d = 6; d <= Empties-10; d+=2)
+			Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 6, search.PV);
+		Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
 		Exact_C(search);
+
+		//for (int d = 4; d < Empties-11; d++)
+		//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 3, search.PV);
+		//Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties-11, 4, search.PV);
+		//Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties-10, 5, search.PV);
+		//Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties- 9, 6, search.PV);
+		////Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,Empties- 8, 6, search.PV);
+		//Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
+		//Exact_C(search);
 	}
 }
 
 // For benchmarking purposes
-int EvaluateExact(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned long long NumberOfEmptyStones)
+int EvaluateEnd(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned long long NumberOfEmptyStones)
 {
 	switch (NumberOfEmptyStones)
 	{
@@ -1471,8 +1509,9 @@ int EvaluateExact(const unsigned long long P, const unsigned long long O, unsign
 	}
 }
 
-void EvaluateExact(CSearch & search)
+void EvaluateEnd(CSearch & search)
 {
+	bool GotProbCut;
 	const unsigned long long Empties = NumberOfEmptyStones(search.P, search.O);
 	switch (Empties)
 	{
@@ -1489,24 +1528,45 @@ void EvaluateExact(CSearch & search)
 	case 10: Endgame::Exact_C(search); break;
 	case 11:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 3, 0, search.PV);
-		Endgame::Exact_C(search); 
+		Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut = false);
+		search.score = Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.selectivity, search.PV, GotProbCut = false);
 		break;
 	case 12:
-	case 13:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 4, 0, search.PV);
-		Endgame::Exact_C(search);
+		Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut = false);
+		search.score = Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.selectivity, search.PV, GotProbCut = false);
 		break;
+	case 13:
 	case 14:
 	case 15:
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 6, search.PV);
-		Endgame::Exact_C(search);
-		break;
 	case 16:
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 2, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 7, 4, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 8, 6, search.PV);
+		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, Empties-10, 6, search.PV);
+		Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
 		Endgame::Exact_C(search);
 		break;
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 3, 0, search.PV);
+	//	Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
+	//	Endgame::Exact_C(search); 
+	//	break;
+	//case 12:
+	//case 13:
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 4, 0, search.PV);
+	//	Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
+	//	Endgame::Exact_C(search);
+	//	break;
+	//case 14:
+	//case 15:
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 6, search.PV);
+	//	Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
+	//	Endgame::Exact_C(search);
+	//	break;
+	//case 16:
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 4, search.PV);
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 7, 5, search.PV);
+	//	Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 8, 6, search.PV);
+	//	Endgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, search.PV, GotProbCut);
+	//	Endgame::Exact_C(search);
+	//	break;
 	default: Endgame::Exact_D(search); break;
 	}
 }

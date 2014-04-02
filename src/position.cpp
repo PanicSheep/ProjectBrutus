@@ -150,14 +150,14 @@ unsigned long long PossibleMoves(const unsigned long long P, const unsigned long
 	flip8 |= mask8 & (flip8 >> 18);
 
 	return ~(P | O) & (
-		((flip1 & maskO) << 1) | 
-		((flip2 & maskO) >> 1) | 
-		((flip3 &     O) << 8) | 
-		((flip4 &     O) >> 8) | 
-		((flip5 & maskO) << 7) | 
-		((flip6 & maskO) >> 7) | 
-		((flip7 & maskO) << 9) | 
-		((flip8 & maskO) >> 9)
+		(flip1 << 1) | 
+		(flip2 >> 1) | 
+		(flip3 << 8) | 
+		(flip4 >> 8) | 
+		(flip5 << 7) | 
+		(flip6 >> 7) | 
+		(flip7 << 9) | 
+		(flip8 >> 9)
 	);
 	#endif
 }

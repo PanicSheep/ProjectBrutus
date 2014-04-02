@@ -5,21 +5,51 @@ namespace Midgame
 	struct CCutOffLimits
 	{
 		unsigned char d, D;
-		float sigma;
-		CCutOffLimits(const unsigned char d, const unsigned char D, const float sigma) : d(d), D(D), sigma(sigma) {}
+		float a, b, sigma;
+		CCutOffLimits(const unsigned char d, const unsigned char D, const float b, const float a, const float sigma) : d(d), D(D), b(b), a(a), sigma(sigma) {}
 	};
 
 	static const CCutOffLimits MPC_table[] = {
-		//CCutOffLimits( 2,  3, 3.6f),
-		CCutOffLimits( 2,  4, 3.1f),
-		CCutOffLimits( 3,  5, 2.8f),
-		CCutOffLimits( 2,  6, 3.9f),
-		//CCutOffLimits( 4,  6, 2.5f),
-		CCutOffLimits( 3,  7, 3.6f),
-	    //CCutOffLimits( 5,  7, 2.4f),
-	    //CCutOffLimits( 2,  8, 4.3f),
-		CCutOffLimits( 4,  8, 3.2f),
-		CCutOffLimits( 6,  8, 2.2f),
+		CCutOffLimits( 2,  4,  0.644710f, 0.978329f, 3.00432f),
+		
+		CCutOffLimits( 3,  5, -0.174416f, 0.983432f, 2.77297f),
+
+		CCutOffLimits( 2,  6,  0.592878f, 0.984816f, 3.80884f),
+		CCutOffLimits( 4,  6, -0.050528f, 1.005940f, 2.47849f),
+
+		CCutOffLimits( 3,  7, -0.227744f, 0.973714f, 3.59683f),
+		CCutOffLimits( 5,  7, -0.054585f, 0.990010f, 2.34988f),
+		
+		CCutOffLimits( 2,  8,  0.919680f, 0.974616f, 4.20224f),
+		CCutOffLimits( 4,  8,  0.286388f, 0.995101f, 3.15356f),
+		CCutOffLimits( 6,  8,  0.341149f, 0.988632f, 2.14631f),
+		
+		CCutOffLimits( 3,  9, -0.367928f, 0.985361f, 4.01665f),
+		CCutOffLimits( 5,  9, -0.189117f, 1.001030f, 3.08096f),
+		//CCutOffLimits( 7,  9, -0.130016f, 1.010210f, 2.21575f),
+		
+		CCutOffLimits( 2, 10,  1.063850f, 0.967414f, 4.67232f),
+		CCutOffLimits( 4, 10,  0.422665f, 0.989296f, 3.53552f),
+		CCutOffLimits( 6, 10,  0.479754f, 0.982539f, 2.75579f),
+		//CCutOffLimits( 8, 10,  0.146744f, 0.993115f, 1.96493f),
+
+		//CCutOffLimits( 3, 11, -0.078589f, 0.982243f, 4.55955f),
+		CCutOffLimits( 5, 11,  0.092611f, 0.999483f, 3.51014f),
+		CCutOffLimits( 7, 11,  0.151370f, 1.008710f, 2.77208f),
+		//CCutOffLimits( 9, 11,  0.285217f, 0.997546f, 1.98103f),
+
+		//CCutOffLimits( 2, 12,  0.636112f, 0.980799f, 4.97909f),
+		CCutOffLimits( 4, 12, -0.005951f, 1.002000f, 4.03935f),
+		CCutOffLimits( 6, 12,  0.041593f, 0.996420f, 3.13466f),
+		CCutOffLimits( 8, 12, -0.293352f, 1.006820f, 2.52315f),
+		//CCutOffLimits(10, 12, -0.435151f, 1.012970f, 1.82846f),
+
+		//CCutOffLimits( 2,  4, 0, 0, 3.1f),
+		//CCutOffLimits( 3,  5, 0, 0, 2.8f),
+		//CCutOffLimits( 2,  6, 0, 0, 3.9f),
+		//CCutOffLimits( 3,  7, 0, 0, 3.6f),
+		//CCutOffLimits( 4,  8, 0, 0, 3.2f),
+		//CCutOffLimits( 6,  8, 0, 0, 2.2f),
 	};
 
 	bool StabilityCutoff(const unsigned long long P, const unsigned long long O, const int NumberOfEmptyStones, const int alpha)
@@ -123,18 +153,35 @@ namespace Midgame
 		if (selectivity == 0)
 			return false;
 
-		for (int i = 0; i < 7; i++)
+		//for (int i = 0; i < 6; i++)
+		//{
+		//	if (depth == MPC_table[i].D)
+		//	{
+		//		bound = static_cast<int>(static_cast<float>(alpha) + SelectivityTable[selectivity].T * MPC_table[i].sigma + 0.5f);
+		//		if (ZWS(search, P, O, bound-1, MPC_table[i].d, 0) >= bound){
+		//			value = alpha+1;
+		//			return true;
+		//		}
+
+		//		bound = static_cast<int>(static_cast<float>(alpha) - SelectivityTable[selectivity].T * MPC_table[i].sigma + 0.5f);
+		//		if (ZWS(search, P, O, bound, MPC_table[i].d, 0) <= bound){
+		//			value = alpha;
+		//			return true;
+		//		}
+		//	}
+		//}
+		for (int i = 0; i < 19; i++)
 		{
 			if (depth == MPC_table[i].D)
 			{
-				bound = static_cast<int>(static_cast<float>(alpha) + SelectivityTable[selectivity].T * MPC_table[i].sigma + 0.5f);
-				if (ZWS(search, P, O, bound-1, MPC_table[i].d, 0) >= bound){
+				bound = static_cast<int>((static_cast<float>(alpha+1) + SelectivityTable[selectivity].T * MPC_table[i].sigma -  MPC_table[i].b) /  MPC_table[i].a + 0.5f);
+				if (ZWS(search, P, O, bound-1, MPC_table[i].d, selectivity) >= bound){
 					value = alpha+1;
 					return true;
 				}
 
-				bound = static_cast<int>(static_cast<float>(alpha) - SelectivityTable[selectivity].T * MPC_table[i].sigma + 0.5f);
-				if (ZWS(search, P, O, bound, MPC_table[i].d, 0) <= bound){
+				bound = static_cast<int>((static_cast<float>(alpha) - SelectivityTable[selectivity].T * MPC_table[i].sigma -  MPC_table[i].b) /  MPC_table[i].a + 0.5f);
+				if (ZWS(search, P, O, bound, MPC_table[i].d, selectivity) <= bound){
 					value = alpha;
 					return true;
 				}
@@ -339,40 +386,48 @@ void EvaluateLimitedDepth(CSearch & search)
 	case 3:
 	case 4:
 	case 5:
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV); break;
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV); break;
 	case 6:
 	case 7:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 5, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 		break;
 	case 8:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 5, 4, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 		break;
 	case 9:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 5, 4, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 7, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 		break;
 	case 10:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 5, 2, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 6, 4, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 8, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 		break;
 	case 11:
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,  5, 2, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,  7, 4, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,  8, 6, search.PV);
 		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta,  9, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 		break;
 	default:
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 5, 2, search.PV);
-		Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, 7, 4, search.PV);
-		for (int d = 8; d <= search.depth-2; d++)
-			Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 6, search.PV);
-		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, 0, search.PV);
+		if (search.depth % 2 == 0)
+		{
+			for (int d = 4; d <= search.depth; d+=2)
+				Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 6, search.PV);
+		}
+		else
+		{
+			for (int d = 3; d <= search.depth; d+=2)
+				Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, d, 6, search.PV);
+		}
+		for (int s = 6; s > search.selectivity; s-=2)
+			Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, s, search.PV);
+		search.score = Midgame::PVS(search, search.P, search.O, search.alpha, search.beta, search.depth, search.selectivity, search.PV);
 	}
 }

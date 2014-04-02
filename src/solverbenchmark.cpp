@@ -92,8 +92,8 @@ void SolverBenchmarkEmpties(const int LowerEmpties, const int UpperEmpties, cons
 
 	for (int E = LowerEmpties; E <= UpperEmpties; ++E)
 	{
-		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(E) + "_100M.b";
-		n = min(100000000, SizeEnd[E] * secounds * nthreads);
+		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(E) + "_10M.ps";
+		n = min(10000000, SizeEnd[E] * secounds * nthreads);
 
 		Solve(filename, n, E, depth, selectivity, nthreads, HashTableBits);
 	}
@@ -114,14 +114,14 @@ void SolverBenchmarkDepth(const int Empties, const int secounds, const signed ch
 		    110, //d7
 		     50, //d8
 		     21, //d9
-		     11, //d10
-		      3, //d11
-		      2, //d12
-		      1, //d13
-		      1, //d14
-		      1, //d15
-		      1, //d16
-		      1, //d17
+		     12, //d10
+		      6, //d11
+		     24, //d12
+		     15, //d13
+		      9, //d14
+		      6, //d15
+		      4, //d16
+		      2, //d17
 		      1, //d18
 		      1, //d19
 		      1  //d20
@@ -131,7 +131,7 @@ void SolverBenchmarkDepth(const int Empties, const int secounds, const signed ch
 
 	for (int d = Lowerdepth; d <= Upperdepth; ++d)
 	{
-		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(Empties) + "_1M.b";
+		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(Empties) + "_1M.ps";
 		n = min(1000000, SizeDepth[d] * secounds * nthreads);
 
 		Solve(filename, n, Empties, d, selectivity, nthreads, HashTableBits);

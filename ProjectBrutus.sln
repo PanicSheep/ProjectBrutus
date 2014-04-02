@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30110.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectBrutus", "ProjectBrutus\ProjectBrutus.vcxproj", "{5282D818-B63C-4D3C-923D-DDC546883F0E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FeatureWeightFitter", "FeatureWeightFitter\FeatureWeightFitter.vcxproj", "{321B278C-9B4B-4210-A5C7-81C20863F6C2}"
@@ -14,6 +16,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MetaFlips", "MetaFlips\MetaFlips.vcxproj", "{96EEA7C3-4078-4AA5-90D4-FB46EBB48E52}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProbCutStats", "ProbCutStats\ProbCutStats.vcxproj", "{15D95746-8E4A-4C6D-8D03-67919A152DB8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FileConverter", "FileConverter\FileConverter.vcxproj", "{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -109,6 +113,18 @@ Global
 		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|Win32.Build.0 = Release|Win32
 		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|x64.ActiveCfg = Release|x64
 		{15D95746-8E4A-4C6D-8D03-67919A152DB8}.Release|x64.Build.0 = Release|x64
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|Win32.Build.0 = Debug|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|x64.ActiveCfg = Debug|x64
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Debug|x64.Build.0 = Debug|x64
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|Win32.ActiveCfg = Release|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|Win32.Build.0 = Release|Win32
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|x64.ActiveCfg = Release|x64
+		{BCC2024E-3D9D-4EE4-A2B8-CBCBA53AB9A9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

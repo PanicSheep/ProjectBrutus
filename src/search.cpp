@@ -11,7 +11,7 @@ const std::string CSearch::GetPV(const int depth) const
 void CSearch::Evaluate()
 {
 	if (depth >= NumberOfEmptyStones(P, O))
-		EvaluateExact(*this);
+		EvaluateEnd(*this);
 	else
 		EvaluateLimitedDepth(*this);
 }

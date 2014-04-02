@@ -20,7 +20,7 @@ public:
 	{
 		FILE* File;
 		m_index_counter.store(0, std::memory_order_release);
-		read_vector(Filename, m_Positions, Size);
+		m_Positions = read_vector<DATASET_POSITON_SCORE>(Filename, Size);
 	}
 
 	DATASET_POSITON_SCORE * TryGetWork();

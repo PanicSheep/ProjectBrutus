@@ -48,5 +48,5 @@ void GeneratePositions(const unsigned long long N, const int Empties, const bool
 		DataVector.push_back(data);
 	}
 
-	write_vector(Filename, DataVector);
+	write_to_file(Filename, DataVector);
 }

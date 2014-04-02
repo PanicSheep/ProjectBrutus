@@ -7,8 +7,8 @@
 
 //Variations of "PossibleMoves()"
 //#define KOGGE_STONE
-#define ADVANCED_KOGGE_STONE
-//#define ADVANCED_KOGGE_STONE_PARALLEL_PREFIX
+//#define ADVANCED_KOGGE_STONE
+#define ADVANCED_KOGGE_STONE_PARALLEL_PREFIX
 
 static const unsigned long long START_POSITION_P = 0x0000000810000000ULL; // Original
 static const unsigned long long START_POSITION_O = 0x0000001008000000ULL; // Original

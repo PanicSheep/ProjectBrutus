@@ -11,15 +11,17 @@ struct CSelectivity
 	CSelectivity(const float T, const float percentile) : T(T), percentile(percentile) {}
 };
 
-static const CSelectivity SelectivityTable[8] = {
+static const CSelectivity SelectivityTable[10] = {
 	CSelectivity(99.f, 100.0f), // 0
 	CSelectivity(3.3f,  99.9f), // 1
 	CSelectivity(2.6f,  99.0f), // 2
 	CSelectivity(2.0f,  95.0f), // 3
 	CSelectivity(1.5f,  87.0f), // 4
-	CSelectivity(1.1f,  73.0f), // 5
+	CSelectivity(1.2f,  77.0f), // 5
 	CSelectivity(1.0f,  68.0f), // 6
-	CSelectivity(0.0f,   0.0f), // 7
+	CSelectivity(0.7f,  52.0f), // 7
+	CSelectivity(0.5f,  38.0f), // 8
+	CSelectivity(0.2f,  16.0f), // 9
 };
 
 class CSearch
