@@ -10,13 +10,20 @@ void REVERSE_BITORDER(unsigned long long & v)
 	v = ( v >> 32                         ) | ( v                          << 32);
 }
 
+unsigned char FIELD_INDEX(const std::string & s)
+{
+	for (int i = 0; i < 64; i++)
+		if (field_name[i] == s)
+			return i;
+	return 64;
+}
 unsigned long long NEIGHBOUR(unsigned long long BitBoard)
 {
     unsigned long long BitBoardNeighbour = 0;
     while (BitBoard)
     {
-        BitBoardNeighbour |= neighbour[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
+        BitBoardNeighbour |= neighbour[BitScanLSB(BitBoard)];
+        RemoveLSB(BitBoard);
     }
     return BitBoardNeighbour;
 }
@@ -26,8 +33,8 @@ unsigned long long AFFECTABLE(unsigned long long BitBoard)
     unsigned long long BitBoardAffectable = 0;
     while (BitBoard)
     {
-        BitBoardAffectable |= affectable[BIT_SCAN_LS1B(BitBoard)];
-        REMOVE_LS1B(BitBoard);
+        BitBoardAffectable |= affectable[BitScanLSB(BitBoard)];
+        RemoveLSB(BitBoard);
     }
     return BitBoardAffectable;
 }
@@ -148,6 +155,24 @@ std::string short_time_format(std::chrono::duration<long long, std::pico> durati
 	return std::string(buff);
 }
 
+std::string board(const unsigned long long P, const unsigned long long O)
+{
+	std::string s;
+	for (unsigned int i = 0; i < 8; i++)
+	{
+		for (unsigned int j = 0; j < 8; j++)
+		{
+			if (P & (0x8000000000000000ULL >> (i * 8 + j)))
+				s.append("X");
+			else if (O & (0x8000000000000000ULL >> (i * 8 + j)))
+				s.append("O");
+			else
+				s.append("-");
+		}
+	}
+	return s;
+}
+
 void print_board(const unsigned long long P, const unsigned long long O)
 {
 	for (int i = 0; i < 8; i++)
@@ -158,6 +183,27 @@ void print_board(const unsigned long long P, const unsigned long long O)
 				std::cout << "X";
 			else if (O & (0x8000000000000000ULL >> (i*8+j)))
 				std::cout << "O";
+			else
+				std::cout << "-";
+		}
+	}
+}
+
+void print_board(const unsigned long long P, const unsigned long long O, const unsigned long long PossibleMoves)
+{
+	std::cout << " |HGFEDCBA\n";
+	std::cout << "-+--------\n";
+	for (int i = 0; i < 8; i++)
+	{
+		std::cout << 8-i << "|";
+		for (int j = 0; j < 8; j++)
+		{
+			if (P & (0x8000000000000000ULL >> (i * 8 + j)))
+				std::cout << "X";
+			else if (O & (0x8000000000000000ULL >> (i * 8 + j)))
+				std::cout << "O";
+			else if (PossibleMoves & (0x8000000000000000ULL >> (i * 8 + j)))
+				std::cout << "*";
 			else
 				std::cout << ".";
 		}

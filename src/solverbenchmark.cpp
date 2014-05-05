@@ -3,7 +3,7 @@
 std::atomic<unsigned long long> NodeCounter;
 std::atomic<std::size_t> PositionCounter;
 
-DATASET_POSITON_SCORE * CPositionManager::TryGetWork()
+CDataset_Position_Score * CPositionManager::TryGetWork()
 {
 	std::size_t Index = m_index_counter.fetch_add(1, std::memory_order_release);
 	if (Index < m_Positions.size())
@@ -14,10 +14,10 @@ DATASET_POSITON_SCORE * CPositionManager::TryGetWork()
 
 void Work(CPositionManager& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable)
 {
-	DATASET_POSITON_SCORE * data;
+	CDataset_Position_Score * data;
 	while (data = PositionManager.TryGetWork())
 	{
-		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, CSearch::NodeType::PV_Node);
+		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, 1);
 		search.Evaluate();
 		HashTable->AdvanceDate();
 		NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
@@ -53,26 +53,26 @@ void Solve(const std::string Filename, const int n, const unsigned char NumberOf
 
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	if (depth == CSearch::END)
-		printf("%3u|   | %14s | %14llu | %9d | %9d | %s\n", NumberOfEmptyStones, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(duration)), 
+		printf("%3u|   | %14s | %14llu | %9d | %9d | %s\n", NumberOfEmptyStones, time_format(duration), 
 			NodeCounter, NodeCounter*1000/duration.count(), n*1000LL/duration.count(), short_time_format(std::chrono::duration_cast<std::chrono::duration<long long, std::pico>>(duration)/n));
 	else
-		printf("%3u|%3u| %14s | %14llu | %9d | %9d | %s\n", NumberOfEmptyStones, depth, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(duration)), 
+		printf("%3u|%3u| %14s | %14llu | %9d | %9d | %s\n", NumberOfEmptyStones, depth, time_format(duration), 
 			NodeCounter, NodeCounter*1000/duration.count(), n*1000LL/duration.count(), short_time_format(std::chrono::duration_cast<std::chrono::duration<long long, std::pico>>(duration)/n));
 }
 
-void SolverBenchmarkEmpties(const int LowerEmpties, const int UpperEmpties, const int secounds, const signed char depth, const unsigned char selectivity, const int nthreads, const int HashTableBits)
+void SolverBenchmarkEmpties(const int LowerEmpties, const int UpperEmpties, const int seconds, const signed char depth, const unsigned char selectivity, const int nthreads, const int HashTableBits)
 {
 	std::string filename;
 	int n;
-	std::size_t SizeEnd[21] = {
+	std::size_t SizeEnd[25] = {
 		2500000, //d0
 		2500000, //d1
 		2500000, //d2
 		1800000, //d3
 		1000000, //d4
-		 450000, //d5
-		 180000, //d6
-		  65000, //d7
+		 200000, //d5
+		 100000, //d6
+		  40000, //d7
 		  23000, //d8
 		   9500, //d9
 		   3800, //d10
@@ -84,22 +84,26 @@ void SolverBenchmarkEmpties(const int LowerEmpties, const int UpperEmpties, cons
 		     25, //d16
 		     10, //d17
 		      5, //d18
-		      2, //d19
-		      1  //d20
+		      5, //d19
+		      5, //d20
+		      2, //d21
+		      2, //d22
+		      1, //d23
+		      1, //d24
 	};
 	printf(" E | d |       time (s) |      nodes (N) |    N/s    |    P/s    | time/P \n");
 	printf("---+---+----------------+----------------+-----------+-----------+--------\n");
 
 	for (int E = LowerEmpties; E <= UpperEmpties; ++E)
 	{
-		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(E) + "_10M.ps";
-		n = min(10000000, SizeEnd[E] * secounds * nthreads);
+		filename = "G:\\Reversi2\\pos\\rnd_d" + std::to_string(E) + "_1M.ps";
+		n = min(1000000, SizeEnd[E] * seconds * nthreads);
 
 		Solve(filename, n, E, depth, selectivity, nthreads, HashTableBits);
 	}
 }
 
-void SolverBenchmarkDepth(const int Empties, const int secounds, const signed char Lowerdepth, const signed char Upperdepth, const unsigned char selectivity, const int nthreads, const int HashTableBits)
+void SolverBenchmarkDepth(const int Empties, const int seconds, const signed char Lowerdepth, const signed char Upperdepth, const unsigned char selectivity, const int nthreads, const int HashTableBits)
 {
 	std::string filename;
 	int n;
@@ -116,12 +120,12 @@ void SolverBenchmarkDepth(const int Empties, const int secounds, const signed ch
 		     21, //d9
 		     12, //d10
 		      6, //d11
-		     24, //d12
-		     15, //d13
-		      9, //d14
-		      6, //d15
-		      4, //d16
-		      2, //d17
+		      6, //d12
+		      4, //d13
+		      2, //d14
+		      1, //d15
+		      1, //d16
+		      1, //d17
 		      1, //d18
 		      1, //d19
 		      1  //d20
@@ -131,8 +135,8 @@ void SolverBenchmarkDepth(const int Empties, const int secounds, const signed ch
 
 	for (int d = Lowerdepth; d <= Upperdepth; ++d)
 	{
-		filename = "F:\\Reversi\\pos\\rnd_d" + std::to_string(Empties) + "_1M.ps";
-		n = min(1000000, SizeDepth[d] * secounds * nthreads);
+		filename = "G:\\Reversi2\\pos\\rnd_d" + std::to_string(Empties) + "_1M.ps";
+		n = min(1000000, SizeDepth[d] * seconds * nthreads);
 
 		Solve(filename, n, Empties, d, selectivity, nthreads, HashTableBits);
 	}

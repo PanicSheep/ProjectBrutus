@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\datamanipulation.cpp" />
     <ClCompile Include="..\src\flip.cpp" />
     <ClCompile Include="..\src\generatepositions.cpp" />
     <ClCompile Include="..\src\position.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="..\src\generatepositions.h" />
     <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\positionmanager.h" />
+    <ClInclude Include="..\src\search.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
   </ItemGroup>

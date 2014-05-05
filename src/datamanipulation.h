@@ -5,31 +5,48 @@
 #include <iostream>
 #include <vector>
 
-class DATASET_OLD;                // .b
-class DATASET_POSITON_SCORE;      // .ps
-class DATASET_POSITON_SCORE_PV;   // .psp
-class DATASET_POSITON_FULL_SCORE; // .pfs
+class CDataset_Old;                // .b
+class CDataset_Position_Score;     // .ps
+class CDataset_Position_Score_PV;  // .psp
+class CDataset_Position_FullScore; // .pfs
 
-enum DATASET { OLD, POSITON_SCORE, POSITON_SCORE_PV, POSITON_FULL_SCORE };
+enum DataType { Old, Position_Score, Position_Score_PV, Position_FullScore };
 
-inline DATASET Ending_to_DATASET(const std::string & s){
-	if (s == "b"  ) return DATASET::OLD;
-	if (s == "ps" ) return DATASET::POSITON_SCORE;
-	if (s == "psp") return DATASET::POSITON_SCORE_PV;
-	if (s == "pfs") return DATASET::POSITON_FULL_SCORE;
+template <DataType datatype> struct CDataset_type { typedef void type; };
+template <> struct CDataset_type<DataType::Old>                { typedef CDataset_Old                type; };
+template <> struct CDataset_type<DataType::Position_Score>     { typedef CDataset_Position_Score     type; };
+template <> struct CDataset_type<DataType::Position_Score_PV>  { typedef CDataset_Position_Score_PV  type; };
+template <> struct CDataset_type<DataType::Position_FullScore> { typedef CDataset_Position_FullScore type; };
+
+inline DataType Ending_to_DataType(const std::string & s){
+	if (s == "b"  ) return DataType::Old;
+	if (s == "ps" ) return DataType::Position_Score;
+	if (s == "psp") return DataType::Position_Score_PV;
+	if (s == "pfs") return DataType::Position_FullScore;
 }
 
-const signed char   DATASET_DEFAULT_depth = -1;
+inline std::string DataType_to_Ending(const DataType & d){
+	if (d == DataType::Old)                return "b";
+	if (d == DataType::Position_Score)     return "ps";
+	if (d == DataType::Position_Score_PV)  return "psp";
+	if (d == DataType::Position_FullScore) return "pfs";
+}
+
+const   signed char DATASET_DEFAULT_depth       = -1;
 const unsigned char DATASET_DEFAULT_selectivity = 0;
-const signed char   DATASET_DEFAULT_score = SCHAR_MIN;
-const unsigned char DATASET_DEFAULT_PV = 64;
+const   signed char DATASET_DEFAULT_score       = SCHAR_MIN;
+const unsigned char DATASET_DEFAULT_PV          = 64;
+
 
 #pragma pack(1)
+
 // .b
 // 144 Bit = 18 Byte
-class DATASET_OLD
+class CDataset_Old
 {
 public:
+	static const std::string FileNameEnding;
+	static const DataType datatype = DataType::Old;
 	unsigned long long P;		// 64 bit
 	unsigned long long O;		// 64 bit
 	signed char depth;			//  8 bit
@@ -40,13 +57,13 @@ public:
 		score = DATASET_DEFAULT_score;
 	}
 
-	DATASET_OLD() : P(0), O(0), depth(DATASET_DEFAULT_depth), score(DATASET_DEFAULT_score) {}
-	DATASET_OLD(const unsigned long long P, const unsigned long long O, const signed char depth, const signed char score) : P(P), O(O), depth(depth), score(score) {}
+	CDataset_Old() : P(0), O(0), depth(DATASET_DEFAULT_depth), score(DATASET_DEFAULT_score) {}
+	CDataset_Old(const unsigned long long P, const unsigned long long O, const signed char depth, const signed char score) : P(P), O(O), depth(depth), score(score) {}
 };
 
 // .ps
 // 152 Bit = 19 Byte
-class DATASET_POSITON_SCORE
+class CDataset_Position_Score
 {
 public:
 	unsigned long long P;		// 64 bit
@@ -61,17 +78,17 @@ public:
 		score = DATASET_DEFAULT_score;
 	}
 
-	DATASET_POSITON_SCORE() : P(0), O(0), depth(DATASET_DEFAULT_depth), selectivity(DATASET_DEFAULT_selectivity), score(DATASET_DEFAULT_score) {}
-	DATASET_POSITON_SCORE(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity, const signed char score) : P(P), O(O), depth(depth), selectivity(selectivity), score(score) {}
+	CDataset_Position_Score() : P(0), O(0), depth(DATASET_DEFAULT_depth), selectivity(DATASET_DEFAULT_selectivity), score(DATASET_DEFAULT_score) {}
+	CDataset_Position_Score(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity, const signed char score) : P(P), O(O), depth(depth), selectivity(selectivity), score(score) {}
 
-	explicit DATASET_POSITON_SCORE(const DATASET_OLD&                that);
-	explicit DATASET_POSITON_SCORE(const DATASET_POSITON_SCORE_PV&   that);
-	explicit DATASET_POSITON_SCORE(const DATASET_POSITON_FULL_SCORE& that);
+	explicit CDataset_Position_Score(const CDataset_Old&                that);
+	explicit CDataset_Position_Score(const CDataset_Position_Score_PV&  that);
+	explicit CDataset_Position_Score(const CDataset_Position_FullScore& that);
 };
 
 // .psp
 // 192 Bit = 24 Byte
-class DATASET_POSITON_SCORE_PV
+class CDataset_Position_Score_PV
 {
 public:
 	unsigned long long P;		// 64 bit
@@ -83,17 +100,17 @@ public:
 
 	void Reset();
 
-	DATASET_POSITON_SCORE_PV();
-	DATASET_POSITON_SCORE_PV(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity, const signed char score) : P(P), O(O), depth(depth), selectivity(selectivity), score(score) {}
+	CDataset_Position_Score_PV();
+	CDataset_Position_Score_PV(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity, const signed char score) : P(P), O(O), depth(depth), selectivity(selectivity), score(score) {}
 
-	explicit DATASET_POSITON_SCORE_PV(const DATASET_OLD&                that);
-	explicit DATASET_POSITON_SCORE_PV(const DATASET_POSITON_SCORE&      that);
-	explicit DATASET_POSITON_SCORE_PV(const DATASET_POSITON_FULL_SCORE& that);
+	explicit CDataset_Position_Score_PV(const CDataset_Old&                that);
+	explicit CDataset_Position_Score_PV(const CDataset_Position_Score&     that);
+	explicit CDataset_Position_Score_PV(const CDataset_Position_FullScore& that);
 };
 
 // .pfs
 // 1168 Bit = 146 Byte
-class DATASET_POSITON_FULL_SCORE
+class CDataset_Position_FullScore
 {
 public:
 	unsigned long long P;		//  64 bit
@@ -108,12 +125,12 @@ public:
 
 	void Reset();
 
-	DATASET_POSITON_FULL_SCORE();
-	DATASET_POSITON_FULL_SCORE(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity);
+	CDataset_Position_FullScore();
+	CDataset_Position_FullScore(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity);
 
-	explicit DATASET_POSITON_FULL_SCORE(const DATASET_OLD&              that);
-	explicit DATASET_POSITON_FULL_SCORE(const DATASET_POSITON_SCORE&    that);
-	explicit DATASET_POSITON_FULL_SCORE(const DATASET_POSITON_SCORE_PV& that);
+	explicit CDataset_Position_FullScore(const CDataset_Old&               that);
+	explicit CDataset_Position_FullScore(const CDataset_Position_Score&    that);
+	explicit CDataset_Position_FullScore(const CDataset_Position_Score_PV& that);
 };
 
 #pragma pack()
@@ -191,7 +208,7 @@ void read_vector(const std::string & filename, std::vector<T>& vector)
 }
 
 template<class T>
-void write_to_file(const std::string filename, std::vector<T>& vector)
+void write_to_file(const std::string & filename, std::vector<T>& vector)
 {
 	FILE* file;
 	fopen_s(&file, filename.c_str(), "wb");

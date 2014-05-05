@@ -54,6 +54,18 @@
     <ClInclude Include="..\src\game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\line.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bitmanipulations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ReversiRules\PossibleMoves\PossibleMoves.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PossibleMoves.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\count_last_flip.cpp">
@@ -98,5 +110,13 @@
     <ClCompile Include="..\src\game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\datamanipulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\src\PossibleMoves.lib">
+      <Filter>Header Files</Filter>
+    </Library>
   </ItemGroup>
 </Project>

@@ -2,52 +2,52 @@
 
 using namespace std;
 
-void DisplayDistribution(const unsigned long long * const value)
+void DisplayHistogram(const unsigned long long * const frequency)
 {
 	int min = 0;
 	int max = 255;
-	bool odd_zero = false;
+	bool no_odds = false;
 
 	//Find min
-	for (int i = 0; i < 256; ++i){
-		if (value[i]){
+	for (int i = 0; i < 256; i++){
+		if (frequency[i]){
 			min = i;
 			break;
 		}
 	}
 
 	//Find max
-	for (int i = 255; i >= 0; --i){
-		if (value[i]){
+	for (int i = 255; i >= 0; i--){
+		if (frequency[i]){
 			max = i;
 			break;
 		}
 	}
 
 	//If all values are in [-64, 64] and there are no odd values
-	if ((min+SCHAR_MIN >= -64) && (max+SCHAR_MIN <= 64)){
-		odd_zero = true;
+	if ((min + SCHAR_MIN >= -64) && (max + SCHAR_MIN <= 64)){
+		no_odds = true;
 		for (int i = min; i <= max; ++i){
-			if (((i+SCHAR_MIN) % 2 == 1) && value[i])
-				odd_zero = false;
+			if (((i + SCHAR_MIN) % 2 == 1) && frequency[i])
+				no_odds = false;
 		}
 	}
 	
-	if (odd_zero)
+	printf("Score|Frequency\n");
+	printf("-----+---------\n");
+	if (no_odds)
 	{
-		cout << "Value distribution:" << endl;
-		for (int i = -64; i <= 64; i+=2)
-			cout << i << "\t" << value[i-SCHAR_MIN] << "\n";
+		for (int score = -64; score <= 64; score += 2)
+			printf(" %+2.2d |%9u\n", score, frequency[score - SCHAR_MIN]);
 	}
 	else
 	{
-		cout << "Value distribution:" << endl;
-		for (int i = min; i <= max; ++i)
-			cout << i+SCHAR_MIN << "\t" << value[i] << "\n";
+		for (int score = min; score <= max; score++)
+			printf(" %+2.2d |%9u\n", score + SCHAR_MIN, frequency[score]);
 	}
 }
 
-void DisplayCharacteristics(const CRunningStatistic<signed char>& stats, const unsigned long long * const value)
+void DisplayCharacteristics(const CRunningStatistic<signed char>& stats, const unsigned long long * const frequency)
 {
 	signed char D1, D9, Q1, Q3, median, mode;
 	bool b_D1 = true;
@@ -60,13 +60,13 @@ void DisplayCharacteristics(const CRunningStatistic<signed char>& stats, const u
 	unsigned long long sum = 0;
 
 	for (int i = 0; i < 256; ++i)
-		sum += value[i];
+		sum += frequency[i];
 
 	counter = 0;
 	for (int i = 0; i < 256; ++i){
-		counter += value[i];
-		if (value[i] > max_value){
-			max_value = value[i];
+		counter += frequency[i];
+		if (frequency[i] > max_value){
+			max_value = frequency[i];
 			mode = i;
 		}
 		if (b_D1 && (counter * 10 > sum)){
@@ -103,153 +103,395 @@ void DisplayCharacteristics(const CRunningStatistic<signed char>& stats, const u
 		 << "mode: " << static_cast<int>(mode) << "\n";
 }
 
-void Stats(const vector<string>& FileNames, bool b_Progress, bool b_Distribution, bool b_Characteristics)
+void Stats(const vector<string>& FileNames, bool b_Progress, bool b_Histogram, bool b_Characteristics)
 {
-	const int N = 10000;
-	DATASET_POSITON_SCORE DataArray[N];
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
 	CRunningStatistic<signed char> stats = CRunningStatistic<signed char>();
 	unsigned long long depth[256];
-	unsigned long long value[256];
+	unsigned long long score[256];
 	memset(depth, 0, 256 * sizeof(unsigned long long));
-	memset(value, 0, 256 * sizeof(unsigned long long));
-	std::size_t ValidData;
-	FILE* file;
+	memset(score, 0, 256 * sizeof(unsigned long long));
 
-	const vector<string>::const_iterator end = FileNames.cend();
-	for (vector<string>::const_iterator it = FileNames.cbegin(); it != end; ++it)
+	for (auto& filename : FileNames)
 	{
-		fopen_s(&file, it->c_str(), "rb");
-		while (ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), N, file))
+		std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
+		switch (Ending_to_DataType(Ending))
 		{
-			for (int i = 0; i < ValidData; ++i){
-				//Position = ReversiPosition(DataArray[i].BitBoardPlayer, DataArray[i].BitBoardOpponent);
-				//if (!Position.PossibleMoves()){
-				//	Position.PlayPass();
-				//	if (Position.PossibleMoves()){
-						/*if (b_Progress)*/ ++depth[DataArray[i].depth - SCHAR_MIN];
-						/*if (b_Distribution || b_Characteristics)*/ ++value[DataArray[i].score - SCHAR_MIN];
-						/*if (b_Characteristics)*/ stats.Add(DataArray[i].score);
-				//	}
-				//}
+		case DataType::Old:
+			read_vector(filename, tmp_OLD);
+			for (auto& item : tmp_OLD){
+				depth[item.depth+1]++;
+				score[item.score - SCHAR_MIN]++;
+				stats.Add(item.score);
 			}
+			tmp_OLD.clear();
+			break;
+		case DataType::Position_Score:
+			read_vector(filename, tmp_POSITON_SCORE);
+			for (auto& item : tmp_POSITON_SCORE){
+				depth[item.depth+1]++;
+				score[item.score - SCHAR_MIN]++;
+				stats.Add(item.score);
+			}
+			tmp_POSITON_SCORE.clear();
+			break;
+		case DataType::Position_Score_PV:
+			read_vector(filename, tmp_POSITON_SCORE_PV);
+			for (auto& item : tmp_POSITON_SCORE_PV){
+				depth[item.depth+1]++;
+				score[item.score - SCHAR_MIN]++;
+				stats.Add(item.score);
+			}
+			tmp_POSITON_SCORE_PV.clear();
+			break;
+		case DataType::Position_FullScore:
+			read_vector(filename, tmp_POSITON_FULL_SCORE);
+			int maxscore = SCHAR_MIN;
+			for (auto& item : tmp_POSITON_FULL_SCORE){
+				for (int i = 0; i < 64; i++)
+					maxscore = ((item.score[i] > maxscore) ? item.score[i] : maxscore);
+				depth[item.depth+1]++;
+				score[maxscore - SCHAR_MIN]++;
+				stats.Add(maxscore);
+			}
+			tmp_POSITON_FULL_SCORE.clear();
+			break;
 		}
-		fclose(file);
 	}
 	
 	if (b_Progress){
 		cout << "Progress:\n";
 		for (int i = 0; i < 255; ++i){
 			if (depth[i])
-				cout << i+SCHAR_MIN << "\t" << depth[i] << "\n";
+				cout << i-1 << "\t" << depth[i] << "\n";
 		}
-		if (depth[255])
-			cout << "Exact\t" << depth[255] << "\n";
-		cout << "\n";
+		if (depth[SCHAR_MAX+1])
+			cout << "Exact\t" << depth[SCHAR_MAX+1] << "\n";
 	}
 	
-	if (b_Distribution){
-		DisplayDistribution(value);
+	if (b_Histogram){
+		DisplayHistogram(score);
 		if (b_Characteristics) cout << "\n";
 	}
 
 	if (b_Characteristics)
-		DisplayCharacteristics(stats, value);
+		DisplayCharacteristics(stats, score);
 }
 
-void Progress(const char * const Filename)
+void Progress(const string & filename)
 {
-	const int N = 10000;
-	DATASET_POSITON_SCORE DataArray[N];
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
 	unsigned long long depth[256];
 	memset(depth, 0, 256 * sizeof(unsigned long long));
-	std::size_t ValidData;
-	FILE* file;
-	fopen_s(&file, Filename, "rb");
 
-	while (ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), N, file)){
-		for (int i = 0; i < ValidData; ++i)
-			++depth[DataArray[i].depth];
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		for (auto& item : tmp_OLD)
+			depth[item.depth+1]++;
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (auto& item : tmp_POSITON_SCORE)
+			depth[item.depth+1]++;
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (auto& item : tmp_POSITON_SCORE_PV)
+			depth[item.depth+1]++;
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (auto& item : tmp_POSITON_FULL_SCORE)
+			depth[item.depth+1]++;
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
 	}
 
-	cout << "Progress of " << Filename << ":\n";
-	for (int i = 0; i < 255; ++i){
+	cout << "Progress of " << filename << ":\n";
+	for (int i = 0; i <= SCHAR_MAX; ++i){
 		if (depth[i])
-			cout << i << "\t" << depth[i] << "\n";
+			cout << i-1 << "\t" << depth[i] << "\n";
 	}
-	if (depth[255])
-		cout << "Exact\t" << depth[255] << "\n";
-
-	fclose(file);
+	if (depth[SCHAR_MAX+1])
+		cout << "Exact\t" << depth[SCHAR_MAX+1] << "\n";
 }
 
-void CountUnique(const char * const Filename)
+void CountUnique(const string & filename)
 {
 	typedef pair<unsigned long long, unsigned long long> ULLULL;
-	const int N = 10000;
-	DATASET_POSITON_SCORE DataArray[N];
-	std::size_t ValidData;
-	struct comp{
-		inline bool operator()(const ULLULL & lhs, const ULLULL & rhs){
-			//return (lhs.first <= rhs.first) && (lhs.second < rhs.second);
-			if (lhs.first < rhs.first)
-				return true;
-			else if (lhs.first == rhs.first)
-				return lhs.second < rhs.second;
-			else
-				return false;
-		}
-	};
+	struct comp { inline bool operator()(const ULLULL & lhs, const ULLULL & rhs) { return (lhs.first < rhs.first) || ((lhs.first == rhs.first) && (lhs.second < rhs.second)); } };
 	set<ULLULL, comp> PositionSet;
-	FILE* file;
-	fopen_s(&file, Filename, "rb");
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
 
-	while (ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), N, file)){
-		for (int i = 0; i < ValidData; ++i)
-			PositionSet.insert(ULLULL(DataArray[i].P, DataArray[i].O));
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		for (auto& item : tmp_OLD)
+			PositionSet.insert(ULLULL(item.P, item.O));
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (auto& item : tmp_POSITON_SCORE)
+			PositionSet.insert(ULLULL(item.P, item.O));
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (auto& item : tmp_POSITON_SCORE_PV)
+			PositionSet.insert(ULLULL(item.P, item.O));
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (auto& item : tmp_POSITON_FULL_SCORE)
+			PositionSet.insert(ULLULL(item.P, item.O));
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
 	}
-
-	cout << "Unique positions in " << Filename << ":\t" << PositionSet.size() << endl;
-
-	fclose(file);
+	cout << "Number of unique positions in " << filename << ":\t" << PositionSet.size() << endl;
 }
 
-void Reset(const char * const Filename)
+void Reset(const string & filename)
 {
-	const int N = 10000;
-	DATASET_POSITON_SCORE DataArray[N];
-	std::size_t ValidData;
-	fpos_t pos1, pos2;
-	FILE* file;
-	fopen_s(&file, Filename, "r+b");
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
 
-	fgetpos(file, &pos1);
-	while (ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), N, file))
+	switch (Ending_to_DataType(Ending))
 	{
-		for (int i = 0; i < ValidData; ++i)
-			DataArray[i].Reset();
-		fgetpos(file, &pos2);
-		fsetpos(file, &pos1);
-		fwrite(DataArray, sizeof(DATASET_POSITON_SCORE), ValidData, file);
-		fsetpos(file, &pos2);
-		fgetpos(file, &pos1);
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		for (auto& item : tmp_OLD)
+			item.Reset();
+		write_to_file(filename, tmp_OLD);
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (auto& item : tmp_POSITON_SCORE)
+			item.Reset();
+		write_to_file(filename, tmp_POSITON_SCORE);
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (auto& item : tmp_POSITON_SCORE_PV)
+			item.Reset();
+		write_to_file(filename, tmp_POSITON_SCORE_PV);
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (auto& item : tmp_POSITON_FULL_SCORE)
+			item.Reset();
+		write_to_file(filename, tmp_POSITON_FULL_SCORE);
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
 	}
+	cout << "Positions of " << filename << " resetted.\n";
+}
 
-	cout << "Positions of " << Filename << " resetted.\n";
+void Mix(const string & filename)
+{
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
 
-	fclose(file);
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		std::random_shuffle(tmp_OLD.begin(), tmp_OLD.end());
+		write_to_file(filename, tmp_OLD);
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		std::random_shuffle(tmp_POSITON_SCORE.begin(), tmp_POSITON_SCORE.end());
+		write_to_file(filename, tmp_POSITON_SCORE);
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		std::random_shuffle(tmp_POSITON_SCORE_PV.begin(), tmp_POSITON_SCORE_PV.end());
+		write_to_file(filename, tmp_POSITON_SCORE_PV);
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		std::random_shuffle(tmp_POSITON_FULL_SCORE.begin(), tmp_POSITON_FULL_SCORE.end());
+		write_to_file(filename, tmp_POSITON_FULL_SCORE);
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
+	}
+	cout << "Positions of " << filename << " mixed.\n";
+}
+
+void Peek(const string & filename, const std::size_t start, const std::size_t end)
+{
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
+
+	cout << "Peek on " << filename << ":\n";
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		printf("    #    |                            Position                            |depth|score\n");
+		printf("---------+----------------------------------------------------------------+-----+-----\n");
+		read_vector(filename, tmp_OLD);
+		for (std::size_t i = start; i < end; i++){
+			if (tmp_OLD[i].depth == SCHAR_MAX)
+				printf("%9u|%64s| END | %+2.2d \n", i, board(tmp_OLD[i].P, tmp_OLD[i].O).c_str(), tmp_OLD[i].score);
+			else
+				printf("%9u|%64s| %3.3d | %+2.2d \n", i, board(tmp_OLD[i].P, tmp_OLD[i].O).c_str(), tmp_OLD[i].depth, tmp_OLD[i].score);
+		}
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		printf("    #    |                            Position                            |depth|selectivity|score\n");
+		printf("---------+----------------------------------------------------------------+-----+-----------+-----\n");
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (std::size_t i = start; i < end; i++){
+			if (tmp_POSITON_SCORE[i].depth == SCHAR_MAX)
+				printf("%9u|%64s| END |   %5s%%  | %+2.2d \n", i, board(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
+			else
+				printf("%9u|%64s| %3.3d |   %5s%%  | %+2.2d \n", i, board(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), tmp_POSITON_SCORE[i].depth, SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
+		}
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		printf("    #    |                            Position                            |depth|selectivity|score|       PV       \n");
+		printf("---------+----------------------------------------------------------------+-----+-----------+-----+----------------\n");
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (std::size_t i = start; i < end; i++){
+			if (tmp_POSITON_SCORE_PV[i].depth == SCHAR_MAX)
+				printf("%9u|%64s| END |   %5s%%  | %+2.2d | %2s %2s %2s %2s %2s \n", i,
+					board(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
+					SelectivityTable[tmp_POSITON_SCORE_PV[i].selectivity],
+					tmp_POSITON_SCORE_PV[i].score,
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[0]),
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[1]),
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[2]),
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[3]),
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[4]));
+			else
+				printf("%9u|%64s| %3.3d |   %5s%%  | %+2.2d | %2s %2s %2s %2s %2s \n", i, 
+					board(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
+					tmp_POSITON_SCORE_PV[i].depth, 
+					SelectivityTable[tmp_POSITON_SCORE_PV[i].selectivity], 
+					tmp_POSITON_SCORE_PV[i].score, 
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[0]),
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[1]), 
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[2]), 
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[3]), 
+					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[4]));
+		}
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		printf("    #    |                            Position                            |depth|selectivity| move:score:PV \n");
+		printf("---------+----------------------------------------------------------------+-----+-----------+---------------\n");
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (std::size_t i = start; i < end; i++){
+			if (tmp_POSITON_FULL_SCORE[i].depth == SCHAR_MAX)
+				printf("%9u|%64s| END |   %5s%%  |", i, board(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
+			else
+				printf("%9u|%64s| %3.3d |   %5s%%  |", i, board(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), tmp_POSITON_FULL_SCORE[i].depth, SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
+			for (int j = 0; j < 64; j++)
+				if (tmp_POSITON_FULL_SCORE[i].score[j] != SCHAR_MIN)
+					printf(" %2s:%2.2d:%2s", FIELD_NAME(j), tmp_POSITON_FULL_SCORE[i].score[j], FIELD_NAME(tmp_POSITON_FULL_SCORE[i].PV[j]));
+			printf("\n");
+		}
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
+	}
+}
+
+
+void DepthFix(const string & filename)
+{
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
+
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		for (auto& item : tmp_OLD)
+			item.depth = SCHAR_MAX;
+		write_to_file(filename, tmp_OLD);
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (auto& item : tmp_POSITON_SCORE)
+			item.depth = SCHAR_MAX;
+		write_to_file(filename, tmp_POSITON_SCORE);
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (auto& item : tmp_POSITON_SCORE_PV)
+			item.depth = SCHAR_MAX;
+		write_to_file(filename, tmp_POSITON_SCORE_PV);
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (auto& item : tmp_POSITON_FULL_SCORE)
+			item.depth = SCHAR_MAX;
+		write_to_file(filename, tmp_POSITON_FULL_SCORE);
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
+	}
+	cout << "Positions of " << filename << " fixed.\n";
 }
 
 int main(int argc, char* argv[])
 {
 	bool b_FileName = false;
 	bool b_Progress = false;
-	bool b_Distribution = false;
+	bool b_Histogram = false;
+	bool b_Characteristics = false;
 	bool b_Unique = false;
 	bool b_Reset = false;
-	bool b_Characteristics = false;
-	bool b_GeneratePositions = false;
+	bool b_Mix = false;
+	bool b_Fix = false;
+	bool b_Peek = false;
+	bool b_New = false;
+	bool b_Perft = false;
 	int Empties;
 	int N;
+	int perft_depth;
+	int peek_start, peek_num;
 	vector<string> FileNames;
 
 	for(int i = 0; i < argc; ++i) 
@@ -261,23 +503,31 @@ int main(int argc, char* argv[])
 			--i;
 			b_FileName = true;
 		}
-		else if (string(argv[i]) == "-p")
+		else if (string(argv[i]) == "-progress")
 			b_Progress = true;
-		else if (string(argv[i]) == "-d")
-			b_Distribution = true;
-		else if (string(argv[i]) == "-u")
+		else if (string(argv[i]) == "-histogram")
+			b_Histogram = true;
+		else if (string(argv[i]) == "-char")
+			b_Characteristics = true;
+		else if (string(argv[i]) == "-uniques")
 			b_Unique = true;
-		else if (string(argv[i]) == "-r")
-			b_Reset = true;
-		else if (string(argv[i]) == "-c")
-			b_Characteristics = true;
-		else if (string(argv[i]) == "-all"){
-			b_Progress = true;
-			b_Distribution = true;
-			b_Characteristics = true;
+		else if (string(argv[i]) == "-mix")
+			b_Mix = true;
+		else if (string(argv[i]) == "-fix")
+			b_Fix = true;
+		else if (string(argv[i]) == "-peek"){
+			b_Peek = true;
+			peek_start = atoi(argv[++i]);
+			peek_num = atoi(argv[++i]);
 		}
-		else if (string(argv[i]) == "-g")
-			b_GeneratePositions = true;
+		else if (string(argv[i]) == "-reset")
+			b_Reset = true;
+		else if (string(argv[i]) == "-perft"){
+			b_Perft = true;
+			perft_depth = atoi(argv[++i]);
+		}
+		else if (string(argv[i]) == "-new")
+			b_New = true;
 		else if (string(argv[i]) == "-e")
 			Empties = atoi(argv[++i]);
 		else if (string(argv[i]) == "-N")
@@ -286,24 +536,19 @@ int main(int argc, char* argv[])
 			cout << "Calculates statistics for given file of positions.\n" <<
 					"Arguments:\n" <<
 					"-f\tFilenames.\n" <<
-					"-p\tShows the progress of solving.\n" <<
-					"-d\tShows the histographic distribution.\n" <<
-					"-u\tShows the number of unique positions.\n" <<
-					"-r\tResets the score and depth of all positions.\n" <<
-					"-c\tShows the characteristic parameters of the distribution.\n" << 
-					"-all\tShows all stats.\n" <<
-					"-g\tGenerate positions using -e and -N.\n" <<
+					"-progress\tShows the progress of solving.\n" <<
+					"-histogram\tShows the histographic distribution.\n" <<
+					"-char\tShows the characteristic parameters of the distribution.\n" <<
+					"-uniques\tShows the number of unique positions.\n" <<
+					"-mix\tMix the positions.\n" <<
+					"-peek\tPeek on positions. -peek [start] [num]\n" <<
+					"-reset\tResets the score and depth of all positions.\n" <<
+					"-new\tGenerate new random positions using -e and -N.\n" <<
 					"-e\tNumber of empty fields in each position.\n" <<
 					"-N\tNumber of positions to generate.\n" <<
-					"-h\tDisplays help." << endl;
+					"-h\tDisplays this help." << endl;
 			return 0;
 		}
-	}
-
-	if (b_GeneratePositions){
-		for (int i = 0; i < FileNames.size(); i++)
-			GeneratePositions<DATASET_POSITON_SCORE>(N, Empties, true, FileNames[i]);
-		return 0;
 	}
 
 	if (!b_FileName){
@@ -313,28 +558,56 @@ int main(int argc, char* argv[])
 		b_FileName = (FileNames.size() != 0);
 	}
 
-	if (b_FileName){
+	if (b_FileName)
+	{
+		if (b_Fix){
+			for (const string & filename : FileNames)
+				DepthFix(filename);
+			return 0;
+		}
+
+		if (b_Mix){
+			for (const string & filename : FileNames)
+				Mix(filename);
+			return 0;
+		}
+
+		if (b_Peek){
+			for (const string & filename : FileNames)
+				Peek(filename, peek_start, peek_num);
+			return 0;
+		}
+
 		if (b_Reset){
-			const vector<string>::const_iterator end = FileNames.cend();
-			for (vector<string>::const_iterator it = FileNames.cbegin(); it != end; ++it)
-				Reset(it->c_str());
+			for (const string & filename : FileNames)
+				Reset(filename);
+			return 0;
+		}
+
+		if (b_New){
+			for (const string & filename : FileNames)
+				GenerateRandomPositions(filename, N, Empties, true);
+			return 0;
+		}
+
+		if (b_Perft){
+			for (const string & filename : FileNames)
+				GeneratePerftPositions(filename, perft_depth, true);
 			return 0;
 		}
 
 		if (b_Unique){
-			const vector<string>::const_iterator end = FileNames.cend();
-			for (vector<string>::const_iterator it = FileNames.cbegin(); it != end; ++it)
-				CountUnique(it->c_str());
+			for (const string & filename : FileNames)
+				CountUnique(filename);
 			return 0;
 		}
-		if (b_Progress && !b_Distribution && !b_Characteristics) //Only progress
+		if (b_Progress && !b_Histogram && !b_Characteristics) //Only progress
 		{
-			const vector<string>::const_iterator end = FileNames.cend();
-			for (vector<string>::const_iterator it = FileNames.cbegin(); it != end; ++it)
-				Progress(it->c_str());
+			for (const string & filename : FileNames)
+				Progress(filename);
 		}
 		else
-			Stats(FileNames, b_Progress, b_Distribution, b_Characteristics);
+			Stats(FileNames, b_Progress, b_Histogram, b_Characteristics);
 	}
 
 	return 0;

@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\configfile.cpp" />
     <ClCompile Include="..\src\count_last_flip.cpp" />
+    <ClCompile Include="..\src\datamanipulation.cpp" />
     <ClCompile Include="..\src\endgame.cpp" />
     <ClCompile Include="..\src\features.cpp" />
     <ClCompile Include="..\src\flip.cpp" />

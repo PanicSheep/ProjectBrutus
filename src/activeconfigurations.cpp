@@ -121,11 +121,11 @@ int main(int argc, char* argv[])
 	//	return 0;
 	//}
 
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d19_100M.b"));
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d7_1M.b"));
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d8_1M.b"));
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d9_1M.b"));
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d10_1M.b"));
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d19_100M.b"));
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d7_1M.b"));
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d8_1M.b"));
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d10_1M.b"));
 	//CalculateActiveConfigurations(FileNames);
 	//return 0;
 

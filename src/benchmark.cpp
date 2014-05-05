@@ -1,4 +1,28 @@
 #include "benchmark.h"
+#include <thread>
+#include <future>
+
+void PreheatCPU(const int seconds)
+{
+	std::chrono::high_resolution_clock::time_point startTime;
+	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0, -1), std::mt19937_64(seconds));
+	unsigned long long A = rnd();
+	unsigned long long B = rnd();
+	unsigned long long C = rnd();
+
+	startTime = std::chrono::high_resolution_clock::now();
+	while (std::chrono::nanoseconds(std::chrono::high_resolution_clock::now() - startTime).count()*1e-9 < seconds)
+	{
+		for (int i = 0; i < 1024 * 1024; ++i)
+		{
+			A = B + C / 3;
+			B = C + A * 5;
+			C = A + B * 7;
+		}
+	}
+
+	std::cout << "CPU was busy: " << C << std::endl;
+}
 
 void FForum_Benchmark(int begin, int end, bool verbose, CHashTable* hashTable)
 {
@@ -76,7 +100,7 @@ void FForum_Benchmark(int begin, int end, bool verbose, CHashTable* hashTable)
 	std::chrono::high_resolution_clock::time_point startTime, endTime, OverallStartTime, OverallEndTime;
 
 	for (int i = begin; i <= end; i++)
-		SearchVector.push_back(CSearch(FForum[i-1].P, FForum[i-1].O, -64, 64, hashTable));
+		SearchVector.push_back(CSearch(FForum[i-1].P, FForum[i-1].O, -64, 64, hashTable, 5));
 
 	int i = begin;
 	if (verbose)
@@ -85,26 +109,26 @@ void FForum_Benchmark(int begin, int end, bool verbose, CHashTable* hashTable)
 		printf("---+-----+-----+----------------+----------------+-----------+----------------\n");
 	}
 	OverallStartTime = std::chrono::high_resolution_clock::now(); //Start Time
-	for (auto it = SearchVector.begin(); it != SearchVector.end(); ++it){
+	for (auto& search : SearchVector){
 		startTime = std::chrono::high_resolution_clock::now(); //Start Time
-		it->Evaluate();
+		search.Evaluate();
 		endTime = std::chrono::high_resolution_clock::now(); //Stop Time
 		hashTable->AdvanceDate();
-		if (it->score != FForum[i-1].Score)
+		if (search.score != FForum[i-1].Score)
 			printf("%3u was miscalculated. It's score should be %+2.2d.\n", i, FForum[i-1].Score);
 		if (verbose)
 		{
 			std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 			if (time_span == std::chrono::milliseconds(0))
-				printf("%3u|  %2u | %+2.2d | %14s | %14llu |           | %2s %2s %2s %2s %2s\n", i, NumberOfEmptyStones(it->P, it->O), it->score, time_format(time_span).c_str(), it->NodeCounter, it->GetPV(0), it->GetPV(1), it->GetPV(2), it->GetPV(3), it->GetPV(4));
+				printf("%3u|  %2u | %+2.2d | %14s | %14llu |           | %s\n", i, NumberOfEmptyStones(search.P, search.O), search.score, time_format(time_span).c_str(), search.NodeCounter, search.GetPV());
 			else
-				printf("%3u|  %2u | %+2.2d | %14s | %14llu | %9d | %2s %2s %2s %2s %2s\n", i, NumberOfEmptyStones(it->P, it->O), it->score, time_format(time_span).c_str(), it->NodeCounter, it->NodeCounter*1000/time_span.count(), it->GetPV(0), it->GetPV(1), it->GetPV(2), it->GetPV(3), it->GetPV(4));
+				printf("%3u|  %2u | %+2.2d | %14s | %14llu | %9d | %s\n", i, NumberOfEmptyStones(search.P, search.O), search.score, time_format(time_span).c_str(), search.NodeCounter, search.NodeCounter*1000/time_span.count(), search.GetPV());
 		}
 		++i;
 	}
 	OverallEndTime = std::chrono::high_resolution_clock::now(); //Stop Time
-	for (auto it = SearchVector.begin() ; it != SearchVector.end(); ++it)
-		OverallNodeCounter += it->NodeCounter;
+	for (auto& search : SearchVector)
+		OverallNodeCounter += search.NodeCounter;
 	std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(OverallEndTime - OverallStartTime);
 	if (time_span == std::chrono::milliseconds(0))
 		printf("%16llu nodes in %14ss.\n", OverallNodeCounter, time_format(time_span).c_str());
@@ -299,7 +323,7 @@ void Count_last_flip_Benchmark(const int N)
 		printf("Count last flip| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
-void POP_COUNT_Benchmark(const int N)
+void PopCount_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
 	unsigned long long b[64];
@@ -311,26 +335,26 @@ void POP_COUNT_Benchmark(const int N)
 	startTime = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < N; i++)
 	{
-		a = POP_COUNT(b[a]);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
-		a = POP_COUNT(a);
+		a = PopCount(b[a]);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
+		a = PopCount(a);
 	}
 	endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	if (a) //Prevent dead code elimination.
-		printf("POP_COUNT      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("PopCount      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 	else
-		printf("POP_COUNT      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("PopCount      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
-void POP_COUNT_MAX15_Benchmark(const int N)
+void PopCount_max15_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
 	unsigned long long b[64];
@@ -342,54 +366,23 @@ void POP_COUNT_MAX15_Benchmark(const int N)
 	startTime = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < N; i++)
 	{
-		a = POP_COUNT_MAX15(b[a]);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
-		a = POP_COUNT_MAX15(a);
+		a = PopCount_max15(b[a]);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
+		a = PopCount_max15(a);
 	}
 	endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	if (a) //Prevent dead code elimination.
-		printf("POP_COUNT_MAX15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("PopCount_max15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 	else
-		printf("POP_COUNT_MAX15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void POP_COUNT_PLUS_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	__m128i b[128];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 128; i++) b[i] = _mm_set_epi64x(rnd(), rnd());
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-		a = POP_COUNT_PLUS(b[a]);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("POP_COUNT_PLUS | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("POP_COUNT_PLUS | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("PopCount_max15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
 void Parity_Benchmark(const int N)
@@ -423,7 +416,7 @@ void Parity_Benchmark(const int N)
 		printf("Parity         | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
-void BIT_SCAN_LS1B_Benchmark(const int N)
+void BitScanLSB_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(1ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
 	unsigned long long b[64];
@@ -435,26 +428,26 @@ void BIT_SCAN_LS1B_Benchmark(const int N)
 	startTime = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < N; i++)
 	{
-		a = BIT_SCAN_LS1B(b[a]);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
-		a = BIT_SCAN_LS1B(a);
+		a = BitScanLSB(b[a]);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
+		a = BitScanLSB(a);
 	}
 	endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	if (a) //Prevent dead code elimination.
-		printf("BIT_SCAN_LS1B  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("BitScanLSB  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 	else
-		printf("BIT_SCAN_LS1B  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("BitScanLSB  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
-void REMOVE_LS1B_Benchmark(const int N)
+void RemoveLSB_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(1ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
 	std::vector<unsigned long long> a(N);
@@ -467,24 +460,24 @@ void REMOVE_LS1B_Benchmark(const int N)
 	for (int i = 0; i < N; i++)
 	{
 		b |= a[i];
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
-		REMOVE_LS1B(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
+		RemoveLSB(b);
 	}
 	endTime = std::chrono::high_resolution_clock::now();
 
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	if (b) //Prevent dead code elimination.
-		printf("REMOVE_LS1B    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("RemoveLSB    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 	else
-		printf("REMOVE_LS1B    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
+		printf("RemoveLSB    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
 void StableStones_corner_and_co_Benchmark(const int N)
@@ -693,7 +686,7 @@ void EvaluateFeatures_Benchmark(const int N)
 }
 
 
-unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const unsigned long long size)
+unsigned long long Solve(const int d, CDataset_Position_Score* DataArray, const unsigned long long size)
 {
 	CHashTable * HashTable = new CHashTable(24);
 	unsigned long long NodeCounter = 0;
@@ -726,81 +719,155 @@ unsigned long long Solve(const int d, DATASET_POSITON_SCORE* DataArray, const un
 	return NodeCounter;
 }
 
-void ReadInFile(const char * const filename, DATASET_POSITON_SCORE * DataArray, const unsigned long long size)
+void HugeBenchmak_(std::vector<std::vector<CDataset_Position_Score>>& Datas, std::atomic_flag& spinlock, const int depth, const int s, const int nthreads, CHashTable * HashTable)
 {
-	FILE* file;
-	fopen_s(&file, filename, "rb");
-
-	std::size_t ValidData = fread(DataArray, sizeof(DATASET_POSITON_SCORE), size, file);
-	if (ValidData != size)
-		std::cerr << "ERROR: Length of file is wrong!" << std::endl;
-
-	fclose(file);
+	for (int d = depth; d <= 16; d += nthreads)
+	{
+		unsigned long long NodeCounter = 0;
+		unsigned long long PositionCounter = 0;
+		std::chrono::high_resolution_clock::time_point startTime, endTime;
+		startTime = std::chrono::high_resolution_clock::now();
+		for (int f = d + 7; f < 50; f += 4)
+		{
+			for (auto& data : Datas[f])
+			{
+				CSearch search(data.P, data.O, -64, 64, d, s, HashTable, 1);
+				search.Evaluate();
+				NodeCounter += search.NodeCounter;
+				PositionCounter++;
+			}
+		}
+		endTime = std::chrono::high_resolution_clock::now();
+		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+		while (spinlock.test_and_set());
+		printf("%2u@%5s%%| %14s | %14llu | %9d | %9d | %s\n",
+			d,
+			SelectivityTable[s].percentile.c_str(),
+			time_format(duration).c_str(),
+			NodeCounter,
+			NodeCounter * 1000 / duration.count(),
+			PositionCounter * 1000 / duration.count(),
+			short_time_format(std::chrono::duration_cast<std::chrono::duration<long long, std::pico>>(duration) / PositionCounter).c_str()
+			);
+		spinlock.clear();
+		HashTable->Clear();
+	}
 }
 
-unsigned long long HugeBenchmak(const int LowerLimit, const int UpperLimit, const int seconds)
+void HugeBenchmak()
 {
-	unsigned long long NodeCounter = 0;
-	DATASET_POSITON_SCORE* DataArray;
-	char buffer[1000];
-	unsigned long long size[21] = {
-		 5000000, //d0
-		 2000000, //d1
-		 1000000, //d2
-		  800000, //d3
-		  300000, //d4
-		  100000, //d5
-		   50000, //d6
-		   20000, //d7
-		    6000, //d8
-		    2000, //d9
-		    1000, //d10
-		     400, //d11
-		     150, //d12
-		      60, //d13
-		      20, //d14
-		      10, //d15
-		       5, //d16
-			   2, //d17
-			   1, //d18
-			   1, //d19
-			   1  //d20
-	};
+	const int size = 2;
+	const int nthreads = 4;
+	std::vector<std::vector<CDataset_Position_Score>> Datas(50);
+	std::vector<std::thread> threads(nthreads - 1);
+	std::vector<CHashTable *> HashTables(nthreads);
+	std::atomic_flag spinlock;
+	spinlock.clear();
 
-
-	printf(" d |       time (s) |      nodes (N) |    N/s    |    P/s    | time/P \n");
-	printf("---+----------------+----------------+-----------+-----------+--------\n");
-
-	for (int d = LowerLimit; d <= UpperLimit; ++d)
+	for (auto& ht : HashTables)
+		ht = new CHashTable(24);
+	
+	// Read in data vectors
+	for (int i = 10; i < 50; i++)
 	{
-		DataArray = new DATASET_POSITON_SCORE[size[d] * seconds];
-		sprintf_s(buffer, "G:\\Reversi\\pos\\rnd_d%d_100M.b", d);
-		ReadInFile(buffer, DataArray, size[d] * seconds);
-		NodeCounter += Solve(d, DataArray, size[d] * seconds);
-		delete [] DataArray;
+		std::string s = "G:\\Reversi2\\pos\\rnd_d";
+		s.append(std::to_string(i));
+		s.append("_1M.ps");
+		Datas[i] = read_vector<CDataset_Position_Score>(s, size);
 	}
-	printf("%16llu nodes.\n", NodeCounter);
 
-	return NodeCounter;
+	printf("  depth  |       time (s) |      nodes (N) |    N/s    |    P/s    | time/P \n");
+	printf("---------+----------------+----------------+-----------+-----------+--------\n");
+	
+	for (int s = 6; s >= 0; s -= 2)
+	{
+		for (int i = 0; i < nthreads-1; ++i)
+			threads[i] = std::thread(HugeBenchmak_, std::ref(Datas), std::ref(spinlock), i+3, s, nthreads, HashTables[i]);
+		HugeBenchmak_(Datas, spinlock, nthreads+2, s, nthreads, HashTables[nthreads-1]);
+
+		// Join workers
+		for (auto& t : threads)
+			t.join();
+	}
+	for (auto& ht : HashTables)
+		delete ht;
+}
+
+std::vector<CDataset_Position_Score> LoadData(const std::string & filename)
+{
+	std::vector<CDataset_Old> tmp_OLD;
+	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+	std::vector<CDataset_Position_Score> Data;
+	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
+
+	switch (Ending_to_DataType(Ending))
+	{
+	case DataType::Old:
+		read_vector(filename, tmp_OLD);
+		for (auto& item : tmp_OLD)
+			Data.push_back(static_cast<CDataset_Position_Score>(item));
+		tmp_OLD.clear();
+		break;
+	case DataType::Position_Score:
+		read_vector(filename, tmp_POSITON_SCORE);
+		for (auto& item : tmp_POSITON_SCORE)
+			Data.push_back(static_cast<CDataset_Position_Score>(item));
+		tmp_POSITON_SCORE.clear();
+		break;
+	case DataType::Position_Score_PV:
+		read_vector(filename, tmp_POSITON_SCORE_PV);
+		for (auto& item : tmp_POSITON_SCORE_PV)
+			Data.push_back(static_cast<CDataset_Position_Score>(item));
+		tmp_POSITON_SCORE_PV.clear();
+		break;
+	case DataType::Position_FullScore:
+		read_vector(filename, tmp_POSITON_FULL_SCORE);
+		for (auto& item : tmp_POSITON_FULL_SCORE)
+			Data.push_back(static_cast<CDataset_Position_Score>(item));
+		tmp_POSITON_FULL_SCORE.clear();
+		break;
+	}
+
+	return Data;
 }
 
 int main(int argc, char* argv[])
 {
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	//SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
-	ConfigFile::Initialize(std::string("F:\\Reversi\\ProjectBrutus.ini"));
+	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
 	Features::Initialize();
+	
+	PreheatCPU(2);
 
-	SolverBenchmarkEmpties(0, 20, 5, CSearch::END, 0, 1, 24);
-	//SolverBenchmarkDepth(25/*Empties*/, 30/*Secounds*/, 10/*Lowerdepth*/, 18/*Upperdepth*/, 6/*selectivity*/, 4/*nthreads*/, 23/*HashTableBits*/);
+	//HugeBenchmak();
+
+	//CHashTable* hashTable = new CHashTable(24);
+	//unsigned long long P = 0x0C1008050C183000ULL;
+	//unsigned long long O = 0xF22E76FAB3E74641ULL;
+
+	//CSearch search;
+	//for (int d = 3; d < 7; d++)
+	//{
+	//	search = CSearch(P, O, -64, 64, d, 0, hashTable, 0);
+	//	search.Evaluate();
+	//	std::cout << d << " : " << (int)search.score << std::endl;
+	//}
+	//delete hashTable;
+
+
+	//SolverBenchmarkEmpties(11 /*LowerEmpties*/, 24 /*UpperEmpties*/, 10 /*seconds*/, CSearch::END /*depth*/, 0 /*selectivity*/, 4 /*nthreads*/, 24 /*HashTableBits*/);
+	//SolverBenchmarkDepth(35/*Empties*/, 5/*seconds*/, 8/*Lowerdepth*/, 20/*Upperdepth*/, 6/*selectivity*/, 4/*nthreads*/, 23/*HashTableBits*/);
 	//HugeBenchmak(0, 20, 20);
 
 	//HugeBenchmak(20, 20);
 
-	//std::vector<DATASET_POSITON_SCORE> Data;
-	//read_vector("G:\\Reversi\\pos\\rnd_d5_10M.b", Data);
-	//const std::vector<DATASET_POSITON_SCORE>::const_iterator end = Data.cend();
-	//for (std::vector<DATASET_POSITON_SCORE>::const_iterator it = Data.cbegin(); it != end; ++it)
+	//std::vector<CDataset_Position_Score> Data;
+	//read_vector("F:\\Reversi\\pos\\rnd_d5_10M.b", Data);
+	//const std::vector<CDataset_Position_Score>::const_iterator end = Data.cend();
+	//for (std::vector<CDataset_Position_Score>::const_iterator it = Data.cbegin(); it != end; ++it)
 	//	std::cout << EvaluateFeatures(it->P, it->O) << "\t" << (int)it->score << std::endl;
 	//return 0;
 	//HugeBenchmak(20, 20);
@@ -841,11 +908,11 @@ int main(int argc, char* argv[])
 	//Parity_Benchmark(10000000);
 	//Parity_Benchmark(10000000);
 	//Count_last_flip_Benchmark(20000000);
-	//POP_COUNT_Benchmark(30000000);
-	//POP_COUNT_MAX15_Benchmark(30000000);
-	//POP_COUNT_PLUS_Benchmark(30000000);
-	//BIT_SCAN_LS1B_Benchmark(200000000);
-	//REMOVE_LS1B_Benchmark(200000000);
+	//PopCount_Benchmark(30000000);
+	//PopCount_max15_Benchmark(30000000);
+	//PopCount_PLUS_Benchmark(30000000);
+	//BitScanLSB_Benchmark(200000000);
+	//RemoveLSB_Benchmark(200000000);
 	//StableStones_corner_and_co_Benchmark(50000000);
 	//StableStones_affectables_Benchmark(10000000);
 	//StableStones_full_edges_second_order_Benchmark(50000000);
@@ -856,25 +923,124 @@ int main(int argc, char* argv[])
 	//EvaluateFeatures_Benchmark(800000);
 	//EvaluateFeatures_Benchmark(800000);
 
-	//CHashTable* hashTable = new CHashTable(24);
-	//printf(" d |   Runtime [s] \n");
-	//printf("---+----------------\n");
-	//std::chrono::high_resolution_clock::time_point startTime, endTime;
-	//for (int d = 0; d < 60; ++d){
-	//	CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, d, 6, hashTable, CSearch::NodeType::PV_Node);
-	//	startTime = std::chrono::high_resolution_clock::now();
-	//	search.Evaluate();
-	//	endTime = std::chrono::high_resolution_clock::now();
-	//	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	//	printf("%3u| %14s\n", d, time_format(duration).c_str());
+	////Play
+	//bool PlayerToPlay = true;
+	//CHashTable* hashTable = new CHashTable(25);
+	//unsigned long long P = START_POSITION_ETH_P;
+	//unsigned long long O = START_POSITION_ETH_O;
+	//std::string s;
+	//unsigned char move;
+	//while (PossibleMoves(P, O) || PossibleMoves(O, P))
+	//{
+	//	print_board(P, O, PossibleMoves(P, O));
+	//	//Human
+	//	if (!PossibleMoves(P, O))
+	//	{
+	//		std::swap(P, O);
+	//		PlayerToPlay = !PlayerToPlay;
+	//	}
+	//	else
+	//	{
+	//		std::cout << "Player's move: ";
+	//		std::cin >> s;
+	//		std::cout << std::endl;
+	//		move = FIELD_INDEX(s);
+	//		PlayStone(P, O, move);
+	//		PlayerToPlay = !PlayerToPlay;
+	//	}
+
+	//	if (!PossibleMoves(P, O) && !PossibleMoves(O, P))
+	//		break;
+
+	//	print_board(O, P, PossibleMoves(P, O));
+	//	//Machine
+	//	if (!PossibleMoves(P, O))
+	//	{
+	//		std::swap(P, O);
+	//		PlayerToPlay = !PlayerToPlay;
+	//	}
+	//	else
+	//	{
+	//		std::cout << "ProjectBrutus' move: ";
+	//		CSearch search(P, O, -64, 64, 16, 6, hashTable, CSearch::NodeType::PV_Node);
+	//		search.Evaluate();
+	//		move = search.PV[0];
+	//		std::cout << FIELD_NAME(move) << "\n";
+	//		std::cout << "Depth: 16(68%)   Score: " << (int)search.score << "   PV: " << search.GetPV(0, 5) << std::endl;
+	//		std::cout << std::endl;
+	//		PlayStone(P, O, move);
+	//		PlayerToPlay = !PlayerToPlay;
+	//	}
+
 	//}
 	//delete hashTable;
-	
+
+	//std::cout << "\n\n GAME OVER!\nProjectBrutu's disccount: " << PopCount(PlayerToPlay ? O : P) << "\nPlayer's disccount: " << PopCount(PlayerToPlay ? P : O) << std::endl;
+
+
+
+	CHashTable* hashTable = new CHashTable(25);	
+	//hashTable->Load("G:\\Reversi2\\Opening.ht");
+	for (int d = 60; d <= 60; d += 2)
+	{
+		CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, d, 6, hashTable, 5);
+		search.Evaluate(std::chrono::high_resolution_clock::now());
+		hashTable->print_stats();
+		//hashTable->Save("Opening.ht");
+		std::cout << "HashTable saved." << std::endl;
+	}
+	delete hashTable;
+
+
+	//CHashTable* hashTable = new CHashTable(24);
+	//unsigned long long P1 = START_POSITION_ETH_P;
+	//unsigned long long O1 = START_POSITION_ETH_O;
+	//unsigned long long P2 = START_POSITION_ETH_P;
+	//unsigned long long O2 = START_POSITION_ETH_O;
+	//PlayStone(P1, O1, 18);
+	//PlayStone(P2, O2, 19);
+	//printf(" d |   Runtime [s]  |score|                             PV                              \n");
+	//printf("---+----------------+-----+-------------------------------------------------------------\n");
+	//std::chrono::high_resolution_clock::time_point startTime, endTime;
+	//for (int d = 4; d < 60; d+=2){
+	//	CSearch search1(P1, O1, -64, 64, d, 6, hashTable, 20);
+	//	CSearch search2(P2, O2, -64, 64, d, 6, hashTable, 20);
+	//	startTime = std::chrono::high_resolution_clock::now();
+	//	auto t1 = std::async(std::launch::async, [&]{search1.Evaluate();});
+	//	auto t2 = std::async(std::launch::async, [&]{search2.Evaluate();});
+	//	t1.get();
+	//	t2.get();
+	//	endTime = std::chrono::high_resolution_clock::now();
+	//	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+	//	printf("%3u| %14s | %+2.2d | %s\n", d, time_format(duration).c_str(), search1.score, search1.GetPV(0, 20).c_str());
+	//	printf("%3u| %14s | %+2.2d | %s\n", d, time_format(duration).c_str(), search2.score, search2.GetPV(0, 20).c_str());
+	//	//hashTable->print_stats();
+	//	//hashTable->Clear();
+	//}
+	//delete hashTable;
+
+
 	//CHashTable* hashTable = new CHashTable(24);
 	//FForum_Benchmark( 1, 19, true, hashTable);
+	//hashTable->print_stats();
 	//FForum_Benchmark(20, 39, true, hashTable);
+	//hashTable->print_stats();
 	//FForum_Benchmark(40, 59, true, hashTable);
+	//hashTable->print_stats();
 	//delete hashTable;
+
+	//printf("   Routine     |  [ns]  |   Runtime [s] \n");
+	//printf("---------------+--------+---------------\n");
+	//for (int i = 0; i < 5; i++)	PossibleMoves_Benchmark(8000000);
+	//for (int i = 0; i < 5; i++)	PossibleMoves2_Benchmark(8000000);
+	//for (int i = 0; i < 5; i++)	Flip_Benchmark(10000000);
+	//for (int i = 0; i < 5; i++)	Parity_Benchmark(10000000);
+	//for (int i = 0; i < 5; i++)	Count_last_flip_Benchmark(20000000);
+	//for (int i = 0; i < 5; i++)	PopCount_Benchmark(30000000);
+	//for (int i = 0; i < 5; i++)	PopCount_max15_Benchmark(30000000);
+	//for (int i = 0; i < 5; i++)	BitScanLSB_Benchmark(200000000);
+	//for (int i = 0; i < 5; i++)	RemoveLSB_Benchmark(200000000);
+	//for (int i = 0; i < 5; i++)	EvaluateFeatures_Benchmark(800000);
 
 	Features::Finalize();
 	return 0;

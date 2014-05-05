@@ -4,14 +4,15 @@ namespace ConfigFile
 {
 	std::map<std::string, std::string> Configurations;
 
-	void Initialize(const std::string & filename)
+	void Initialize(const std::string & argv0, const std::string & filename)
 	{
+		std::string filepath = argv0.substr(0, argv0.rfind("\\") + 1) + filename;
 		std::size_t pos;
 		std::string s, key;
 		std::ifstream file;
-		file.open(filename);
+		file.open(filepath);
 		if(!file){
-			std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+			std::cerr << "ERROR: File '" << filepath << "' could not be opened!" << std::endl;
 			return;
 		}
 

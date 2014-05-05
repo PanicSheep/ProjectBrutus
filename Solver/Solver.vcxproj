@@ -163,6 +163,7 @@
     <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\bitmanipulations.h" />
     <ClInclude Include="..\src\configfile.h" />
     <ClInclude Include="..\src\count_last_flip.h" />
     <ClInclude Include="..\src\datamanipulation.h" />

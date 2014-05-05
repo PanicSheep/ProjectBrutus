@@ -1,167 +1,5 @@
 #include "position.h"
 
-inline unsigned long long get_some_moves(const unsigned long long P, const unsigned long long mask, const int dir)
-{
-    // kogge-stone algorithm
-    // 6 << + 6 >> + 12 & + 7 |
-    // + better instruction independency
-    unsigned long long flip_l, flip_r;
-    unsigned long long mask_l, mask_r;
-    int d;
-
-    flip_l = flip_r = P;
-    mask_l = mask_r = mask;
-    d = dir;
-
-    flip_l |= mask_l & (flip_l << d);   flip_r |= mask_r & (flip_r >> d);
-    mask_l &= (mask_l << d);            mask_r &= (mask_r >> d);
-    d <<= 1;
-    flip_l |= mask_l & (flip_l << d);   flip_r |= mask_r & (flip_r >> d);
-    mask_l &= (mask_l << d);            mask_r &= (mask_r >> d);
-    d <<= 1;
-    flip_l |= mask_l & (flip_l << d);   flip_r |= mask_r & (flip_r >> d);
-
-    return ((flip_l & mask) << dir) | ((flip_r & mask) >> dir);
-}
-
-unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O)
-{
-	#if defined(KOGGE_STONE)
-		
-    return (  get_some_moves(P, O & 0x7E7E7E7E7E7E7E7EULL, 1)     // horizontal
-		    | get_some_moves(P, O & 0x00FFFFFFFFFFFF00ULL, 8)   // vertical
-		    | get_some_moves(P, O & 0x007E7E7E7E7E7E00ULL, 7)   // diagonal
-            | get_some_moves(P, O & 0x007E7E7E7E7E7E00ULL, 9))  // codiagonal
-		    & ~(P|O); // mask with empties
-
-	#elif defined(ADVANCED_KOGGE_STONE)
-
-	unsigned long long mask1, mask2, mask3, mask4, mask5, mask6, mask7, mask8, maskO;
-	unsigned long long flip1, flip2, flip3, flip4, flip5, flip6, flip7, flip8;
-
-	maskO = O & 0x7E7E7E7E7E7E7E7EULL;
-
-	flip1 = P | (maskO & (P << 1));
-	flip2 = P | (maskO & (P >> 1));
-	flip3 = P | (    O & (P << 8));
-	flip4 = P | (    O & (P >> 8));
-	flip5 = P | (maskO & (P << 7));
-	flip6 = P | (maskO & (P >> 7));
-	flip7 = P | (maskO & (P << 9));
-	flip8 = P | (maskO & (P >> 9));
-
-	mask1 = maskO & (maskO << 1);
-	mask2 = maskO & (maskO >> 1);
-	mask3 =     O & (    O << 8);
-	mask4 =     O & (    O >> 8);
-	mask5 = maskO & (maskO << 7);
-	mask6 = maskO & (maskO >> 7);
-	mask7 = maskO & (maskO << 9);
-	mask8 = maskO & (maskO >> 9);
-
-	flip1 |= mask1 & (flip1 << 2);
-	flip2 |= mask2 & (flip2 >> 2);
-	flip3 |= mask3 & (flip3 << 16);
-	flip4 |= mask4 & (flip4 >> 16);
-	flip5 |= mask5 & (flip5 << 14);
-	flip6 |= mask6 & (flip6 >> 14);
-	flip7 |= mask7 & (flip7 << 18);
-	flip8 |= mask8 & (flip8 >> 18);
-
-	mask1 &= (mask1 << 2);
-	mask2 &= (mask2 >> 2);
-	mask3 &= (mask3 << 16);
-	mask4 &= (mask4 >> 16);
-	mask5 &= (mask5 << 14);
-	mask6 &= (mask6 >> 14);
-	mask7 &= (mask7 << 18);
-	mask8 &= (mask8 >> 18);
-
-	flip1 |= mask1 & (flip1 << 4);
-	flip2 |= mask2 & (flip2 >> 4);
-	flip3 |= mask3 & (flip3 << 32);
-	flip4 |= mask4 & (flip4 >> 32);
-	flip5 |= mask5 & (flip5 << 28);
-	flip6 |= mask6 & (flip6 >> 28);
-	flip7 |= mask7 & (flip7 << 36);
-	flip8 |= mask8 & (flip8 >> 36);
-
-	return ~(P | O) & (
-						((flip1 & maskO) << 1) | 
-						((flip2 & maskO) >> 1) | 
-						((flip3 &     O) << 8) | 
-						((flip4 &     O) >> 8) | 
-						((flip5 & maskO) << 7) | 
-						((flip6 & maskO) >> 7) | 
-						((flip7 & maskO) << 9) | 
-						((flip8 & maskO) >> 9)
-						);
-
-	#elif defined(ADVANCED_KOGGE_STONE_PARALLEL_PREFIX)
-
-	unsigned long long mask1, mask2, mask3, mask4, mask5, mask6, mask7, mask8, maskO;
-	unsigned long long flip1, flip2, flip3, flip4, flip5, flip6, flip7, flip8;
-	
-	maskO = O & 0x7E7E7E7E7E7E7E7EULL;
-
-	flip1 = maskO & (P << 1);
-	flip2 = maskO & (P >> 1);
-	flip3 =     O & (P << 8);
-	flip4 =     O & (P >> 8);
-	flip5 = maskO & (P << 7);
-	flip6 = maskO & (P >> 7);
-	flip7 = maskO & (P << 9);
-	flip8 = maskO & (P >> 9);
-
-	flip1 |= maskO & (flip1 << 1);
-	flip2 |= maskO & (flip2 >> 1);
-	flip3 |=     O & (flip3 << 8);
-	flip4 |=     O & (flip4 >> 8);
-	flip5 |= maskO & (flip5 << 7);
-	flip6 |= maskO & (flip6 >> 7);
-	flip7 |= maskO & (flip7 << 9);
-	flip8 |= maskO & (flip8 >> 9);
-
-	mask1 = maskO & (maskO << 1);
-	mask2 = maskO & (maskO >> 1);
-	mask3 =     O & (    O << 8);
-	mask4 =     O & (    O >> 8);
-	mask5 = maskO & (maskO << 7);
-	mask6 = maskO & (maskO >> 7);
-	mask7 = maskO & (maskO << 9);
-	mask8 = maskO & (maskO >> 9);
-
-	flip1 |= mask1 & (flip1 << 2);
-	flip2 |= mask2 & (flip2 >> 2);
-	flip3 |= mask3 & (flip3 << 16);
-	flip4 |= mask4 & (flip4 >> 16);
-	flip5 |= mask5 & (flip5 << 14);
-	flip6 |= mask6 & (flip6 >> 14);
-	flip7 |= mask7 & (flip7 << 18);
-	flip8 |= mask8 & (flip8 >> 18);
-	
-	flip1 |= mask1 & (flip1 << 2);
-	flip2 |= mask2 & (flip2 >> 2);
-	flip3 |= mask3 & (flip3 << 16);
-	flip4 |= mask4 & (flip4 >> 16);
-	flip5 |= mask5 & (flip5 << 14);
-	flip6 |= mask6 & (flip6 >> 14);
-	flip7 |= mask7 & (flip7 << 18);
-	flip8 |= mask8 & (flip8 >> 18);
-
-	return ~(P | O) & (
-		(flip1 << 1) | 
-		(flip2 >> 1) | 
-		(flip3 << 8) | 
-		(flip4 >> 8) | 
-		(flip5 << 7) | 
-		(flip6 >> 7) | 
-		(flip7 << 9) | 
-		(flip8 >> 9)
-	);
-	#endif
-}
-
 void PossibleMoves(const unsigned long long P, const unsigned long long O, unsigned long long & PossibleMovesP, unsigned long long & PossibleMovesO)
 {
 	__m128i mask1, mask2, mask3, mask4, mask5, mask6, mask7, mask8, maskO1, maskO2, maskO3;
@@ -467,7 +305,7 @@ unsigned long long StableStones_triangles(const unsigned long long O)
     return StableStones;
 }
 
-unsigned long long StableStones_skyline(const unsigned long long O)
+unsigned long long StableStones_skyline(unsigned long long O)
 {
     int StablesOld, StablesNew;
     unsigned long long tmpBitBoard, StableStones;
@@ -475,11 +313,11 @@ unsigned long long StableStones_skyline(const unsigned long long O)
 		
 	for (int directions = 0; directions < 8; ++directions)
 	{
-		StablesOld = BIT_SCAN_LS1B(~(O & 0x00000000000000FFULL));
+		StablesOld = BitScanLSB(~(O & 0x00000000000000FFULL));
 		StableStones |= 0x00000000000000FFULL >> 8-StablesOld;
 		for (int counter = 0; (StablesOld > 1) && (counter < 64); counter += 8)
 		{
-			StablesNew = BIT_SCAN_LS1B(~((O >> counter) & 0x00000000000000FFULL));
+			StablesNew = BitScanLSB(~((O >> counter) & 0x00000000000000FFULL));
 			if ((StablesOld != 8) || (StablesNew != 8))
 				StablesOld = MIN(StablesOld-1, StablesNew);
 			StableStones |= (0x00000000000000FFULL >> 8-StablesOld) << counter;
@@ -490,23 +328,23 @@ unsigned long long StableStones_skyline(const unsigned long long O)
 		case 0:
 		case 2:
 		case 5:
-			vertical_flip(O);
-			vertical_flip(StableStones);
+			O = vertical_flip(O);
+			StableStones = vertical_flip(StableStones);
 			break;
 		case 1:
 		case 4:
 		case 6:
-			horizontal_flip(O);
-			horizontal_flip(StableStones);
+			O = horizontal_flip(O);
+			StableStones = horizontal_flip(StableStones);
 			break;
 		case 3:
-			diagonal_flip(O);
-			diagonal_flip(StableStones);
+			O = diagonal_flip(O);
+			StableStones = diagonal_flip(StableStones);
 			break;
 		}
 	}
 
-    diagonal_flip(StableStones); //Fliping back
+    StableStones = diagonal_flip(StableStones); //Fliping back
 
     return StableStones;
 }

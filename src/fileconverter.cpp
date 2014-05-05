@@ -17,12 +17,12 @@ void Convert_1(const std::string & s_input, const std::string & s_output)
 {
 	std::string ending_output = s_output.substr(s_output.rfind(".") + 1, s_output.length());
 
-	switch (Ending_to_DATASET(ending_output))
+	switch (Ending_to_DataType(ending_output))
 	{
-	//case OLD:                return Convert_2<INPUT, DATASET_OLD               >(s_input, s_output);
-	case POSITON_SCORE:      return Convert_2<INPUT, DATASET_POSITON_SCORE     >(s_input, s_output);
-	case POSITON_SCORE_PV:   return Convert_2<INPUT, DATASET_POSITON_SCORE_PV  >(s_input, s_output);
-	case POSITON_FULL_SCORE: return Convert_2<INPUT, DATASET_POSITON_FULL_SCORE>(s_input, s_output);
+	//case DataType::Old:              return Convert_2<INPUT, CDataset_Old               >(s_input, s_output);
+	case DataType::Position_Score:     return Convert_2<INPUT, CDataset_Position_Score    >(s_input, s_output);
+	case DataType::Position_Score_PV:  return Convert_2<INPUT, CDataset_Position_Score_PV >(s_input, s_output);
+	case DataType::Position_FullScore: return Convert_2<INPUT, CDataset_Position_FullScore>(s_input, s_output);
 	}
 }
 
@@ -30,12 +30,12 @@ void Convert(const std::string & s_input, const std::string & s_output)
 {
 	std::string ending_input = s_input.substr(s_input.rfind(".") + 1, s_input.length());
 
-	switch (Ending_to_DATASET(ending_input))
+	switch (Ending_to_DataType(ending_input))
 	{
-	case OLD:                return Convert_1<DATASET_OLD               >(s_input, s_output);
-	case POSITON_SCORE:      return Convert_1<DATASET_POSITON_SCORE     >(s_input, s_output);
-	case POSITON_SCORE_PV:   return Convert_1<DATASET_POSITON_SCORE_PV  >(s_input, s_output);
-	case POSITON_FULL_SCORE: return Convert_1<DATASET_POSITON_FULL_SCORE>(s_input, s_output);
+	case DataType::Old:                return Convert_1<CDataset_Old               >(s_input, s_output);
+	case DataType::Position_Score:     return Convert_1<CDataset_Position_Score    >(s_input, s_output);
+	case DataType::Position_Score_PV:  return Convert_1<CDataset_Position_Score_PV >(s_input, s_output);
+	case DataType::Position_FullScore: return Convert_1<CDataset_Position_FullScore>(s_input, s_output);
 	}
 }
 

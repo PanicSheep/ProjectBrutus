@@ -104,5 +104,8 @@
     <ClInclude Include="..\src\game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\bitmanipulations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

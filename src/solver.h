@@ -28,11 +28,12 @@ public:
 	FILE* m_file;
 	fpos_t m_pos;
 
-	CPositionManager(const std::string& Filename, const std::size_t Size, const unsigned char depth, const unsigned char selectivity)
+	CPositionManager(const std::string& Filename, const std::size_t Size, const unsigned char depth, const unsigned char selectivity, const bool SkipSolved)
 	{
 		m_index_counter.store(0, std::memory_order_release);
 		fopen_s(&m_file, Filename.c_str(), "r+b");
-		LoopOverSolvedPositions(depth, selectivity);
+		if (SkipSolved)
+			LoopOverSolvedPositions(depth, selectivity);
 		LoadPositions(Size);
 	}
 	~CPositionManager() { fclose(m_file); }
@@ -96,15 +97,15 @@ public:
 };
 
 template <class DATASET>
-void Work(CPositionManager<DATASET>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable);
+void Work(CPositionManager<DATASET>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose);
 
-template <> void Work<DATASET_POSITON_SCORE>(CPositionManager<DATASET_POSITON_SCORE>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable)
+template <> void Work<CDataset_Position_Score>(CPositionManager<CDataset_Position_Score>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose)
 {
 	unsigned long long NumSolved;
-	DATASET_POSITON_SCORE * data;
+	CDataset_Position_Score * data;
 	while (data = PositionManager.TryGetWork())
 	{
-		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, CSearch::NodeType::PV_Node);
+		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, 0);
 		search.Evaluate();
 		HashTable->AdvanceDate();
 		data->depth = depth;
@@ -112,40 +113,84 @@ template <> void Work<DATASET_POSITON_SCORE>(CPositionManager<DATASET_POSITON_SC
 		data->score = search.score;
 		NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-		while (Spinlock.test_and_set());
-		std::cout << "\r";
-		print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-		Spinlock.clear();
+		if (verbose)
+		{
+			while (Spinlock.test_and_set());
+			printf("%9d| ");
+			print_board(data->P, data->O);
+			printf(" |%2d@%3.1f%%|  %+2.2d\n", SelectivityTable[selectivity].percentile, search.score);
+			Spinlock.clear();
+		}
+		else
+		{
+			if ((NumSolved & 0xF) == 0)
+			{
+				while (Spinlock.test_and_set());
+				std::cout << "\r";
+				print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
+		}
 	}
 }
 
-template <> void Work<DATASET_POSITON_SCORE_PV>(CPositionManager<DATASET_POSITON_SCORE_PV>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable)
+template <> void Work<CDataset_Position_Score_PV>(CPositionManager<CDataset_Position_Score_PV>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose)
 {
 	unsigned long long NumSolved;
-	DATASET_POSITON_SCORE_PV * data;
+	CDataset_Position_Score_PV * data;
 	while (data = PositionManager.TryGetWork())
 	{
-		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, CSearch::NodeType::PV_Node);
+		{
+			unsigned long long P = data->P;
+			unsigned long long O = data->O;
+
+			for (int i = 0; i < 5; i++)
+			{
+				HashTable->Update(P, O, HashTableValueType(0, data->depth - i, data->selectivity, data->score, data->score, data->PV[i], 64));
+				if (data->PV[i] != 64)
+					PlayStone(P, O, data->PV[i]);
+				else
+					break;
+			}
+			if (data->PV[4] != 64)
+				HashTable->Update(P, O, HashTableValueType(0, data->depth - 5, data->selectivity, data->score, data->score, 64, 64));
+		}
+		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, 5);
 		search.Evaluate();
 		HashTable->AdvanceDate();
 		data->depth = depth;
 		data->selectivity = selectivity;
 		data->score = search.score;
 		for (int i = 0; i < 5; ++i)
-			data->PV[i], search.PV[i];
+			data->PV[i] = search.PV(i);
 		NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-		while (Spinlock.test_and_set());
-		std::cout << "\r";
-		print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-		Spinlock.clear();
+		if (verbose)
+		{
+			while (Spinlock.test_and_set());
+			search.print_result(true);
+			printf("%9d| ", NumSolved + 1);
+			print_board(data->P, data->O);
+			printf(" |%2d@%3.1f%%|  %+2.2d  | %s\n", depth, SelectivityTable[selectivity].percentile, search.score, search.GetPV());
+			Spinlock.clear();
+		}
+		else
+		{
+			if ((NumSolved & 0xF) == 0)
+			{
+				while (Spinlock.test_and_set());
+				std::cout << "\r";
+				print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
+		}
 	}
 }
 
-template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSITON_FULL_SCORE>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable)
+template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Position_FullScore>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose)
 {
 	unsigned long long NumSolved;
-	DATASET_POSITON_FULL_SCORE * data;
+	CDataset_Position_FullScore * data;
 	while (data = PositionManager.TryGetWork())
 	{
 		if (data->score[27] != DATASET_DEFAULT_score) // Game over.
@@ -162,11 +207,11 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 		if (data->score[36] != DATASET_DEFAULT_score) // Only best move score aviable.
 		{
 			//Search best move
-			CSearch search(data->P, data->O, data->score[36]-1, data->score[36]+1, depth, selectivity, HashTable, CSearch::NodeType::PV_Node);
+			CSearch search(data->P, data->O, data->score[36]-1, data->score[36]+1, depth, selectivity, HashTable, 2);
 			search.Evaluate();
 			NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 
-			if (search.PV[0] == DATASET_DEFAULT_PV) // No best move returned
+			if (search.PV(0) == DATASET_DEFAULT_PV) // No best move returned
 			{
 				if ((PossibleMoves(data->P, data->O) == 0) && PossibleMoves(data->O, data->P) == 0) // Game over
 				{
@@ -186,14 +231,14 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 					unsigned long long BitBoardPossible = PossibleMoves(P, O);
 					while (BitBoardPossible)
 					{
-						Move = BIT_SCAN_LS1B(BitBoardPossible);
-						REMOVE_LS1B(BitBoardPossible);
+						Move = BitScanLSB(BitBoardPossible);
+						RemoveLSB(BitBoardPossible);
 						if (flipped = flip(P, O, Move))
 						{
-							CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth-1, selectivity, HashTable, CSearch::NodeType::PV_Node);
+							CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth-1, selectivity, HashTable, 1);
 							search.Evaluate();
 							data->score[Move] = search.score;
-							data->PV[Move] = search.PV[0];
+							data->PV[Move] = search.PV(0);
 							NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 						}
 					}
@@ -201,9 +246,9 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 			}
 			else
 			{
-				data->score[search.PV[0]] = data->score[36];
+				data->score[search.PV(0)] = data->score[36];
 				data->score[36] = DATASET_DEFAULT_score;
-				data->PV[search.PV[0]] = search.PV[1];
+				data->PV[search.PV(0)] = search.PV(1);
 
 				unsigned long long P = data->P;
 				unsigned long long O = data->O;
@@ -213,17 +258,17 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 				if (PossibleMoves(P, O) == 0)
 					std::swap(P, O);
 
-				unsigned long long BitBoardPossible = PossibleMoves(P, O) ^ (1ULL << search.PV[0]);
+				unsigned long long BitBoardPossible = PossibleMoves(P, O) ^ (1ULL << search.PV(0));
 				while (BitBoardPossible)
 				{
-					Move = BIT_SCAN_LS1B(BitBoardPossible);
-					REMOVE_LS1B(BitBoardPossible);
+					Move = BitScanLSB(BitBoardPossible);
+					RemoveLSB(BitBoardPossible);
 					if (flipped = flip(P, O, Move))
 					{
-						CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, CSearch::NodeType::PV_Node);
+						CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, 1);
 						search.Evaluate();
 						data->score[Move] = search.score;
-						data->PV[Move] = search.PV[0];
+						data->PV[Move] = search.PV(0);
 						NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 					}
 				}
@@ -248,7 +293,7 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 		{
 			if (PossibleMoves(O, P) == 0) // Game over
 			{
-				CSearch search(P, O, -64, 64, depth, selectivity, HashTable, CSearch::NodeType::PV_Node);
+				CSearch search(P, O, -64, 64, depth, selectivity, HashTable, 0);
 				search.Evaluate();
 				HashTable->AdvanceDate();
 				data->depth = depth;
@@ -268,14 +313,14 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 		unsigned long long BitBoardPossible = PossibleMoves(P, O);
 		while (BitBoardPossible)
 		{
-			Move = BIT_SCAN_LS1B(BitBoardPossible);
-			REMOVE_LS1B(BitBoardPossible);
+			Move = BitScanLSB(BitBoardPossible);
+			RemoveLSB(BitBoardPossible);
 			if (flipped = flip(P, O, Move))
 			{
-				CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, CSearch::NodeType::PV_Node);
+				CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, 1);
 				search.Evaluate();
 				data->score[Move] = search.score;
-				data->PV[Move] = search.PV[0];
+				data->PV[Move] = search.PV(0);
 				NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 			}
 		}
@@ -284,34 +329,58 @@ template <> void Work<DATASET_POSITON_FULL_SCORE>(CPositionManager<DATASET_POSIT
 		data->depth = depth;
 		data->selectivity = selectivity;
 		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-		while (Spinlock.test_and_set());
-		std::cout << "\r";
-		print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-		Spinlock.clear();
+		if ((NumSolved & 0xF) == 0)
+		{
+			while (Spinlock.test_and_set());
+			std::cout << "\r";
+			print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+			Spinlock.clear();
+		}
 	}
 }
 
+template <class DATASET> void printHeader();
+template <> void printHeader<CDataset_Position_Score>()
+{ 
+	printf("       # |                                                                  |  depth | score \n");
+	printf("---------+------------------------------------------------------------------+--------+-------\n");
+}
+template <> void printHeader<CDataset_Position_Score_PV>()
+{
+	printf("       # |                                                                  |  depth | score | PV                 \n");
+	printf("---------+------------------------------------------------------------------+--------+-------+--------------------\n");
+}
+template <> void printHeader<CDataset_Position_FullScore>()
+{
+	printf("       # |                                                                  |  depth | score \n");
+	printf("---------+------------------------------------------------------------------+--------+-------\n");
+}
+
+
 template <class DATASET>
-void Solve(const std::string& Filename, const int n, const signed char depth, const unsigned char selectivity, const int nthreads)
+void Solve(const std::string& Filename, const int n, const signed char depth, const unsigned char selectivity, const int nthreads, const bool verbose, const bool SkipSolved, const bool Save)
 {
 	NodeCounter = 0;
 
 	std::cout << nthreads << " threads in total.\n";
-
+	
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	std::vector<std::thread> threads(nthreads - 1);
 	std::vector<CHashTable*> HashTables(nthreads);
-	CPositionManager<DATASET> PositionManager(Filename, n, depth, selectivity);
+	CPositionManager<DATASET> PositionManager(Filename, n, depth, selectivity, SkipSolved);
 
 	for (auto& ht : HashTables)
 		ht = new CHashTable(24);
+
+	if (verbose)
+		printHeader<DATASET>();
 
 	startTime = std::chrono::high_resolution_clock::now(); //Start Time
 
 	// Start workers
 	for (int i = 0; i < nthreads - 1; ++i)
-		threads[i] = std::thread(Work<DATASET>, std::ref(PositionManager), depth, selectivity, HashTables[i]);
-	Work<DATASET>(PositionManager, depth, selectivity, HashTables[nthreads - 1]);
+		threads[i] = std::thread(Work<DATASET>, std::ref(PositionManager), depth, selectivity, HashTables[i], verbose);
+	Work<DATASET>(PositionManager, depth, selectivity, HashTables[nthreads - 1], verbose);
 
 	// Join workers
 	for (auto& t : threads)
@@ -325,7 +394,9 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 	for (auto& ht : HashTables)
 		delete ht;
 
-	PositionManager.SavePositions();
+	if (Save)
+		PositionManager.SavePositions();
+
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	std::cout << PositionCounter.load(std::memory_order_acquire) << " positions solved in: " << time_format(duration) << std::endl;
 	std::cout << PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;

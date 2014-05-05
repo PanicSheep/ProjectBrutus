@@ -9,6 +9,9 @@ int main(int argc, char* argv[])
 	int s = 0;
 	int n = 10;
 	int t = 4;
+	bool v = false;
+	bool SkipSolved = true;
+	bool Save = true;
 	std::string Filename;
 
 	for(int i = 0; i < argc; ++i)
@@ -25,6 +28,16 @@ int main(int argc, char* argv[])
 			s = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-t")
 			t = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-v")
+			v = true;
+		else if (std::string(argv[i]) == "-test"){
+			SkipSolved = false;
+			Save = false;
+		}
+		else if (std::string(argv[i]) == "-noskip")
+			SkipSolved = false;
+		else if (std::string(argv[i]) == "-nosave")
+			Save = false;
 		else if (std::string(argv[i]) == "-h")
 			std::cout << "Solves a file of given reversi positions." << std::endl <<
 					"Arguments:" << std::endl <<
@@ -32,36 +45,51 @@ int main(int argc, char* argv[])
 					"-n\tNumber of positions to solve (default: 100)" << std::endl <<
 					"-d\tDepth to solve for (default: Exact)" << std::endl <<
 					"-t\tNumber of threads" << std::endl <<
+					"-test\tRun as test." << std::endl <<
+					"-noskip\tDon't skip solved positions." << std::endl <<
+					"-nosave\tDon't save results." << std::endl <<
 					"-h\tDisplays help." << std::endl;
 	}
 
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
-	ConfigFile::Initialize(std::string("F:\\Reversi\\ProjectBrutus.ini"));
+	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
 	Features::Initialize();
 
-	//Filename = std::string("F:\\Reversi\\pos\\rnd_d23_1M.psp");
+	//Filename = std::string("F:\\Reversi\\pos\\rnd_d31_1M.psp");
 	//n = 1000;
 	//d = 13;
 	//s = 6;
 	//t = 4;
+	//v = true;
+	//test = true;
 	
 	std::string ending_input = Filename.substr(Filename.rfind(".") + 1, Filename.length());
 
-	if (FILE *file = fopen(Filename.c_str(), "r"))
-		fclose(file);
-	else
+	if(b_file)
 	{
-		std::cerr << "ERROR: File '" << Filename << "' could not be opened." << std::endl;
-		return 1;
-	}
+		if (FILE *file = fopen(Filename.c_str(), "r"))
+			fclose(file);
+		else
+		{
+			std::cerr << "ERROR: File '" << Filename << "' could not be opened." << std::endl;
+			return 1;
+		}
 
-	switch (Ending_to_DATASET(ending_input))
-	{
-	//case OLD:                Solve<DATASET_OLD               >(Filename, n, d, s, t); break;
-	case POSITON_SCORE:      Solve<DATASET_POSITON_SCORE     >(Filename, n, d, s, t); break;
-	case POSITON_SCORE_PV:   Solve<DATASET_POSITON_SCORE_PV  >(Filename, n, d, s, t); break;
-	case POSITON_FULL_SCORE: Solve<DATASET_POSITON_FULL_SCORE>(Filename, n, d, s, t); break;
+		if (!SkipSolved && !Save)
+			std::cout << "Running as a TEST!" << std::endl;
+		if (!SkipSolved)
+			std::cout << "Don't skip solved positions!" << std::endl;
+		if (!Save)
+			std::cout << "Don't save results!" << std::endl;
+
+		switch (Ending_to_DataType(ending_input))
+		{
+		//case DataType::Old:                Solve<CDataset_Old               >(Filename, n, d, s, t, v, test); break;
+		case DataType::Position_Score:     Solve<CDataset_Position_Score    >(Filename, n, d, s, t, v, SkipSolved, Save); break;
+		case DataType::Position_Score_PV:  Solve<CDataset_Position_Score_PV >(Filename, n, d, s, t, v, SkipSolved, Save); break;
+		case DataType::Position_FullScore: Solve<CDataset_Position_FullScore>(Filename, n, d, s, t, v, SkipSolved, Save); break;
+		}
 	}
 
 	Features::Finalize();

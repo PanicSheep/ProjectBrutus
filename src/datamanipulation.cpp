@@ -1,8 +1,8 @@
 #include "datamanipulation.h"
 
-DATASET_POSITON_SCORE::DATASET_POSITON_SCORE(const DATASET_OLD&                that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity), score(that.score) { }
-DATASET_POSITON_SCORE::DATASET_POSITON_SCORE(const DATASET_POSITON_SCORE_PV&   that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity), score(that.score) { }
-DATASET_POSITON_SCORE::DATASET_POSITON_SCORE(const DATASET_POSITON_FULL_SCORE& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
+CDataset_Position_Score::CDataset_Position_Score(const CDataset_Old&                that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity), score(that.score) { }
+CDataset_Position_Score::CDataset_Position_Score(const CDataset_Position_Score_PV&  that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity), score(that.score) { }
+CDataset_Position_Score::CDataset_Position_Score(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
 {
 	score = SCHAR_MIN;
 	for (int i = 0; i < 64; i++)
@@ -11,7 +11,7 @@ DATASET_POSITON_SCORE::DATASET_POSITON_SCORE(const DATASET_POSITON_FULL_SCORE& t
 }
 
 
-void DATASET_POSITON_SCORE_PV::Reset()
+void CDataset_Position_Score_PV::Reset()
 {
 	depth = DATASET_DEFAULT_depth;
 	selectivity = DATASET_DEFAULT_selectivity;
@@ -20,10 +20,10 @@ void DATASET_POSITON_SCORE_PV::Reset()
 		PV[i] = DATASET_DEFAULT_PV;
 }
 
-DATASET_POSITON_SCORE_PV::DATASET_POSITON_SCORE_PV() : P(0), O(0) { Reset(); }
-DATASET_POSITON_SCORE_PV::DATASET_POSITON_SCORE_PV(const DATASET_OLD&                that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity), score(that.score) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
-DATASET_POSITON_SCORE_PV::DATASET_POSITON_SCORE_PV(const DATASET_POSITON_SCORE&      that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity), score(that.score) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
-DATASET_POSITON_SCORE_PV::DATASET_POSITON_SCORE_PV(const DATASET_POSITON_FULL_SCORE& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
+CDataset_Position_Score_PV::CDataset_Position_Score_PV() : P(0), O(0) { Reset(); }
+CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Old&                that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity), score(that.score) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
+CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Position_Score&     that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity), score(that.score) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
+CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
 {
 	for (int i = 0; i < 5; i++)
 		PV[i] = DATASET_DEFAULT_PV;
@@ -37,7 +37,7 @@ DATASET_POSITON_SCORE_PV::DATASET_POSITON_SCORE_PV(const DATASET_POSITON_FULL_SC
 }
 
 
-void DATASET_POSITON_FULL_SCORE::Reset()
+void CDataset_Position_FullScore::Reset()
 {
 	depth = DATASET_DEFAULT_depth;
 	selectivity = DATASET_DEFAULT_selectivity;
@@ -47,9 +47,9 @@ void DATASET_POSITON_FULL_SCORE::Reset()
 	}
 }
 
-DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE() : P(0), O(0) { Reset(); }
+CDataset_Position_FullScore::CDataset_Position_FullScore() : P(0), O(0) { Reset(); }
 
-DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity) : P(P), O(O), depth(depth), selectivity(selectivity)
+CDataset_Position_FullScore::CDataset_Position_FullScore(const unsigned long long P, const unsigned long long O, const signed char depth, const unsigned char selectivity) : P(P), O(O), depth(depth), selectivity(selectivity)
 {
 	for (int i = 0; i < 64; ++i){
 		score[i] = DATASET_DEFAULT_score;
@@ -57,7 +57,7 @@ DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const unsigned long long 
 	}
 }
 
-DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const DATASET_OLD& that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity)
+CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Old& that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity)
 {
 	for (int i = 0; i < 64; ++i){
 		score[i] = DATASET_DEFAULT_score;
@@ -65,7 +65,7 @@ DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const DATASET_OLD& that) 
 	}
 	score[36] = that.score;
 }
-DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const DATASET_POSITON_SCORE& that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity)
+CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Position_Score& that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity)
 {
 	for (int i = 0; i < 64; ++i){
 		score[i] = DATASET_DEFAULT_score;
@@ -73,7 +73,7 @@ DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const DATASET_POSITON_SCO
 	}
 	score[36] = that.score;
 }
-DATASET_POSITON_FULL_SCORE::DATASET_POSITON_FULL_SCORE(const DATASET_POSITON_SCORE_PV& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
+CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Position_Score_PV& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity)
 {
 	for (int i = 0; i < 64; ++i){
 		score[i] = DATASET_DEFAULT_score;

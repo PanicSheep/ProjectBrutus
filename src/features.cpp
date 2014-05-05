@@ -894,19 +894,19 @@ void FillConfigurationArray(const unsigned long long P, const unsigned long long
 		Offset += Size_X;
 	}
 	if (Feature_PlayersBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersBoarder(P, O));
+		Array[Index++] = Offset + (int)PopCount(PlayersBoarder(P, O));
 		Offset += Size_PlayersBoarder;
 	}
 	if (Feature_OpponentsBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsBoarder(P, O));
+		Array[Index++] = Offset + (int)PopCount(OpponentsBoarder(P, O));
 		Offset += Size_OpponentsBoarder;
 	}
 	if (Feature_PlayersExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersExposed(P, O));
+		Array[Index++] = Offset + (int)PopCount(PlayersExposed(P, O));
 		Offset += Size_PlayersExposeds;
 	}
 	if (Feature_OpponentsExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsExposed(P, O));
+		Array[Index++] = Offset + (int)PopCount(OpponentsExposed(P, O));
 		Offset += Size_OpponentsExposeds;
 	}
 
@@ -914,36 +914,36 @@ void FillConfigurationArray(const unsigned long long P, const unsigned long long
 		BitBoardPossible = PossibleMoves(P, O);
 
 	if (Feature_Possible){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible);
 		Offset += Size_Possible;
 	}
 	if (Feature_Possible_E){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x8100000000000081UL);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible & 0x8100000000000081UL);
 		Offset += Size_Possible_E;
 	}
 	if (Feature_Possible_XC){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x42C300000000C342UL);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible & 0x42C300000000C342UL);
 		Offset += Size_Possible_XC;
 	}
 	if (Feature_Parity){
 		const unsigned long long E = ~(P | O);
-		const unsigned long long parity = (POP_COUNT(E & 0xF0F0F0F000000000ULL) & 1) << 3 
-										| (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
-										| (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
-										|  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-		Array[Index++] = Offset + (int)POP_COUNT(parity);
+		const unsigned long long parity = (PopCount(E & 0xF0F0F0F000000000ULL) & 1) << 3 
+										| (PopCount(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
+										| (PopCount(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
+										|  PopCount(E & 0x000000000F0F0F0FULL) & 1;
+		Array[Index++] = Offset + (int)PopCount(parity);
 		Offset += Size_Parity;
 	}
 	if (Feature_Quadrants){
 		const unsigned long long E = ~(P | O);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0x0F0F0F0F00000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL);
-		Array[Index++] = Offset + (int)POP_COUNT(E & 0x000000000F0F0F0FULL);
+		Array[Index++] = Offset + (int)PopCount(E & 0xF0F0F0F000000000ULL);
+		Array[Index++] = Offset + (int)PopCount(E & 0x0F0F0F0F00000000ULL);
+		Array[Index++] = Offset + (int)PopCount(E & 0xF0F0F0F000000000ULL);
+		Array[Index++] = Offset + (int)PopCount(E & 0x000000000F0F0F0FULL);
 		Offset += Size_Quadrants;
 	}
 	if (Feature_NumberOfOwnStones){
-		Array[Index++] = Offset + (int)POP_COUNT(P);
+		Array[Index++] = Offset + (int)PopCount(P);
 		Offset += Size_NumberOfOwnStones;
 	}
 }
@@ -1072,19 +1072,19 @@ void FillConfigurationArraySorted(const unsigned long long P, const unsigned lon
 		Offset += Size_X;
 	}
 	if (Feature_PlayersBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersBoarder(P, O));
+		Array[Index++] = Offset + (int)PopCount(PlayersBoarder(P, O));
 		Offset += Size_PlayersBoarder;
 	}
 	if (Feature_OpponentsBoarder){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsBoarder(P, O));
+		Array[Index++] = Offset + (int)PopCount(OpponentsBoarder(P, O));
 		Offset += Size_OpponentsBoarder;
 	}
 	if (Feature_PlayersExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(PlayersExposed(P, O));
+		Array[Index++] = Offset + (int)PopCount(PlayersExposed(P, O));
 		Offset += Size_PlayersExposeds;
 	}
 	if (Feature_OpponentsExposeds){
-		Array[Index++] = Offset + (int)POP_COUNT(OpponentsExposed(P, O));
+		Array[Index++] = Offset + (int)PopCount(OpponentsExposed(P, O));
 		Offset += Size_OpponentsExposeds;
 	}
 
@@ -1092,36 +1092,36 @@ void FillConfigurationArraySorted(const unsigned long long P, const unsigned lon
 		BitBoardPossible = PossibleMoves(P, O);
 
 	if (Feature_Possible){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible);
 		Offset += Size_Possible;
 	}
 	if (Feature_Possible_E){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x8100000000000081UL);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible & 0x8100000000000081UL);
 		Offset += Size_Possible_E;
 	}
 	if (Feature_Possible_XC){
-		Array[Index++] = Offset + (int)POP_COUNT(BitBoardPossible & 0x42C300000000C342UL);
+		Array[Index++] = Offset + (int)PopCount(BitBoardPossible & 0x42C300000000C342UL);
 		Offset += Size_Possible_XC;
 	}
 	if (Feature_Parity){
-		unsigned long long Parity = (POP_COUNT(~(P | O) & 0xF0F0F0F000000000ULL) & 1) << 3 
-								  | (POP_COUNT(~(P | O) & 0x0F0F0F0F00000000ULL) & 1) << 2 
-								  | (POP_COUNT(~(P | O) & 0x00000000F0F0F0F0ULL) & 1) << 1 
-								  |  POP_COUNT(~(P | O) & 0x000000000F0F0F0FULL) & 1;
-		Array[Index++] = Offset + (int)POP_COUNT(Parity);
+		unsigned long long Parity = (PopCount(~(P | O) & 0xF0F0F0F000000000ULL) & 1) << 3 
+								  | (PopCount(~(P | O) & 0x0F0F0F0F00000000ULL) & 1) << 2 
+								  | (PopCount(~(P | O) & 0x00000000F0F0F0F0ULL) & 1) << 1 
+								  |  PopCount(~(P | O) & 0x000000000F0F0F0FULL) & 1;
+		Array[Index++] = Offset + (int)PopCount(Parity);
 		Offset += Size_Parity;
 	}
 	if (Feature_Quadrants){
-		Array[Index+0] = Offset + (int)POP_COUNT(~(P | O) & 0xF0F0F0F000000000ULL);
-		Array[Index+1] = Offset + (int)POP_COUNT(~(P | O) & 0x0F0F0F0F00000000ULL);
-		Array[Index+2] = Offset + (int)POP_COUNT(~(P | O) & 0xF0F0F0F000000000ULL);
-		Array[Index+3] = Offset + (int)POP_COUNT(~(P | O) & 0x000000000F0F0F0FULL);
+		Array[Index+0] = Offset + (int)PopCount(~(P | O) & 0xF0F0F0F000000000ULL);
+		Array[Index+1] = Offset + (int)PopCount(~(P | O) & 0x0F0F0F0F00000000ULL);
+		Array[Index+2] = Offset + (int)PopCount(~(P | O) & 0xF0F0F0F000000000ULL);
+		Array[Index+3] = Offset + (int)PopCount(~(P | O) & 0x000000000F0F0F0FULL);
 		Sort4(Array, Index);
 		Index += Symmetry_Quadrants;
 		Offset += Size_Quadrants;
 	}
 	if (Feature_NumberOfOwnStones){
-		Array[Index++] = Offset + (int)POP_COUNT(P);
+		Array[Index++] = Offset + (int)PopCount(P);
 		Offset += Size_NumberOfOwnStones;
 	}
 }
@@ -1132,7 +1132,11 @@ int EvaluateFeatures(const unsigned long long P, const unsigned long long O)
 	unsigned char BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
 	// ############ Remove safety
 	if (BoxIndex >= Features::NumberOfFiles)
+	{
 		BoxIndex = Features::NumberOfFiles - 1;
+		//std::cerr << "ERROR: Feature index out of range!" << std::endl;
+		//throw std::errc(0);
+	}
 	// ############ Remove safety
 
 	int Array[Features::Symmetries];
@@ -1174,7 +1178,11 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 	int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
 	// ############ Remove safety
 	if (BoxIndex >= Features::NumberOfFiles)
+	{
 		BoxIndex = Features::NumberOfFiles - 1;
+		//std::cerr << "ERROR: Feature index out of range!" << std::endl;
+		//throw std::errc(0);
+	}
 	// ############ Remove safety
 
 	float * weights = Features::Weights[BoxIndex];
@@ -1274,19 +1282,19 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 		Offset += Size_X;
 	}
 	if (Feature_PlayersBoarder){
-		sum += weights[Offset + (int)POP_COUNT(PlayersBoarder(P, O))];
+		sum += weights[Offset + (int)PopCount(PlayersBoarder(P, O))];
 		Offset += Size_PlayersBoarder;
 	}
 	if (Feature_OpponentsBoarder){
-		sum += weights[Offset + (int)POP_COUNT(OpponentsBoarder(P, O))];
+		sum += weights[Offset + (int)PopCount(OpponentsBoarder(P, O))];
 		Offset += Size_OpponentsBoarder;
 	}
 	if (Feature_PlayersExposeds){
-		sum += weights[Offset + (int)POP_COUNT(PlayersExposed(P, O))];
+		sum += weights[Offset + (int)PopCount(PlayersExposed(P, O))];
 		Offset += Size_PlayersExposeds;
 	}
 	if (Feature_OpponentsExposeds){
-		sum += weights[Offset + (int)POP_COUNT(OpponentsExposed(P, O))];
+		sum += weights[Offset + (int)PopCount(OpponentsExposed(P, O))];
 		Offset += Size_OpponentsExposeds;
 	}
 
@@ -1294,36 +1302,36 @@ int CActiveConfigurations::EvaluateFeatures(const unsigned long long P, const un
 		BitBoardPossible = PossibleMoves(P, O);
 
 	if (Feature_Possible){
-		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible)];
+		sum += weights[Offset + (int)PopCount(BitBoardPossible)];
 		Offset += Size_Possible;
 	}
 	if (Feature_Possible_E){
-		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible & 0x8100000000000081UL)];
+		sum += weights[Offset + (int)PopCount(BitBoardPossible & 0x8100000000000081UL)];
 		Offset += Size_Possible_E;
 	}
 	if (Feature_Possible_XC){
-		sum += weights[Offset + (int)POP_COUNT(BitBoardPossible & 0x42C300000000C342UL)];
+		sum += weights[Offset + (int)PopCount(BitBoardPossible & 0x42C300000000C342UL)];
 		Offset += Size_Possible_XC;
 	}
 	if (Feature_Parity){
 		const unsigned long long E = ~(P | O);
-		const unsigned long long parity = (POP_COUNT(E & 0xF0F0F0F000000000ULL) & 1) << 3 
-										| (POP_COUNT(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
-										| (POP_COUNT(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
-										|  POP_COUNT(E & 0x000000000F0F0F0FULL) & 1;
-		sum += weights[Offset + (int)POP_COUNT(parity)];
+		const unsigned long long parity = (PopCount(E & 0xF0F0F0F000000000ULL) & 1) << 3 
+										| (PopCount(E & 0x0F0F0F0F00000000ULL) & 1) << 2 
+										| (PopCount(E & 0x00000000F0F0F0F0ULL) & 1) << 1 
+										|  PopCount(E & 0x000000000F0F0F0FULL) & 1;
+		sum += weights[Offset + (int)PopCount(parity)];
 		Offset += Size_Parity;
 	}
 	if (Feature_Quadrants){
 		const unsigned long long E = ~(P | O);
-		sum += weights[Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL)];
-		sum += weights[Offset + (int)POP_COUNT(E & 0x0F0F0F0F00000000ULL)];
-		sum += weights[Offset + (int)POP_COUNT(E & 0xF0F0F0F000000000ULL)];
-		sum += weights[Offset + (int)POP_COUNT(E & 0x000000000F0F0F0FULL)];
+		sum += weights[Offset + (int)PopCount(E & 0xF0F0F0F000000000ULL)];
+		sum += weights[Offset + (int)PopCount(E & 0x0F0F0F0F00000000ULL)];
+		sum += weights[Offset + (int)PopCount(E & 0xF0F0F0F000000000ULL)];
+		sum += weights[Offset + (int)PopCount(E & 0x000000000F0F0F0FULL)];
 		Offset += Size_Quadrants;
 	}
 	if (Feature_NumberOfOwnStones){
-		sum += weights[Offset + (int)POP_COUNT(P)];
+		sum += weights[Offset + (int)PopCount(P)];
 		Offset += Size_NumberOfOwnStones;
 	}
 
@@ -1343,13 +1351,13 @@ bool Congruent(const unsigned long long P1, const unsigned long long P2)
 	return false;
 }
 
-bool Test_Patterns_POP_COUNT(const int symmeties, const unsigned long long * const Pattern)
+bool Test_Patterns_PopCount(const int symmeties, const unsigned long long * const Pattern)
 {
 	bool Success = true;
 	unsigned long long * POPCOUNT = new unsigned long long[symmeties];
 
 	for (int i = 0; i < symmeties; i++)
-		POPCOUNT[i] = POP_COUNT(Pattern[i]);
+		POPCOUNT[i] = PopCount(Pattern[i]);
 	for (int i = 0; i < symmeties; i++)
 	{
 		if (POPCOUNT[0] != POPCOUNT[i]){
@@ -1380,7 +1388,7 @@ bool Test_Pattern_Congruence(const int symmeties, const unsigned long long * con
 void For_all_configurations_in_pattern_do_fkt(const unsigned long long Pattern, std::function<void(const unsigned long long, const unsigned long long)> fkt)
 {
 	unsigned long long P, O;
-	const unsigned long long POPCOUNT = POP_COUNT(Pattern);
+	const unsigned long long POPCOUNT = PopCount(Pattern);
 	unsigned long long * BitConfig = new unsigned long long[POPCOUNT];
 	unsigned long long tmp;
 
@@ -1388,8 +1396,8 @@ void For_all_configurations_in_pattern_do_fkt(const unsigned long long Pattern, 
 	tmp = Pattern;
 	for (int i = 0; i < POPCOUNT; i++)
 	{
-		BitConfig[i] = 1ULL << BIT_SCAN_LS1B(tmp);
-		REMOVE_LS1B(tmp);
+		BitConfig[i] = 1ULL << BitScanLSB(tmp);
+		RemoveLSB(tmp);
 	}
 
 	for (unsigned long long i = 0; i < (1ULL << POPCOUNT); i++)
@@ -1398,8 +1406,8 @@ void For_all_configurations_in_pattern_do_fkt(const unsigned long long Pattern, 
 		tmp = i;
 		while (tmp)
 		{
-			P |= BitConfig[BIT_SCAN_LS1B(tmp)];
-			REMOVE_LS1B(tmp);
+			P |= BitConfig[BitScanLSB(tmp)];
+			RemoveLSB(tmp);
 		}
 
 		// For each opponents configuration
@@ -1413,8 +1421,8 @@ void For_all_configurations_in_pattern_do_fkt(const unsigned long long Pattern, 
 			tmp = j;
 			while (tmp)
 			{
-				O |= BitConfig[BIT_SCAN_LS1B(tmp)];
-				REMOVE_LS1B(tmp);
+				O |= BitConfig[BitScanLSB(tmp)];
+				RemoveLSB(tmp);
 			}
 
 			// If some of the 4 center fields are in the pattern, they have to be occupied
@@ -1550,11 +1558,11 @@ bool Test(const int symmeties, const int size, unsigned long long * Pattern, int
 {
 	using namespace Features;
 	bool Success = true;
-	const unsigned long long POPCOUNT = POP_COUNT(Pattern[0]);
+	const unsigned long long POPCOUNT = PopCount(Pattern[0]);
 	unsigned long long * BitConfig = new unsigned long long[POPCOUNT];
 
 	// Test patern's population count to be equal
-	Success &= Test_Patterns_POP_COUNT(symmeties, Pattern);
+	Success &= Test_Patterns_PopCount(symmeties, Pattern);
 
 	// Test congruence of patterns
 	Success &= Test_Pattern_Congruence(symmeties, Pattern);
@@ -1591,8 +1599,8 @@ bool Test(const int symmeties, const int size, unsigned long long * Pattern, int
 			tmp = i;
 			while (tmp)
 			{
-				P |= BitConfig[BIT_SCAN_LS1B(tmp)];
-				REMOVE_LS1B(tmp);
+				P |= BitConfig[BitScanLSB(tmp)];
+				RemoveLSB(tmp);
 			}
 
 			HasSymmetry = false;
@@ -1615,8 +1623,8 @@ bool Test(const int symmeties, const int size, unsigned long long * Pattern, int
 				tmp = j;
 				while (tmp)
 				{
-					O |= BitConfig[BIT_SCAN_LS1B(tmp)];
-					REMOVE_LS1B(tmp);
+					O |= BitConfig[BitScanLSB(tmp)];
+					RemoveLSB(tmp);
 				}
 				
 				HasSymmetry = false;

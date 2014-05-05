@@ -2,14 +2,65 @@
 
 using namespace std;
 
-void Load_Matrix(const vector<string>& file_matrix, vector<DATASET_POSITON_SCORE>& A)
+// 136 Bit = 17 Byte
+class CPOSITON_SCORE
 {
-	const vector<string>::const_iterator end = file_matrix.cend();
-	for (vector<string>::const_iterator it = file_matrix.cbegin(); it != end; ++it)
-		read_vector(it->c_str(), A);
+public:
+	unsigned long long P, O;
+	signed char score;
+	CPOSITON_SCORE() : P(0), O(0), score(DATASET_DEFAULT_score) {};
+	CPOSITON_SCORE(const CDataset_Old               & data) : P(data.P), O(data.O), score(data.score) {}
+	CPOSITON_SCORE(const CDataset_Position_Score     & data) : P(data.P), O(data.O), score(data.score) {}
+	CPOSITON_SCORE(const CDataset_Position_Score_PV  & data) : P(data.P), O(data.O), score(data.score) {}
+	CPOSITON_SCORE(const CDataset_Position_FullScore& data) : P(data.P), O(data.O)
+	{
+		score = SCHAR_MIN;
+		for (int i = 0; i < 64; i++)
+			if (data.score[i] > score)
+				score = data.score[i];
+	}
+};
+
+void Load_Matrix(const vector<string>& file_matrix, vector<CPOSITON_SCORE>& A)
+{
+	vector<CDataset_Old> tmp_OLD;
+	vector<CDataset_Position_Score> tmp_POSITON_SCORE;
+	vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
+	vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
+
+	for (auto& file : file_matrix)
+	{
+		switch (Ending_to_DataType(file.substr(file.rfind(".") + 1, file.length())))
+		{
+		case DataType::Old:
+			read_vector(file, tmp_OLD);
+			for (auto& item : tmp_OLD)
+				A.push_back(static_cast<CPOSITON_SCORE>(item));
+			tmp_OLD.clear();
+			break;
+		case DataType::Position_Score:
+			read_vector(file, tmp_POSITON_SCORE);
+			for (auto& item : tmp_POSITON_SCORE)
+				A.push_back(static_cast<CPOSITON_SCORE>(item));
+			tmp_POSITON_SCORE.clear();
+			break;
+		case DataType::Position_Score_PV:
+			read_vector(file, tmp_POSITON_SCORE_PV);
+			for (auto& item : tmp_POSITON_SCORE_PV)
+				A.push_back(static_cast<CPOSITON_SCORE>(item));
+			tmp_POSITON_SCORE_PV.clear();
+			break;
+		case DataType::Position_FullScore:
+			read_vector(file, tmp_POSITON_FULL_SCORE);
+			for (auto& item : tmp_POSITON_FULL_SCORE)
+				A.push_back(static_cast<CPOSITON_SCORE>(item));
+			tmp_POSITON_FULL_SCORE.clear();
+			break;
+		}
+	}
 }
 
-double Matrix_norm(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, vector<double>& x)
+double Matrix_norm(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, vector<double>& x)
 {
 	double tmp;
 	double sum = 0;
@@ -44,7 +95,7 @@ double Matrix_norm(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& P
 	return sqrt(sum);
 }
 
-int Calc_Present_Configurations(const vector<DATASET_POSITON_SCORE>& A, vector<bool>& Present, const int Threshold)
+int Calc_Present_Configurations(const vector<CPOSITON_SCORE>& A, vector<bool>& Present, const int Threshold)
 {
 	int counter = 0;
 	int Array[Features::Symmetries];
@@ -78,7 +129,7 @@ int Calc_Present_Configurations(const vector<DATASET_POSITON_SCORE>& A, vector<b
 	return counter;
 }
 
-void Calc_C_r0(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x0, vector<double>& C, vector<double>& r0)
+void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x0, vector<double>& C, vector<double>& r0)
 {
 	double tmp;
 	int Array[Features::Symmetries];
@@ -140,7 +191,7 @@ void Calc_C_r0(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Prese
 			C[i] = 0.0;		
 	}
 }
-void Calc_C_r0(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, vector<double>& C, vector<double>& r0)
+void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, vector<double>& C, vector<double>& r0)
 {
 	int Array[Features::Symmetries];
 	const int size = A.size();
@@ -196,7 +247,7 @@ void Calc_C_r0(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Prese
 	}
 }
 
-double relative_residual(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
+double relative_residual(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
 {
 	double b = 0;
 	double relres = 0;
@@ -232,7 +283,7 @@ double relative_residual(const vector<DATASET_POSITON_SCORE>& A, const vector<bo
 	return sqrt(relres / b);
 }
 
-vector<double> ATAx(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
+vector<double> ATAx(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
 {
 	double tmp;
 	int Array[Features::Symmetries];
@@ -267,7 +318,7 @@ vector<double> ATAx(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& 
 	return result;
 }
 
-void Test_Restart(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, const vector<double>& C, vector<double>& r, vector<double>& h, vector<double>& d)
+void Test_Restart(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, const vector<double>& C, vector<double>& r, vector<double>& h, vector<double>& d)
 {
 	vector<double> r_new = vector<double>(Features::Size);
 	vector<double> r_diff = vector<double>(Features::Size);
@@ -313,7 +364,7 @@ void Test_Restart(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Pr
 	}
 }
 
-void DoStatsMuSigma(const vector<DATASET_POSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, double& mu, double& sigma, double& avg_abs_err)
+void DoStatsMuSigma(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, double& mu, double& sigma, double& avg_abs_err)
 {
 	CRunningStatistic<double> stats = CRunningStatistic<double>();
 	avg_abs_err = 0;
@@ -364,7 +415,7 @@ void SolveInRAM(const vector<string> file_matrix, const char* file_start_x, cons
 	vector<double> x;
 	vector<double> z(Features::Size);
 	vector<bool> Present(Features::Size);
-	vector<DATASET_POSITON_SCORE> A;
+	vector<CPOSITON_SCORE> A;
 	double alpha, beta, tmp1, tmp2, tmp_dot2, tol, res, mu, sigma, avg_abs_err;
 	tol = 1e-5;
 
@@ -631,14 +682,14 @@ int main(int argc, char* argv[])
 	//	return 0;
 	//}
 	
-	//FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d5_1M.b"));
-	////FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d9_1M.b"));
-	////FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d10_1M.b"));
-	////FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d11_1M.b"));
-	////FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d12_1M.b"));
-	////FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d13_1M.b"));
-	////SolveInRAM(FileNames, string("G:\\Penis.b").c_str(), string("G:\\Penis.b").c_str(), Iterations, 10);
-	//SolveInRAM(FileNames, 0, string("G:\\Penis.b").c_str(), 50, 10);
+	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d5_1M.b"));
+	////FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
+	////FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d10_1M.b"));
+	////FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d11_1M.b"));
+	////FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d12_1M.b"));
+	////FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d13_1M.b"));
+	////SolveInRAM(FileNames, string("F:\\Penis.b").c_str(), string("F:\\Penis.b").c_str(), Iterations, 10);
+	//SolveInRAM(FileNames, 0, string("F:\\Penis.b").c_str(), 50, 10);
 	//return 0;
 
 	if (b_FileName)

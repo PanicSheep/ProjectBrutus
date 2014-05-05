@@ -3,6 +3,7 @@
 #include "features.h"
 #include "flip.h"
 #include "hashtable.h"
+#include "line.h"
 #include "move.h"
 #include "position.h"
 #include "search.h"
@@ -15,17 +16,19 @@ class CSearch;
 // For benchmarking purposes
 int EvaluateEnd(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned long long NumberOfEmptyStones);
 
-void EvaluateEnd(CSearch & search);
-void EvaluateLimitedDepth(CSearch & search);
+int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity);
+int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity, CLine & pline);
+int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity);
+int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, CLine & pline);
 
 
 inline int EvaluateGameOver(const unsigned long long P, const int NumberOfEmptyStones)
 {
-	// POP_COUNT(P) + POP_COUNT(O) == 64 - NumberOfEmptyStones
-	// OwnMinusOpponents == POP_COUNT(P) - POP_COUNT(O)
-	//                   == POP_COUNT(P) - ( 64 - NumberOfEmptyStones - POP_COUNT(P) )
-	//                   == 2 * POP_COUNT(P) + NumberOfEmptyStones - 64
-	int OwnMinusOpponents = (POP_COUNT(P) << 1) + NumberOfEmptyStones - 64;
+	// PopCount(P) + PopCount(O) == 64 - NumberOfEmptyStones
+	// OwnMinusOpponents == PopCount(P) - PopCount(O)
+	//                   == PopCount(P) - ( 64 - NumberOfEmptyStones - PopCount(P) )
+	//                   == 2 * PopCount(P) + NumberOfEmptyStones - 64
+	int OwnMinusOpponents = (PopCount(P) << 1) + NumberOfEmptyStones - 64;
 	if (OwnMinusOpponents > 0)
 		return OwnMinusOpponents + NumberOfEmptyStones;
 	else if (OwnMinusOpponents < 0)
@@ -35,22 +38,21 @@ inline int EvaluateGameOver(const unsigned long long P, const int NumberOfEmptyS
 }
 
 bool UseHashTableValue(HashTableValueType htValue, int alpha, int beta, signed char depth, unsigned char selectivity, int & value);
-bool UseHashTableValue(HashTableValueType htValue, int alpha, int beta, signed char depth, unsigned char selectivity, int & value, bool & GotProbCut);
 
-namespace Endgame
-{
-	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity, bool & GotProbCut);
-	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline, bool & GotProbCut);
-
-	int       ZWS_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha);
-	int AlphaBeta_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha, int beta);
-	int       ZWS_Exact_4(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const int alpha);
-	int AlphaBeta_Exact_4(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const int alpha, const int beta);
-}
+//namespace Endgame
+//{
+//	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char selectivity, bool & GotProbCut);
+//	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, unsigned char selectivity, unsigned char * pline, bool & GotProbCut);
+//
+//	int       ZWS_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha);
+//	int AlphaBeta_Exact_B(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const unsigned char NumberOfEmptyStones, int alpha, int beta);
+//	int       ZWS_Exact_4(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const int alpha);
+//	int AlphaBeta_Exact_4(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char parity, const int alpha, const int beta);
+//}
 
 namespace Midgame
 {
-	int LimitedDepth_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter);
+	//int LimitedDepth_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter);
 	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, signed char depth, unsigned char selectivity);
-	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, signed char depth, unsigned char selectivity, unsigned char * pline);
+	//int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, signed char depth, unsigned char selectivity, unsigned char * pline);
 }

@@ -277,24 +277,53 @@ namespace Flip
 	};
 	#endif
 
+	// Mask Of Truth
+	inline unsigned long long MOT(const bool b) { return -static_cast<unsigned long long>(b != 0); }
+
+	unsigned long long A1_(const unsigned long long P, const unsigned long long O)
+	{
+		unsigned long long flipped = 0;
+		const unsigned long long line1 = 0x80402010080402FEULL;
+		const unsigned long long line2 = 0x0101010101010100ULL;
+
+		const unsigned long long outflank1 = ((O | ~line1) + 0x202ULL) & P & line1;
+		const unsigned long long outflank2 = ((O | ~line2) + 0x100ULL) & P & line2;
+		flipped |= (outflank1 - static_cast<unsigned long long>((outflank1 & 0xFEULL) != 0) - (MOT(outflank1 & 0x8040201008040200ULL) & 0x200ULL)) & line1;
+		flipped |= (outflank2 - static_cast<unsigned long long>(outflank2 != 0)) & line2;
+
+		return flipped;
+	}
+	//unsigned long long B1(const unsigned long long P, const unsigned long long O)
+	//{
+	//	unsigned long long flipped = 0;
+	//	const unsigned long long line1 = 0x00804020100804FEULL;
+	//	const unsigned long long line2 = 0x0202020202020202ULL;
+
+	//	const unsigned long long outflank1 = ((O | ~line1) + 0x404ULL) & P & line1;
+	//	const unsigned long long outflank2 = ((O | ~line2) + 0x200ULL) & P & line2;
+	//	flipped |= (outflank1 - (MOT(outflank1 & 0x00000000000000FEULL) & 0x4ULL) - (MOT(outflank1 & 0x0080402010080402ULL) & 0x400ULL)) & line1;
+	//	flipped |= (outflank2 - (MOT(outflank2) & 0x200ULL)) & line2;
+
+	//	return flipped;
+	//}
 inline unsigned long long A1(const unsigned long long P, const unsigned long long O)
 {
-	const unsigned long long O_h = (O >> 1) & 0x3FULL;
-	const unsigned long long P_h = P >> 2;
-	const unsigned char outflank_h = OUTFLANK_0[O_h] & P_h;
-	const unsigned long long flips_h = FLIPS_0[outflank_h] << 1;
+	unsigned long long Penis = A1_(P, O);
+	unsigned long long flipped, outflank_v, outflank_h, outflank_d9;
 
-	const unsigned long long O_v = ((O & 0x0001010101010100ULL) * 0x0102040810204080ULL) >> 57;
-	const unsigned long long P_v = ((P & 0x0101010101010101ULL) * 0x0102040810204080ULL) >> 58;
-	const unsigned char outflank_v = OUTFLANK_0[O_v] & P_v;
-	const unsigned long long flips_v = STRETCH_A1A8[FLIPS_0[outflank_v]] << 0;
+	outflank_v = ((O | ~0x0101010101010100ULL) + 0x0000000000000100ULL) & P & 0x0101010101010100ULL;
+	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x0101010101010100ULL;
 
-	const unsigned long long O_dc = ((O & 0x0040201008040200ULL) * 0x0101010101010101ULL) >> 57;
-	const unsigned long long P_dc = ((P & 0x8040201008040201ULL) * 0x0101010101010101ULL) >> 58;
-	const unsigned char outflank_dc = OUTFLANK_0[O_dc] & P_dc;
-	const unsigned long long flips_dc = STRETCH_V[FLIPS_0[outflank_dc]] & 0x8040201008040201ULL;
+	outflank_h = ((O & 0x000000000000007eULL) + 0x0000000000000002ULL) & P;
+	flipped |= (outflank_h - (unsigned int)(outflank_h != 0)) & 0x000000000000007eULL;
 
-	return flips_h | flips_v | flips_dc;
+	outflank_d9 = ((O | ~0x8040201008040200ULL) + 0x0000000000000200ULL) & P & 0x8040201008040200ULL;
+	flipped |= (outflank_d9 - (unsigned int)(outflank_d9 != 0)) & 0x8040201008040200ULL;
+
+	if (flipped != Penis)
+		std::cout << std::hex << flipped << " : " << Penis << std::dec << std::endl;
+
+	return flipped;
 }
 inline unsigned long long B1(const unsigned long long P, const unsigned long long O)
 {
@@ -1672,6 +1701,39 @@ inline unsigned long long H8(const unsigned long long P, const unsigned long lon
 		ZZ<0,6>, ZZ<1,6>, ZZ<2,6>, ZZ<3,6>, ZZ<4,6>, ZZ<5,6>, ZZ<6,6>, ZZ<7,6>,
 		ZZ<0,7>, ZZ<1,7>, ZZ<2,7>, ZZ<3,7>, ZZ<4,7>, ZZ<5,7>, ZZ<6,7>, ZZ<7,7>
 	};
+
+	//unsigned long long flip_dir(const unsigned long long P, const unsigned long long O, const unsigned char c, const unsigned char dir)
+	//{
+	//	int x = c % 8;
+	//	int y = c / 8;
+	//	unsigned long long outflank = 0;
+	//	unsigned long long flipped = 0;
+
+	//	for (int i = x; i < )
+
+
+	//	unsigned long long BB_c = 1ULL << c;
+	//	
+	//	if ((BB_c << dir) & 0x007E7E7E7E7E7E00ULL)
+	//	{
+	//		if ((BB_c << dir) & O)
+	//		{
+
+	//		}
+	//	}
+	//}
+
+	//unsigned long long flip_basic(const unsigned long long P, const unsigned long long O, const unsigned char c)
+	//{
+	//	int x = c % 8;
+	//	int y = c / 8;
+	//	unsigned long long outflank = 0;
+	//	unsigned long long flipped = 0;
+
+	//	for (int i = x + 1; i < 8; i++){
+	//		if (1ULL << (c))
+	//	}
+	//}
 
 	void PrintArrays()
 	{

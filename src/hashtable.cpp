@@ -18,7 +18,7 @@ FORCE_INLINE void Upgrade(HashTableValueType& Value_db, const HashTableValueType
 
 void CTwoNode::Update(const unsigned long long P, const unsigned long long O, const HashTableValueType& Value, const unsigned char date)
 {
-	static const unsigned char OldAge = 2;
+	static const unsigned char OldAge = 6;
 	while (spinlock.test_and_set(std::memory_order_acquire)) ;
 
 	if (P == m_P1 && O == m_O1){
@@ -130,4 +130,34 @@ void CTwoNode::Clear()
 	m_value2 = HashTableValueType();
 
 	spinlock.clear(std::memory_order_release);
+}
+
+void CHashTable::Save(const std::string & filename) const
+{
+	FILE* file;
+	fopen_s(&file, filename.c_str(), "wb");
+	if (!file){
+		std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+		throw "File could not be opened.";
+		return;
+	}
+
+	fwrite(table, sizeof(NodeType), 1ULL << Bits, file);
+
+	fclose(file);
+}
+
+void CHashTable::Load(const std::string & filename)
+{
+	FILE* file;
+	fopen_s(&file, filename.c_str(), "rb");
+	if (!file){
+		std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+		throw "File could not be opened.";
+		return;
+	}
+
+	fread(table, sizeof(NodeType), 1ULL << Bits, file);
+
+	fclose(file);
 }

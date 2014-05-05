@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -6,3 +7,4 @@
 #include "generatepositions.h"
 #include "statistics.h"
 #include "position.h"
+#include "search.h"

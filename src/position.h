@@ -1,14 +1,10 @@
 #pragma once
 #include "flip.h"
+#include "PossibleMoves.h"
 #include "utility.h"
 #include <emmintrin.h>
 #include <intrin.h>
 #include <utility>
-
-//Variations of "PossibleMoves()"
-//#define KOGGE_STONE
-//#define ADVANCED_KOGGE_STONE
-#define ADVANCED_KOGGE_STONE_PARALLEL_PREFIX
 
 static const unsigned long long START_POSITION_P = 0x0000000810000000ULL; // Original
 static const unsigned long long START_POSITION_O = 0x0000001008000000ULL; // Original
@@ -27,7 +23,7 @@ inline void ResetPosition(unsigned long long & P, unsigned long long & O, const 
 	}
 }
 
-inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return POP_COUNT(~(P | O)); }
+inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return PopCount(~(P | O)); }
 inline unsigned char parity(const unsigned long long E)
 {
 	unsigned long long p = E;
@@ -41,7 +37,7 @@ inline unsigned char parity(const unsigned long long E)
 	return p & 0xFULL;
 }
 inline unsigned char parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
-unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);
+//unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);
 void PossibleMoves(const unsigned long long P, const unsigned long long O, unsigned long long & PossibleMovesP, unsigned long long & PossibleMovesO);
 void PlayStone(unsigned long long & P, unsigned long long & O, const unsigned char coordinate);
 
