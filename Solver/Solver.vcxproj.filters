@@ -57,6 +57,9 @@
     <ClCompile Include="..\src\datamanipulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\PossibleMoves.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\solver.h">
@@ -89,9 +92,6 @@
     <ClInclude Include="..\src\count_last_flip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\datamanipulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -102,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PossibleMoves.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\bitmanipulations.h">

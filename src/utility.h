@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cassert>
 #include <chrono>
+#include <ctime>
 #include <emmintrin.h>
 #include <iostream>
 #include "bitmanipulations.h"
@@ -124,7 +125,10 @@ std::string SCIENTIFIC_NOTATION(double Number);
 std::string time_format(const std::chrono::milliseconds duration);
 std::string short_time_format(std::chrono::duration<long long, std::pico> duration);
 std::string board(const unsigned long long P, const unsigned long long O);
+std::string board2D(const unsigned long long P, const unsigned long long O);
 void print_board(const unsigned long long, const unsigned long long);
 void print_board(const unsigned long long P, const unsigned long long O, const unsigned long long PossibleMoves);
 void print_progressbar(const int width, const float fraction);
-void print_progressbar_percentage(const int width, const float fraction);
+std::string progressbar_percentage(const int width, const float fraction);
+std::string ThousandsSeparator(unsigned long long n);
+std::string DateTimeNow();

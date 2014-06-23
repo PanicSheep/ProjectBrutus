@@ -173,6 +173,26 @@ std::string board(const unsigned long long P, const unsigned long long O)
 	return s;
 }
 
+std::string board2D(const unsigned long long P, const unsigned long long O)
+{
+	std::string s = "  H G F E D C B A  \n";
+	for (unsigned int i = 0; i < 8; i++)
+	{
+		s.append(std::to_string(9-i));
+		for (unsigned int j = 0; j < 8; j++)
+		{
+			if (P & (0x8000000000000000ULL >> (i * 8 + j)))
+				s.append(" X");
+			else if (O & (0x8000000000000000ULL >> (i * 8 + j)))
+				s.append(" O");
+			else
+				s.append(" -");
+		}
+		s.append(" " + std::to_string(i) + "\n");
+	}
+	return s.append("  H G F E D C B A  ");
+}
+
 void print_board(const unsigned long long P, const unsigned long long O)
 {
 	for (int i = 0; i < 8; i++)
@@ -191,24 +211,24 @@ void print_board(const unsigned long long P, const unsigned long long O)
 
 void print_board(const unsigned long long P, const unsigned long long O, const unsigned long long PossibleMoves)
 {
-	std::cout << " |HGFEDCBA\n";
-	std::cout << "-+--------\n";
+	std::cout << "  H G F E D C B A  \n";
 	for (int i = 0; i < 8; i++)
 	{
-		std::cout << 8-i << "|";
+		std::cout << 8-i << " ";
 		for (int j = 0; j < 8; j++)
 		{
 			if (P & (0x8000000000000000ULL >> (i * 8 + j)))
-				std::cout << "X";
+				std::cout << "X ";
 			else if (O & (0x8000000000000000ULL >> (i * 8 + j)))
-				std::cout << "O";
+				std::cout << "O ";
 			else if (PossibleMoves & (0x8000000000000000ULL >> (i * 8 + j)))
-				std::cout << "*";
+				std::cout << ". ";
 			else
-				std::cout << ".";
+				std::cout << "- ";
 		}
-		std::cout << std::endl;
+		std::cout << 8-i << std::endl;
 	}
+	std::cout << "  H G F E D C B A  \n";
 }
 
 void print_progressbar(const int width, const float fraction)
@@ -219,10 +239,31 @@ void print_progressbar(const int width, const float fraction)
 	printf("%s%s", std::string(d, done).c_str(), std::string(width - d, togo).c_str());
 	//std::cout << std::string(d, done) << std::string(width - d, togo);
 }
-void print_progressbar_percentage(const int width, const float fraction)
+std::string progressbar_percentage(const int width, const float fraction)
 {
 	const unsigned char done = 219;
 	const unsigned char togo = 177;
 	const int d = static_cast<const int>(fraction * width);
-	printf("%s%s %5.1f%%", std::string(d, done).c_str(), std::string(width - d, togo).c_str(), static_cast<int>(fraction * 1000)/10.0f);
+	std::string s = std::string(d, done);
+	s.append(std::string(width - d, togo));
+	s.append(" ");
+	s.append(std::to_string(static_cast<int>(fraction * 1000) / 10.0f));
+	s.append("%");
+	return s;
+}
+
+std::string ThousandsSeparator(unsigned long long n)
+{
+	if (n < 1000)
+		return std::to_string(n);
+	else
+		return ThousandsSeparator(n / 1000ULL).append("'").append(std::string(3 - std::to_string(n % 1000ULL).length(), '0')).append(std::to_string(n % 1000ULL));
+}
+
+std::string DateTimeNow()
+{
+	std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
+
+	std::time_t t = std::chrono::system_clock::to_time_t(p);
+	return std::string(std::ctime(&t));
 }

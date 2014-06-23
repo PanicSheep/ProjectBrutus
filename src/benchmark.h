@@ -7,6 +7,7 @@
 #include "position.h"
 #include "solverbenchmark.h"
 #include "utility.h"
+#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <iostream>

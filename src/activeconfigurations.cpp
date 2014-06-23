@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void Load_Matrix(const vector<string>& file_matrix, vector<DATASET_POSITON_SCORE>& A)
+void Load_Matrix(const vector<string>& file_matrix, vector<CDataset_Position_Score>& A)
 {
 	const vector<string>::const_iterator end = file_matrix.cend();
 	for (vector<string>::const_iterator it = file_matrix.cbegin(); it != end; ++it)
@@ -13,7 +13,7 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 {
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	std::chrono::high_resolution_clock::time_point OverallstartTime, OverallendTime;
-	vector<DATASET_POSITON_SCORE> A;
+	vector<CDataset_Position_Score> A;
 	vector<int> Appearances(Features::Size);
 	vector<int> local_Appearances;
 	int Array[Features::Symmetries];

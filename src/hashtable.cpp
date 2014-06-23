@@ -29,7 +29,7 @@ void CTwoNode::Update(const unsigned long long P, const unsigned long long O, co
 		Upgrade(m_value2, Value);
 		m_date2 = date;
 	}
-	else if (Value.cost >= m_value1.cost){
+	else if (Value.cost > m_value1.cost){
 		m_P2 = m_P1;
 		m_O2 = m_O1;
 		m_value2 = m_value1;
@@ -40,7 +40,7 @@ void CTwoNode::Update(const unsigned long long P, const unsigned long long O, co
 		m_value1 = Value;
 		m_date1 = date;
 	}
-	else if (Value.cost >= m_value2.cost){
+	else if (Value.cost > m_value2.cost){
 		m_P2 = P;
 		m_O2 = O;
 		m_value2 = Value;

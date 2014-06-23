@@ -38,6 +38,13 @@ const   signed char DATASET_DEFAULT_score       = SCHAR_MIN;
 const unsigned char DATASET_DEFAULT_PV          = 64;
 
 
+struct CPosition
+{
+	unsigned long long P, O;
+	CPosition(unsigned long long P, unsigned long long O) : P(P), O(O) {}
+};
+
+
 #pragma pack(1)
 
 // .b
@@ -224,6 +231,7 @@ void write_to_file(const std::string & filename, std::vector<T>& vector)
 	fclose(file);
 }
 
+void read_vector(const std::string & filename, std::size_t size, std::vector<CPosition>& vector);
 
 
 bool Test_datamanipulation();

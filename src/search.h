@@ -1,4 +1,5 @@
 #pragma once
+#include "configfile.h"
 #include "game.h"
 #include "hashtable.h"
 #include "line.h"
@@ -14,16 +15,16 @@ struct CSelectivity
 };
 
 static const CSelectivity SelectivityTable[10] = {
-	CSelectivity(99.f, "100.0"), // 0
-	CSelectivity(3.3f, " 99.9"), // 1
-	CSelectivity(2.6f, " 99.0"), // 2
-	CSelectivity(2.0f, " 95.0"), // 3
-	CSelectivity(1.5f, " 87.0"), // 4
-	CSelectivity(1.2f, " 77.0"), // 5
-	CSelectivity(1.0f, " 68.0"), // 6
-	CSelectivity(0.7f, " 52.0"), // 7
-	CSelectivity(0.5f, " 38.0"), // 8
-	CSelectivity(0.2f, " 16.0"), // 9
+	CSelectivity(99.f, ""), // 0
+	CSelectivity(3.3f, "99%"), // 1
+	CSelectivity(2.6f, "98%"), // 2
+	CSelectivity(2.0f, "95%"), // 3
+	CSelectivity(1.5f, "87%"), // 4
+	CSelectivity(1.2f, "77%"), // 5
+	CSelectivity(1.0f, "68%"), // 6
+	CSelectivity(0.7f, "52%"), // 7
+	CSelectivity(0.5f, "38%"), // 8
+	CSelectivity(0.2f, "16%"), // 9
 };
 
 class CSearch
@@ -32,24 +33,26 @@ public:
 	static const signed char END = SCHAR_MAX;
 	enum NodeType { PV_Node, All_Node, Cut_Node };
 
-	unsigned long long P;									//  64 Bit
-	unsigned long long O;									//  64 Bit
-	unsigned long long NodeCounter;							//  64 Bit
-	std::chrono::high_resolution_clock::time_point endTime;	//  64 Bit
-	CHashTable* hashTable;									//  64 Bit
-	signed char alpha;										//   8 Bit
-	signed char beta;										//   8 Bit
-	signed char depth;										//   8 Bit
-	unsigned char selectivity;								//   8 Bit
-	signed char score;										//   8 Bit
-	                                                        // -------
-	                                                        // 368 Bit
+	unsigned long long P;									  //  64 Bit
+	unsigned long long O;									  //  64 Bit
+	unsigned long long NodeCounter;							  //  64 Bit
+	std::chrono::high_resolution_clock::time_point startTime; //  64 Bit
+	std::chrono::high_resolution_clock::time_point endTime;	  //  64 Bit
+	CHashTable* hashTable;									  //  64 Bit
+	signed char alpha;										  //   8 Bit
+	signed char beta;										  //   8 Bit
+	signed char depth;										  //   8 Bit
+	unsigned char selectivity;								  //   8 Bit
+	signed char score;										  //   8 Bit
+	                                                          // -------
+	                                                          // 368 Bit
 	NodeType nodeType;
 	CLine PV_line;
 
 	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, std::chrono::high_resolution_clock::time_point endTime, CHashTable* hashTable, unsigned char PV_depth) : 
 		P(P), O(O),
 		NodeCounter(0),
+		startTime(std::chrono::high_resolution_clock::now()),
 		endTime(endTime),
 		hashTable(hashTable),
 		alpha(alpha),
@@ -61,12 +64,12 @@ public:
 		PV_line(CLine(PV_depth))
 	{}
 
-	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, std::chrono::seconds duration, CHashTable* hashTable, unsigned char PV_depth)
-		: CSearch(P,O,alpha,beta, depth, selectivity, std::chrono::high_resolution_clock::time_point() + duration, hashTable, PV_depth) {}
+	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, std::chrono::milliseconds duration, CHashTable* hashTable, unsigned char PV_depth)
+		: CSearch(P, O, alpha, beta, END, 0, std::chrono::high_resolution_clock::now() + duration, hashTable, PV_depth) {}
 
 	// 10 years time
 	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, CHashTable* hashTable, unsigned char PV_depth)
-		: CSearch(P,O,alpha,beta, depth, selectivity, std::chrono::high_resolution_clock::time_point() + std::chrono::hours(24 * 365 * 10), hashTable, PV_depth) {}
+		: CSearch(P, O, alpha, beta, depth, selectivity, std::chrono::high_resolution_clock::now() + std::chrono::hours(24 * 365 * 10), hashTable, PV_depth) {}
 	
 	// Exact Evaluation
 	CSearch(const unsigned long long P, const unsigned long long O, signed char alpha, signed char beta, CHashTable* hashTable, unsigned char PV_depth)
@@ -100,6 +103,8 @@ public:
 		return *this;
 	}
 
+	inline bool TestTimeOut() { return std::chrono::high_resolution_clock::now() > endTime; }
+
 	inline bool HashTableLookUp(const unsigned long long P, const unsigned long long O, HashTableValueType & HashValue) const { return hashTable->LookUp(P, O, HashValue); }
 	void HashTableUpdate(const unsigned long long P, const unsigned long long O, const unsigned long long NodeCounter, signed char depth, unsigned char selectivity, signed char alpha, signed char beta, unsigned char PV, unsigned char AV) 
 	{ hashTable->Update(P, O, HashTableValueType(NodeCounter,depth, selectivity, alpha, beta, PV, AV)); }
@@ -107,13 +112,14 @@ public:
 	inline const std::string GetPV() const { return PV_line.GetPV(); }
 	inline const std::string GetPV(const int depth) const { return PV_line.GetPV(depth); }
 	inline const std::string GetPV(const int StartDepth, const int num) const { return PV_line.GetPV(StartDepth, num); }
-	void print_header(const bool verbose);
-	void print_result(const bool verbose);
-	int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
-	int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity, CLine & pline, std::chrono::high_resolution_clock::time_point startTime);
-	int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
-	int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, CLine & pline, std::chrono::high_resolution_clock::time_point startTime);
-	void Evaluate(std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::time_point());
+	std::string DepthSelectivity(signed char depth, unsigned char selectivity);
+	void print_header(const int num_width, const bool verbose);
+	void print_result(const int num_width, const int num, const bool verbose);
+	//int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
+	//int EvaluateEnd(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const unsigned char selectivity, CLine & pline, std::chrono::high_resolution_clock::time_point startTime);
+	//int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
+	//int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, CLine & pline, std::chrono::high_resolution_clock::time_point startTime);
+	void Evaluate(const bool verbose = false);
 private:
-	void print_stats(const signed char depth, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
+	void print_stats(CSearch & search, int score, const signed char depth, const unsigned char selectivity);
 };

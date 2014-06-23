@@ -139,8 +139,8 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 
 	for (auto& filename : filenames)
 	{
-		std::cout << "Processing file: " << filename << std::endl;
-		std::cout << "\r"; print_progressbar_percentage(50, 0);
+		std::cerr << "Processing file: " << filename << std::endl;
+		std::cerr << "\r" << progressbar_percentage(50, 0);
 		TimePoint = std::chrono::high_resolution_clock::now();
 		counter = 0;
 		data = LoadData(filename);
@@ -148,14 +148,16 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 		{
 			CSearch search;
 			CSearchDepths searchdepths(ComparisonPairs, filename);
-			#pragma omp for schedule(static, 1)
+			#pragma omp for schedule(dynamic, 1)
 			for (int i = 0; i < size; ++i)
 			{
-				for (int d = 0; d < 127; ++d)
+				for (int d = 0; d <= 127; ++d)
 				{
 					for (int s = 6; s >= 0; --s)
 					{
-						if (searchdepths.depth[d][s])
+						if (d == CSearch::END && s == 0 && searchdepths.depth[CSearch::END][0])
+							searchdepths.score[CSearch::END][0] = data[i].score;
+						else if (searchdepths.depth[d][s])
 						{
 							search = CSearch(data[i].P, data[i].O, -64, 64, d, s, hashTable, 0);
 							search.Evaluate();
@@ -163,8 +165,6 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 						}
 					}
 				}
-				if (searchdepths.depth[CSearch::END][0])
-					searchdepths.score[CSearch::END][0] = data[i].score;
 				hashTable->AdvanceDate();
 
 				searchdepths.Distribute(ComparisonPairs, filename);
@@ -174,13 +174,13 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 				{
 					if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - TimePoint).count() > 1000)
 					{
-						std::cout << "\r"; print_progressbar_percentage(50, counter / static_cast<double>(size));
+						std::cerr << "\r" << progressbar_percentage(50, counter / static_cast<double>(size));
 						TimePoint = std::chrono::high_resolution_clock::now();
 					}
 				}
 			}
 		}
-		std::cout << "\r"; print_progressbar_percentage(50, 1); std::cout << std::endl;
+		std::cerr << "\r" << progressbar_percentage(50, 1) << std::endl;
 	}
 
 	std::cout << std::endl << "############\n" << std::endl;
@@ -208,7 +208,7 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 		}
 		Sum_X /= static_cast<double>(N);
 		Sum_X_sq /= static_cast<double>(N);
-		printf("%2u(%1u)|%2u(%1u)|%6.6f| CCutOffLimits(%2u, %2u, %6.6ff, %6.6ff, %6.6ff),\n", Pair->D, Pair->S, Pair->d, Pair->s, Pair->LinReg.R_sq(), Pair->D, Pair->d, a, b, std::sqrt(Sum_X_sq - Sum_X * Sum_X));
+		printf("%2u(%1u)|%2u(%1u)|%6.6f| CCutOffLimits(%2u, %2u, % 6.6ff, %6.6ff, %6.6ff),\n", Pair->D, Pair->S, Pair->d, Pair->s, Pair->LinReg.R_sq(), Pair->D, Pair->d, a, b, std::sqrt(Sum_X_sq - Sum_X * Sum_X));
 	}
 
 	std::cout << std::endl << "############" << std::endl;
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
 
 	std::vector<std::string> FileNames;
 	int d;
-	int n = 10;
+	int n = 1000000;
 	int bit = 24;
 	bool v = false;
 
@@ -288,88 +288,191 @@ int main(int argc, char* argv[])
 	std::vector<CComparisonPair*> ComparisonPairs;
 	CComparisonPair* tmp;
 
-	//for (int s = 6; s >= 0; s--)
-	//	for (int S = s - 1; S >= 0; S--)
-	//	{
-	//		tmp = new CComparisonPair(16/*d*/, s/*s*/, 16/*D*/, S/*S*/);
-	//		tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d19_1M.b"));
-	//		tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d20_1M.b"));
-	//		tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d21_1M.b"));
-	//		tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d22_1M.b"));
-	//		ComparisonPairs.push_back(tmp);
-	//	}
-
-	//tmp = new CComparisonPair(16/*d*/, 6/*s*/, 16/*D*/, 0/*S*/);
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d23_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d24_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d25_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d26_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d27_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d28_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d29_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d30_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d31_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d32_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d33_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d34_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d35_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d36_1M.b"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d37_1M.b"));
-	//ComparisonPairs.push_back(tmp);
-
-	for (int d = 2; d < 7; d++)
-	{
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d13_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d14_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d15_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d16_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d17_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d18_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d19_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d20_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d21_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_1M.ps"));
 		ComparisonPairs.push_back(tmp);
-
+	}
+	for (int d = 0; d <= 6; d++){
 		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("pos\\rnd_d22_1M.ps"));
+		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_1M.ps"));
 		ComparisonPairs.push_back(tmp);
 	}
 
-	//tmp = new CComparisonPair(2/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d14_1M.ps"));
-	//ComparisonPairs.push_back(tmp);
-	//
-	//tmp = new CComparisonPair(2/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d15_1M.ps"));
+	////for (int s = 6; s >= 0; s--)
+	////	for (int S = 6; S >= 0; S--)
+	//		//for (int D = 9; D <= 16; D++)
+	//			for (int d = 0; d <= 3; d++)
+	//			{
+	//				tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//				tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d10_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d11_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d12_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d26_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d27_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d28_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d29_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d30_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d31_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d32_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d33_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d34_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d35_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d36_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d37_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d38_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d39_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d40_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d41_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d42_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d43_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d44_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d45_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d46_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d47_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d48_1M.ps"));
+	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d49_1M.ps"));
+	//				ComparisonPairs.push_back(tmp);
+	//				//if ((d == 0) && (D % 2 == 1)) 
+	//				//	d--;
+	//			}
+	//n = 1000;
+	//v = false;
+
+	//tmp = new CComparisonPair(16/*d*/, 6/*s*/, 16/*D*/, 0/*S*/);
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d23_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d24_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d25_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d26_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d27_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d28_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d29_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d30_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d31_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d32_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d33_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d34_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d35_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d36_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d37_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d38_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d39_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d40_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d41_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d42_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d43_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d44_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d45_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d46_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d47_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d48_1M.ps"));
+	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d49_1M.ps"));
 	//ComparisonPairs.push_back(tmp);
 
-	n = 1000000;
-	v = true;
+	//for (int d = 2; d < 7; d++)
+	//{
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d13_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d14_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d15_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d16_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d17_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d18_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d19_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d20_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d21_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+
+	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//	tmp->Add(std::string("pos\\rnd_d22_1M.ps"));
+	//	ComparisonPairs.push_back(tmp);
+	//}
+
+	//tmp = new CComparisonPair(CSearch::END/*d*/, 6/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d17_1M.ps"));
+	//ComparisonPairs.push_back(tmp);
+	//
+	//tmp = new CComparisonPair(CSearch::END/*d*/, 6/*s*/, CSearch::END/*D*/, 0/*S*/);
+	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d18_1M.ps"));
+	//ComparisonPairs.push_back(tmp);
+
 
 	//for (int d = 0; d < 17; d+=2)
 	//	for (int D = d + 2; D < 17; D+=2)
@@ -408,6 +511,11 @@ int main(int argc, char* argv[])
 	CHashTable* hashTable = new CHashTable(bit);
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
 	Features::Initialize();
+	Midgame::Initialize();
+
+	std::cout << "ProbCut statistics started for n=" << n << std::endl;
+	std::cout << "Start time: " << DateTimeNow() << std::endl;
+	
 
 	//CompareToExactNumEmpty(FileNames, d, n, false);
 	//CompareToExact(FileNames, d, n, false);
@@ -416,7 +524,8 @@ int main(int argc, char* argv[])
 	CalcStats(ComparisonPairs, hashTable, n, v);
 	endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	std::cout << time_format(duration) << std::endl;
+	std::cout << "End time: " << DateTimeNow() << std::endl;
+	std::cout << "Computation time: " << time_format(duration) << std::endl;
 
 	Features::Finalize();
 	return 0;

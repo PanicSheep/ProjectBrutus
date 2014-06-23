@@ -44,7 +44,9 @@ int main(int argc, char* argv[])
 					"-f\tFilename." << std::endl <<
 					"-n\tNumber of positions to solve (default: 100)" << std::endl <<
 					"-d\tDepth to solve for (default: Exact)" << std::endl <<
+					"-s\tSelectivity to solve for (default: no selectivity)" << std::endl <<
 					"-t\tNumber of threads" << std::endl <<
+					"-v\tVerbose" << std::endl <<
 					"-test\tRun as test." << std::endl <<
 					"-noskip\tDon't skip solved positions." << std::endl <<
 					"-nosave\tDon't save results." << std::endl <<
@@ -55,14 +57,17 @@ int main(int argc, char* argv[])
 
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
 	Features::Initialize();
+	Midgame::Initialize();
 
-	//Filename = std::string("F:\\Reversi\\pos\\rnd_d31_1M.psp");
-	//n = 1000;
-	//d = 13;
-	//s = 6;
-	//t = 4;
-	//v = true;
-	//test = true;
+	Filename = std::string("G:\\Reversi\\pos\\perft5.psp");
+	b_file = true;
+	n = 764;
+	d = 16;
+	s = 6;
+	t = 4;
+	v = false;
+	SkipSolved = false;
+	Save = false;
 	
 	std::string ending_input = Filename.substr(Filename.rfind(".") + 1, Filename.length());
 

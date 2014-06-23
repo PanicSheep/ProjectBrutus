@@ -134,3 +134,32 @@ bool Test_datamanipulation()
 
 	return true;
 }
+
+void read_vector(const std::string & filename, std::size_t size, std::vector<CPosition>& vector)
+{
+	std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
+	switch (Ending_to_DataType(ending))
+	{
+	case DataType::Position_Score:
+	{
+		std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
+		for (auto& pos : vec)
+			vector.push_back(CPosition(pos.P, pos.O));
+		break;
+	}
+	case DataType::Position_Score_PV:
+	{
+		std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
+		for (auto& pos : vec)
+			vector.push_back(CPosition(pos.P, pos.O));
+		break;
+	}
+	case DataType::Position_FullScore:
+	{
+		std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
+		for (auto& pos : vec)
+			vector.push_back(CPosition(pos.P, pos.O));
+		break;
+	}
+	}
+}

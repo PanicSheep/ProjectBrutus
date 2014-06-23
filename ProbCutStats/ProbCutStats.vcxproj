@@ -131,6 +131,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,6 +151,7 @@
     <ClInclude Include="..\src\hashtable.h" />
     <ClInclude Include="..\src\move.h" />
     <ClInclude Include="..\src\position.h" />
+    <ClInclude Include="..\src\PossibleMoves.h" />
     <ClInclude Include="..\src\search.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
@@ -165,6 +168,7 @@
     <ClCompile Include="..\src\midgame.cpp" />
     <ClCompile Include="..\src\move.cpp" />
     <ClCompile Include="..\src\position.cpp" />
+    <ClCompile Include="..\src\PossibleMoves.cpp" />
     <ClCompile Include="..\src\probcutstats.cpp" />
     <ClCompile Include="..\src\search.cpp" />
     <ClCompile Include="..\src\utility.cpp" />

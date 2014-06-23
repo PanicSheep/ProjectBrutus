@@ -127,7 +127,7 @@ template <> void Work<CDataset_Position_Score>(CPositionManager<CDataset_Positio
 			{
 				while (Spinlock.test_and_set());
 				std::cout << "\r";
-				print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 				Spinlock.clear();
 			}
 		}
@@ -156,7 +156,7 @@ template <> void Work<CDataset_Position_Score_PV>(CPositionManager<CDataset_Posi
 				HashTable->Update(P, O, HashTableValueType(0, data->depth - 5, data->selectivity, data->score, data->score, 64, 64));
 		}
 		CSearch search(data->P, data->O, -64, 64, depth, selectivity, HashTable, 5);
-		search.Evaluate();
+		search.Evaluate(false);
 		HashTable->AdvanceDate();
 		data->depth = depth;
 		data->selectivity = selectivity;
@@ -168,10 +168,7 @@ template <> void Work<CDataset_Position_Score_PV>(CPositionManager<CDataset_Posi
 		if (verbose)
 		{
 			while (Spinlock.test_and_set());
-			search.print_result(true);
-			printf("%9d| ", NumSolved + 1);
-			print_board(data->P, data->O);
-			printf(" |%2d@%3.1f%%|  %+2.2d  | %s\n", depth, SelectivityTable[selectivity].percentile, search.score, search.GetPV());
+			std::cout << search.result(9, NumSolved + 1, false) << std::endl;
 			Spinlock.clear();
 		}
 		else
@@ -180,7 +177,7 @@ template <> void Work<CDataset_Position_Score_PV>(CPositionManager<CDataset_Posi
 			{
 				while (Spinlock.test_and_set());
 				std::cout << "\r";
-				print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 				Spinlock.clear();
 			}
 		}
@@ -200,7 +197,7 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 			NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
 			while (Spinlock.test_and_set());
 			std::cout << "\r";
-			print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 			Spinlock.clear();
 			continue;
 		}
@@ -279,7 +276,7 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 			NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
 			while (Spinlock.test_and_set());
 			std::cout << "\r";
-			print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 			Spinlock.clear();
 			continue;
 		}
@@ -303,7 +300,7 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 				NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
 				while (Spinlock.test_and_set());
 				std::cout << "\r";
-				print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 				Spinlock.clear();
 				continue;
 			}
@@ -333,7 +330,7 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 		{
 			while (Spinlock.test_and_set());
 			std::cout << "\r";
-			print_progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
 			Spinlock.clear();
 		}
 	}
@@ -342,18 +339,18 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 template <class DATASET> void printHeader();
 template <> void printHeader<CDataset_Position_Score>()
 { 
-	printf("       # |                                                                  |  depth | score \n");
-	printf("---------+------------------------------------------------------------------+--------+-------\n");
+	printf("       # |                                                                | depth  |score\n");
+	printf("---------+----------------------------------------------------------------+--------+-----\n");
 }
 template <> void printHeader<CDataset_Position_Score_PV>()
 {
-	printf("       # |                                                                  |  depth | score | PV                 \n");
-	printf("---------+------------------------------------------------------------------+--------+-------+--------------------\n");
+	printf("       # |                                                                | depth  |score| PV                 \n");
+	printf("---------+----------------------------------------------------------------+--------+-----+--------------------\n");
 }
 template <> void printHeader<CDataset_Position_FullScore>()
 {
-	printf("       # |                                                                  |  depth | score \n");
-	printf("---------+------------------------------------------------------------------+--------+-------\n");
+	printf("       # |                                                                | depth  |score\n");
+	printf("---------+----------------------------------------------------------------+--------+-----\n");
 }
 
 
@@ -370,10 +367,10 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 	CPositionManager<DATASET> PositionManager(Filename, n, depth, selectivity, SkipSolved);
 
 	for (auto& ht : HashTables)
-		ht = new CHashTable(24);
+		ht = new CHashTable(20);
 
 	if (verbose)
-		printHeader<DATASET>();
+		std::cout << CSearch(0, 0, -64, 64, 0, 5).header(9, false) << std::endl;
 
 	startTime = std::chrono::high_resolution_clock::now(); //Start Time
 
@@ -388,8 +385,8 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 
 	endTime = std::chrono::high_resolution_clock::now(); //Stop Time
 
-	std::cout << "\r";
-	print_progressbar_percentage(50, 1); std::cout << std::endl;
+	std::cerr << "\r";
+	std::cerr << progressbar_percentage(50, 1); std::cout << std::endl;
 
 	for (auto& ht : HashTables)
 		delete ht;
@@ -400,5 +397,6 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 	std::cout << PositionCounter.load(std::memory_order_acquire) << " positions solved in: " << time_format(duration) << std::endl;
 	std::cout << PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;
+	std::cout << ThousandsSeparator(NodeCounter) << " Nodes." << std::endl;
 	std::cout << NodeCounter * 1000 / duration.count() << " nodes per second." << std::endl;
 }

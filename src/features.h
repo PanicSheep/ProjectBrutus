@@ -9,85 +9,69 @@
 
 namespace Features
 {
-	template <unsigned char I>
-	inline unsigned short POWER_OF_3()
-	{
-		unsigned short sum = 0;
-		if (I & 0x01) sum += 1;
-		if (I & 0x02) sum += 1*3;
-		if (I & 0x04) sum += 1*3*3;
-		if (I & 0x08) sum += 1*3*3*3;
-		if (I & 0x10) sum += 1*3*3*3*3;
-		if (I & 0x20) sum += 1*3*3*3*3*3;
-		if (I & 0x40) sum += 1*3*3*3*3*3*3;
-		if (I & 0x80) sum += 1*3*3*3*3*3*3*3;
-		return sum;
-	}
-
-	template <unsigned char I>
-	inline unsigned short POWER_OF_3_INV()
-	{
-		unsigned short sum = 0;
-		if (I & 0x01) sum += 1*3*3*3*3*3*3*3;
-		if (I & 0x02) sum += 1*3*3*3*3*3*3;
-		if (I & 0x04) sum += 1*3*3*3*3*3;
-		if (I & 0x08) sum += 1*3*3*3*3;
-		if (I & 0x10) sum += 1*3*3*3;
-		if (I & 0x20) sum += 1*3*3;
-		if (I & 0x40) sum += 1*3;
-		if (I & 0x80) sum += 1;
-		return sum;
-	}
-
-	extern int NumberOfFiles;
-
-	const bool Feature_C = true; 
-	const bool Feature_L1 = true; 
-	const bool Feature_L2 = true; 
-	const bool Feature_L3 = true; 
-	const bool Feature_A = true; 
-	const bool Feature_Sq = true; 
-	const bool Feature_B = true; 
-	const bool Feature_D3 = false; 
-	const bool Feature_D4 = true; 
-	const bool Feature_D5 = true; 
-	const bool Feature_D6 = true; 
-	const bool Feature_D7 = true; 
-	const bool Feature_X = false; 
-	const bool Feature_PlayersBoarder = false; 
-	const bool Feature_OpponentsBoarder = false; 
-	const bool Feature_PlayersExposeds = false; 
+	template <unsigned int power> inline unsigned int Power3() { return 3 * Power3<power-1>(); }
+	template <> inline unsigned int Power3<0>() { return 1; }
+	
+	const bool Feature_C                 = true; 
+	const bool Feature_L1                = true; 
+	const bool Feature_L2                = true; 
+	const bool Feature_L3                = true; 
+	const bool Feature_A                 = true; 
+	const bool Feature_Sq                = true; 
+	const bool Feature_B                 = true; 
+	const bool Feature_D3                = false; 
+	const bool Feature_D4                = true; 
+	const bool Feature_D5                = true; 
+	const bool Feature_D6                = true; 
+	const bool Feature_D7                = true; 
+	const bool Feature_X                 = false; 
+	const bool Feature_PlayersBoarder    = false; 
+	const bool Feature_OpponentsBoarder  = false; 
+	const bool Feature_PlayersExposeds   = false; 
 	const bool Feature_OpponentsExposeds = false;
-	const bool Feature_Possible = false; 
-	const bool Feature_Possible_E = false; 
-	const bool Feature_Possible_XC = false; 
-	const bool Feature_Parity = false; 
-	const bool Feature_Quadrants = false; 
+	const bool Feature_Possible          = false; 
+	const bool Feature_Possible_E        = false; 
+	const bool Feature_Possible_XC       = false; 
+	const bool Feature_Parity            = false; 
+	const bool Feature_Quadrants         = false; 
 	const bool Feature_NumberOfOwnStones = false;
 
-	const int Size_C = 29646;
-	const int Size_L1 = 3321;
-	const int Size_L2 = 3321;
-	const int Size_L3 = 3321;
-	const int Size_A = 131220;
-	const int Size_Sq = 10206;
-	const int Size_B = 59049;
-	const int Size_D3 = 18;
-	const int Size_D4 = 45;
-	const int Size_D5 = 135;
-	const int Size_D6 = 378;
-	const int Size_D7 = 1134;
-	const int Size_X = 1296;
-	const int Size_PlayersBoarder = 65;
-	const int Size_OpponentsBoarder = 65;
-	const int Size_PlayersExposeds = 65;
-	const int Size_OpponentsExposeds = 65;
-	const int Size_Possible = 65;
-	const int Size_Possible_E = 5;
-	const int Size_Possible_XC = 13;
-	const int Size_Parity = 5;
-	const int Size_Quadrants = 17;
-	const int Size_NumberOfOwnStones = 65;
+	const int ReducedSize_C = 29646;
+	const int ReducedSize_L1 = 3321;
+	const int ReducedSize_L2 = 3321;
+	const int ReducedSize_L3 = 3321;
+	const int ReducedSize_A = 131220;
+	const int ReducedSize_Sq = 10206;
+	const int ReducedSize_B = 59049;
+	const int ReducedSize_D3 = 18;
+	const int ReducedSize_D4 = 45;
+	const int ReducedSize_D5 = 135;
+	const int ReducedSize_D6 = 378;
+	const int ReducedSize_D7 = 1134;
+	const int ReducedSize_X = 1296;
+	//const int ReducedSize_PlayersBoarder = 65;
+	//const int ReducedSize_OpponentsBoarder = 65;
+	//const int ReducedSize_PlayersExposeds = 65;
+	//const int ReducedSize_OpponentsExposeds = 65;
+	//const int ReducedSize_Possible = 65;
+	//const int ReducedSize_Possible_E = 5;
+	//const int ReducedSize_Possible_XC = 13;
+	//const int ReducedSize_Parity = 5;
+	//const int ReducedSize_Quadrants = 17;
+	//const int ReducedSize_NumberOfOwnStones = 65;
+	const int FullSize_C = 59049;
+	const int FullSize_L1 = 6561;
+	const int FullSize_L2 = 6561;
+	const int FullSize_L3 = 6561;
+	const int FullSize_A = 531441;
+	const int FullSize_Sq = 19683;
+	const int FullSize_B = 59049;
+	const int FullSize_D3 = 27;
+	const int FullSize_D4 = 81;
+	const int FullSize_D5 = 243;
+	const int FullSize_D6 = 729;
+	const int FullSize_D7 = 2187;
+	const int FullSize_X = 6561;
 
 	const int Symmetry_C = 4;
 	const int Symmetry_L1 = 4;
@@ -113,30 +97,35 @@ namespace Features
 	const int Symmetry_Quadrants = 4;
 	const int Symmetry_NumberOfOwnStones = 1;
 
-	const int Size = 0
-		+ (Feature_C ? Size_C : 0)
-		+ (Feature_L1 ? Size_L1 : 0)
-		+ (Feature_L2 ? Size_L2 : 0)
-		+ (Feature_L3 ? Size_L3 : 0)
-		+ (Feature_A ? Size_A : 0)
-		+ (Feature_Sq ? Size_Sq : 0)
-		+ (Feature_B ? Size_B : 0)
-		+ (Feature_D3 ? Size_D3 : 0)
-		+ (Feature_D4 ? Size_D4 : 0)
-		+ (Feature_D5 ? Size_D5 : 0)
-		+ (Feature_D6 ? Size_D6 : 0)
-		+ (Feature_D7 ? Size_D7 : 0)
-		+ (Feature_X ? Size_X : 0)
-		+ (Feature_PlayersBoarder ? Size_PlayersBoarder : 0)
-		+ (Feature_OpponentsBoarder ? Size_OpponentsBoarder : 0)
-		+ (Feature_PlayersExposeds ? Size_PlayersExposeds : 0)
-		+ (Feature_OpponentsExposeds ? Size_OpponentsExposeds : 0)
-		+ (Feature_Possible ? Size_Possible : 0)
-		+ (Feature_Possible_E ? Size_Possible_E : 0)
-		+ (Feature_Possible_XC ? Size_Possible_XC : 0)
-		+ (Feature_Parity ? Size_Parity : 0)
-		+ (Feature_Quadrants ? Size_Quadrants : 0)
-		+ (Feature_NumberOfOwnStones ? Size_NumberOfOwnStones : 0);
+	const int ReducedSize = 0
+		+ (Feature_C ? ReducedSize_C : 0)
+		+ (Feature_L1 ? ReducedSize_L1 : 0)
+		+ (Feature_L2 ? ReducedSize_L2 : 0)
+		+ (Feature_L3 ? ReducedSize_L3 : 0)
+		+ (Feature_A ? ReducedSize_A : 0)
+		+ (Feature_Sq ? ReducedSize_Sq : 0)
+		+ (Feature_B ? ReducedSize_B : 0)
+		+ (Feature_D3 ? ReducedSize_D3 : 0)
+		+ (Feature_D4 ? ReducedSize_D4 : 0)
+		+ (Feature_D5 ? ReducedSize_D5 : 0)
+		+ (Feature_D6 ? ReducedSize_D6 : 0)
+		+ (Feature_D7 ? ReducedSize_D7 : 0)
+		+ (Feature_X ? ReducedSize_X : 0);
+	
+	const int FullSize = 0
+		+ (Feature_C ? FullSize_C : 0)
+		+ (Feature_L1 ? FullSize_L1 : 0)
+		+ (Feature_L2 ? FullSize_L2 : 0)
+		+ (Feature_L3 ? FullSize_L3 : 0)
+		+ (Feature_A ? FullSize_A : 0)
+		+ (Feature_Sq ? FullSize_Sq : 0)
+		+ (Feature_B ? FullSize_B : 0)
+		+ (Feature_D3 ? FullSize_D3 : 0)
+		+ (Feature_D4 ? FullSize_D4 : 0)
+		+ (Feature_D5 ? FullSize_D5 : 0)
+		+ (Feature_D6 ? FullSize_D6 : 0)
+		+ (Feature_D7 ? FullSize_D7 : 0)
+		+ (Feature_X ? FullSize_X : 0);
 
 	const int Symmetries = 0
 		+ (Feature_C ? Symmetry_C : 0)
@@ -219,8 +208,8 @@ public:
 	int EvaluateFeatures(const unsigned long long P, const unsigned long long O) const;
 };
 
-void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int* const Array);
-void FillConfigurationArraySorted(const unsigned long long P, const unsigned long long O, int* const Array);
+void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* const Array);
+void FillReducedConfigurationArraySorted(const unsigned long long P, const unsigned long long O, int* const Array);
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O);
 

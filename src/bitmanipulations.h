@@ -5,8 +5,8 @@
 // #####################################
 // ##    CPU specific optimizations   ##
 // #####################################
-#define YORKFIELD
-//#define HASWELL
+//#define YORKFIELD
+#define HASWELL
 
 //#define HAS_MMX
 //#define HAS_SSE
@@ -51,6 +51,7 @@
 	#define HAS_POPCNT // Population count
 #endif
 #if defined(HAS_BMI1)
+	#define HAS_BEXTR // Bit Field Extract
 	#define HAS_BLSI // Extract Lowest Set Isolated Bit (x & -x)
 	#define HAS_BLSMASK // Get mask up to lowest set bit (x ^ (x - 1))
 	#define HAS_BLSR // Reset lowest set bit (x & (x - 1))
@@ -167,8 +168,25 @@ FORCE_INLINE void RemoveMSB(unsigned long long & b){ b ^= GetMSB(b); }
 #endif
 
 
+// PDep
+#ifdef HAS_PDEP
+	FORCE_INLINE unsigned long long PDep(const unsigned long long src, const unsigned long long mask) { return _pdep_u64(src, mask); }
+#else
+	inline unsigned long long PDep(unsigned long long src, unsigned long long mask){
+		unsigned long long res = 0;
+		for (unsigned long long bb = 1; mask; bb += bb)
+		{
+			if (src & bb)
+				res |= mask & -mask;
+			mask &= mask - 1;
+		}
+		return res;
+	}
+#endif
+
+
 // PExt
-#if defined(HAS_PEXT)
+#ifdef HAS_PEXT
 	FORCE_INLINE unsigned long long PExt(const unsigned long long src, const unsigned long long mask) { return _pext_u64(src, mask); }
 #else
 	inline unsigned long long PExt(unsigned long long src, unsigned long long mask){
@@ -181,4 +199,12 @@ FORCE_INLINE void RemoveMSB(unsigned long long & b){ b ^= GetMSB(b); }
 		}
 		return res;
 	}
+#endif
+
+
+// BExtr
+#ifdef HAS_BEXTR
+	FORCE_INLINE unsigned long long BExtr(const unsigned long long src, const unsigned int start, unsigned int len) { return _bextr_u64(src, start, len); }
+#else
+	FORCE_INLINE unsigned long long BExtr(const unsigned long long src, const unsigned int start, unsigned int len) { return (src >> start) & ((1ULL << len)-1); }
 #endif
