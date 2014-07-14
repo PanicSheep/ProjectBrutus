@@ -49,16 +49,22 @@ namespace Midgame
 
 	double sigma(int D, int d)
 	{
-		const double a = -0.8251;
-		const double b = -5.328;
-		const double c = 0.06022;
-		const double e = 8.25;
-		return (a * d + b) * exp(-c * D) + e;
+		//const double a = -1.337;
+		//const double b = -3.885;
+		//const double c = 0.09345;
+		//const double e = 6.958;
+		//return (a * d + b) * exp(-c * D) + e;
+		const double a = 1.58;
+		const double b = 0.1526;
+		const double c = 1.835;
+		const double e = 1.243;
+		const double f = 0.9589;
+		return ((a*exp(-b*d) + c)*pow((D - d), e)) / (D - d + f);
 	}
 
 	bool MPC(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, signed char depth, unsigned char selectivity, int & value)
 	{
-		if (selectivity == 0 || depth < 3)
+		if (selectivity == 0 || depth < 4)
 			return false;
 
 		int zero_eval, small_depth;
@@ -67,50 +73,58 @@ namespace Midgame
         int probcut_depth, probcut_alpha, probcut_beta;
         int eval_beta, eval_alpha;
         int score;
+		double folded_sigma;
 		double t = SelectivityTable[selectivity].T;
-		double mu = -1.5;
+		double mu = -0.5;
 
 		++search.NodeCounter;
 		zero_eval = EvaluateFeatures(P, O);
 
-		if (depth > 16)
-		{
-			probcut_depth = (depth / 4) * 2 + (depth & 1) - 4;
-			while (probcut_depth <= (depth / 4) * 2 + (depth & 1))
-			{
-				probcut_error = t * sigma(depth, probcut_depth) + 0.5;
-				eval_error = t * sigma(probcut_depth, 0) + 0.5;
+		if (search.probCutLevel >= 2)
+			return false;
+		search.probCutLevel++;
 
-				eval_beta = beta - eval_error;
-				probcut_beta = beta + probcut_error;
-				probcut_alpha = probcut_beta - 1;
+		//if (depth > 16)
+		//{
+		//	probcut_depth = (depth / 4) * 2 + (depth & 1) - 4;
+		//	while (probcut_depth <= (depth / 4) * 2 + (depth & 1))
+		//	{
+		//		probcut_error = t * sigma(depth, probcut_depth) + 0.5;
+		//		folded_sigma = std::sqrt(sigma(probcut_depth, 0) * sigma(probcut_depth, 0) + sigma(depth, probcut_depth) * sigma(depth, probcut_depth));
+		//		eval_error = t * folded_sigma + 0.5;
 
-				if (zero_eval - mu * sigma(probcut_depth, 0) >= beta + t * sigma(depth, probcut_depth) && probcut_beta <= 64)
-				{
-					score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-					if (score >= probcut_beta){
-						//printf("Upper cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound - 1, value);
-						value = beta;
-						return true;
-					}
-				}
+		//		eval_beta = beta - eval_error;
+		//		probcut_beta = beta + probcut_error;
+		//		probcut_alpha = probcut_beta - 1;
 
-				eval_alpha = alpha + eval_error;
-				probcut_alpha = alpha - probcut_error;
-				if (zero_eval + mu * sigma(probcut_depth, 0) < alpha - t * sigma(depth, probcut_depth) && probcut_alpha >= -64)
-				{
-					score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-					if (score <= probcut_alpha){
-						//printf("Lower cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound, value);
-						value = alpha;
-						return true;
-					}
-				}
+		//		if (zero_eval - mu * t * folded_sigma >= beta && probcut_beta <= 64)
+		//		//if (zero_eval >= eval_beta && probcut_beta <= 64)
+		//		{
+		//			score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
+		//			if (score >= probcut_beta){
+		//				//printf("Upper cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound - 1, value);
+		//				value = beta;
+		//				return true;
+		//			}
+		//		}
 
-				probcut_depth += 2;
-			}
-		}
-		else
+		//		eval_alpha = alpha + eval_error;
+		//		probcut_alpha = alpha - probcut_error;
+		//		if (zero_eval + mu * folded_sigma < alpha && probcut_alpha >= -64)
+		//		//if (zero_eval < eval_alpha && probcut_alpha >= -64)
+		//		{
+		//			score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
+		//			if (score <= probcut_alpha){
+		//				//printf("Lower cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound, value);
+		//				value = alpha;
+		//				return true;
+		//			}
+		//		}
+
+		//		probcut_depth += 2;
+		//	}
+		//}
+		//else
 		{
 			for (int i = 0; i < MPC_table.size(); i++)
 				if (MPC_table[i].InUse && (depth == MPC_table[i].D))
@@ -119,47 +133,53 @@ namespace Midgame
 					{
 						if (zero_eval >= (beta + t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f){
 							value = beta;
+							search.probCutLevel--;
 							return true;
 						}
 						if (zero_eval <= (alpha - t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f){
 							value = alpha;
+							search.probCutLevel--;
 							return true;
 						}
 					}
 
 					probcut_depth = MPC_table[i].d;
 					//probcut_error = t * sigma(depth, probcut_depth) + 0.5;
-					eval_error = t * sigma(probcut_depth, 0) + 0.5;
+					//eval_error = t * sigma(probcut_depth, 0) + 0.5;
 					//printf("eval_error:%d\n", eval_error);
 					//eval_error = 0;
 
-					eval_beta = beta - eval_error;
+					//eval_beta = beta - eval_error;
+					folded_sigma = std::sqrt(sigma(probcut_depth, 0) * sigma(probcut_depth, 0) + sigma(depth, probcut_depth) * sigma(depth, probcut_depth));
 					probcut_beta = (beta + t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f;
 					probcut_alpha = probcut_beta - 1;
 
-					if (zero_eval >= eval_beta && probcut_beta <= 64)
+					if (zero_eval >= beta + mu * t * folded_sigma + 0.5f && probcut_beta <= 64)
 					{
-						score = ZWS(search, P, O, probcut_alpha, probcut_depth, 0);
+						score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
 						if (score >= probcut_beta){
 							//printf("Upper cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound-1, value);
 							value = beta;
+							search.probCutLevel--;
 							return true;
 						}
 					}
 
-					eval_alpha = alpha + eval_error;
+					//eval_alpha = alpha + eval_error;
 					probcut_alpha = (alpha - t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f;
-					if (zero_eval < eval_alpha && probcut_alpha >= -64)
+					if (zero_eval <= alpha - mu * t * folded_sigma + 0.5f && probcut_alpha >= -64)
 					{
-						score = ZWS(search, P, O, probcut_alpha, probcut_depth, 0);
+						score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
 						if (score <= probcut_alpha){
 							//printf("Lower cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound, value);
 							value = alpha;
+							search.probCutLevel--;
 							return true;
 						}
 					}
 				}
 		}
+		search.probCutLevel--;
 		return false;
 	}
 	
@@ -168,11 +188,11 @@ namespace Midgame
 		static const char stability_cutoff_limits[64] = {
 			-99, -99, -99, -99, -99, -15, -16, -15,
 			-16, -17, -18, -17, -18, -19, -20, -19,
-			-20, -99, -99, -99, -99, -99, -99, -99,
-			-99, -99, -99, -99, -99, -99, -99, -99,
-			-99, -99, -99, -99, -99, -99, -99, -99,
-			-99, -99, -99, -99, -99, -99, -99, -99,
-			-99, -99, -99, -99, -99, -99, -99, -99,
+			-20, -21, -22, -21, -22, -23, -24, -23,
+			-24, -25, -26, -25, -26, -27, -28, -27,
+			-28, -29, -30, -29, -30, -31, -32, -31,
+			-32, -33, -34, -33, -34, -35, -36, -35,
+			-36, -99, -99, -99, -99, -99, -99, -99,
 			-99, -99, -99, -99, -99, -99, -99, -99
 		};
 		int OwnMinusOpponents = PopCount(P) - PopCount(O);
@@ -268,9 +288,7 @@ namespace Midgame
 	}
 	int ZWS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, signed char depth, unsigned char selectivity)
 	{
-		if (search.TestTimeOut())
-			return alpha;
-
+		if (search.TestTimeOut()) return alpha;
 		if (depth == 2) return ZWS_2(P, O, search.NodeCounter, alpha);
 		if (depth == 1) return ZWS_1(P, O, search.NodeCounter, alpha);
 		if (depth == 0) return ZWS_0(P, O, search.NodeCounter, alpha);
@@ -310,67 +328,67 @@ namespace Midgame
 			if (htValue.PV != 64)
 			{
 				flipped = flip(P, O, htValue.PV);
-				//if (ETC(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, alpha, depth, selectivity))
-				//	return alpha + 1;
+				if (ETC(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, alpha, depth, selectivity))
+					return alpha + 1;
 				if (ESC(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -alpha-1))
 					return alpha + 1;
 			}
 			if (htValue.AV != 64)
 			{
 				flipped = flip(P, O, htValue.AV);
-				//if (ETC(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, alpha, depth, selectivity))
-				//	return alpha + 1;
+				if (ETC(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, alpha, depth, selectivity))
+					return alpha + 1;
 				if (ESC(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -alpha-1))
 					return alpha + 1;
 			}
 
-			if (htValue.PV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.PV);
-				flipped = flip(P, O, htValue.PV);
-				if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -alpha-1, depth-1, selectivity) > alpha)
-				{
-					if (!search.TestTimeOut())
-						search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, alpha+1, 64, htValue.PV, htValue.AV);
-					return alpha+1;
-				}
-			}
+			//if (htValue.PV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.PV);
+			//	flipped = flip(P, O, htValue.PV);
+			//	if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -alpha-1, depth-1, selectivity) > alpha)
+			//	{
+			//		if (!search.stop)
+			//			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, alpha+1, 64, htValue.PV, htValue.AV);
+			//		return alpha+1;
+			//	}
+			//}
 
-			if (htValue.AV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.AV);
-				flipped = flip(P, O, htValue.AV);
-				if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -alpha-1, depth-1, selectivity) > alpha)
-				{
-					if (!search.TestTimeOut())
-						search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, alpha+1, 64, htValue.AV, htValue.PV);
-					return alpha+1;
-				}
-			}
+			//if (htValue.AV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.AV);
+			//	flipped = flip(P, O, htValue.AV);
+			//	if (-ZWS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -alpha-1, depth-1, selectivity) > alpha)
+			//	{
+			//		if (!search.stop)
+			//			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, alpha+1, 64, htValue.AV, htValue.PV);
+			//		return alpha+1;
+			//	}
+			//}
 		}
 
 		CMoveList mvList(search, P, O, BitBoardPossible, depth, htValue);
 
-		for (auto& mv : mvList)
-		{
-			//if (ETC(search, mv.P, mv.O, alpha, depth, selectivity))
-			//	return alpha+1;
-			if (ESC(search, mv.P, mv.O, -alpha-1))
-				return alpha + 1;
-		}
+		//for (auto& mv : mvList)
+		//{
+		//	//if (ETC(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, alpha, depth, selectivity))
+		//	//	return alpha+1;
+		//	if (ESC(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1))
+		//		return alpha + 1;
+		//}
 
 		for (auto& mv : mvList)
 		{
-			if (-ZWS(search, mv.P, mv.O, -alpha-1, depth-1, selectivity) > alpha)
+			if (-ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, depth-1, selectivity) > alpha)
 			{
-				if (!search.TestTimeOut())
+				if (!search.stop)
 					search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, alpha+1, 64, mv.move, 64);
 				return alpha+1;
 			}
 		}
-		if (!search.TestTimeOut())
+		if (!search.stop)
 			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, -64, alpha, 64, 64);
 		return alpha;
 	}
@@ -476,8 +494,6 @@ namespace Midgame
 			}
 		}
 
-		unsigned char line = 64;
-
 		while (BitBoardPossible)
 		{
 			BitScanLSB(&Move, BitBoardPossible);
@@ -529,11 +545,8 @@ namespace Midgame
 	}
 	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, signed char depth, unsigned char selectivity)
 	{
-		if (search.TestTimeOut())
-			return alpha;
-						
-		if (depth == 2) 
-			return PVS_2(P, O, search.NodeCounter, alpha, beta);
+		if (search.TestTimeOut()) return alpha;
+		if (depth == 2) return PVS_2(P, O, search.NodeCounter, alpha, beta);
 
 		const unsigned char Empties = NumberOfEmptyStones(P, O);
 
@@ -542,7 +555,6 @@ namespace Midgame
 		unsigned char BestMove = 64;
 		unsigned long long flipped;
 		unsigned long long BitBoardPossible = PossibleMoves(P, O);
-		unsigned char BestMove1, BestMove2;
 
 		++search.NodeCounter;
 
@@ -567,68 +579,68 @@ namespace Midgame
 			if (UseHashTableValue(htValue, alpha, beta, depth, selectivity, value))
 				return value;
 
-			if (htValue.PV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.PV);
-				flipped = flip(P, O, htValue.PV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, depth-1, selectivity);
-				if (value >= beta)
-				{
-					if (!search.TestTimeOut())
-						search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, beta, 64, htValue.PV, htValue.AV);
-					return beta;
-				}
-				if (value > alpha)
-				{
-					BestMove = htValue.PV;
-					alpha = value;
-					SearchPV = false;
-				}
-			}
+			//if (htValue.PV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.PV);
+			//	flipped = flip(P, O, htValue.PV);
+			//	value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, depth-1, selectivity);
+			//	if (value >= beta)
+			//	{
+			//		if (!search.stop)
+			//			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, beta, 64, htValue.PV, htValue.AV);
+			//		return beta;
+			//	}
+			//	if (value > alpha)
+			//	{
+			//		BestMove = htValue.PV;
+			//		alpha = value;
+			//		SearchPV = false;
+			//	}
+			//}
 
-			if (htValue.AV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.AV);
-				flipped = flip(P, O, htValue.AV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, depth-1, selectivity);
-				if (value >= beta)
-				{
-					if (!search.TestTimeOut())
-						search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, beta, 64, htValue.AV, htValue.PV);
-					return beta;
-				}
-				if (value > alpha)
-				{
-					BestMove = htValue.AV;
-					alpha = value;
-					SearchPV = false;
-				}
-			}
+			//if (htValue.AV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.AV);
+			//	flipped = flip(P, O, htValue.AV);
+			//	value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, depth-1, selectivity);
+			//	if (value >= beta)
+			//	{
+			//		if (!search.stop)
+			//			search.HashTableUpdate(P, O, search.NodeCounter-LocalNodeCounter, depth, selectivity, beta, 64, htValue.AV, htValue.PV);
+			//		return beta;
+			//	}
+			//	if (value > alpha)
+			//	{
+			//		BestMove = htValue.AV;
+			//		alpha = value;
+			//		SearchPV = false;
+			//	}
+			//}
+		}
+
+		if (htValue.PV == 64 && depth >= 4 && PopCount(BitBoardPossible) > 1)
+		{
+			PVS(search, P, O, -64, 64, depth-2, 6);
+			search.HashTableLookUp(P, O, htValue);
 		}
 
 		CMoveList mvList(search, P, O, BitBoardPossible, depth, htValue);
-		BestMove1 = mvList.BestMove();
-		BestMove2 = mvList.NextBestMove();
 		for (auto& mv : mvList)
 		{
-			if (search.TestTimeOut())
-				return alpha;
 			if (SearchPV)
-				value = -PVS(search, mv.P, mv.O, -beta, -alpha, depth-1, selectivity);
+				value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, depth-1, selectivity);
 			else
 			{
-				value = -ZWS(search, mv.P, mv.O, -alpha-1, depth-1, selectivity);
+				value = -ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, depth-1, selectivity);
 				if (value > alpha)
-					value = -PVS(search, mv.P, mv.O, -beta, -alpha, depth-1, selectivity);
+					value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, depth-1, selectivity);
 			}
 			if (value >= beta)
 			{
-				if (!search.TestTimeOut()){
-					//if (mv.move == BestMove1) BestMove1 = BestMove2;
+				if (!search.stop)
 					search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, mv.move, 64);
-				}
 				return beta;
 			}
 			if (value > alpha)
@@ -645,7 +657,7 @@ namespace Midgame
 				SearchPV = false;
 			}
 		}
-		if (!search.TestTimeOut())
+		if (!search.stop)
 		{
 			if (SearchPV)
 				search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, -64, alpha, 64, 64);
@@ -656,13 +668,9 @@ namespace Midgame
 	}
 	int PVS(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, int beta, signed char depth, unsigned char selectivity, CLine & pline)
 	{
-		if (search.TestTimeOut())
-			return alpha;
-
+		if (search.TestTimeOut()) return alpha;
 		if (pline.size == 0) return PVS(search, P, O, alpha, beta, depth, selectivity);
-
-		if (depth == 2)
-			return PVS_2(P, O, search.NodeCounter, alpha, beta, pline);
+		if (depth == 2) return PVS_2(P, O, search.NodeCounter, alpha, beta, pline);
 
 		const unsigned char Empties = NumberOfEmptyStones(P, O);
 
@@ -670,7 +678,6 @@ namespace Midgame
 		int value;
 		unsigned long long flipped;
 		unsigned long long BitBoardPossible = PossibleMoves(P, O);
-		unsigned char BestMove1, BestMove2;
 
 		++search.NodeCounter;
 
@@ -698,71 +705,73 @@ namespace Midgame
 				if ((value < alpha) || (value > beta))
 					return value;
 
-			if (htValue.PV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.PV);
-				flipped = flip(P, O, htValue.PV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, depth-1, selectivity, line);
-				if (value >= beta)
-				{
-					if (!search.TestTimeOut()){
-						pline.NewPV(htValue.PV, line);
-						search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, htValue.PV, htValue.AV);
-					}
-					return beta;
-				}
-				if (value > alpha)
-				{
-					if (!search.TestTimeOut())
-						pline.NewPV(htValue.PV, line);
-					alpha = value;
-					SearchPV = false;
-				}
-			}
+			//if (htValue.PV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.PV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.PV);
+			//	flipped = flip(P, O, htValue.PV);
+			//	value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.PV) ^ flipped, -beta, -alpha, depth-1, selectivity, line);
+			//	if (value >= beta)
+			//	{
+			//		if (!search.stop){
+			//			pline.NewPV(htValue.PV, line);
+			//			search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, htValue.PV, htValue.AV);
+			//		}
+			//		return beta;
+			//	}
+			//	if (value > alpha)
+			//	{
+			//		if (!search.stop)
+			//			pline.NewPV(htValue.PV, line);
+			//		alpha = value;
+			//		SearchPV = false;
+			//	}
+			//}
 
-			if (htValue.AV != 64)
-			{
-				assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
-				BitBoardPossible ^= (1ULL << htValue.AV);
-				flipped = flip(P, O, htValue.AV);
-				value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, depth-1, selectivity, line);
-				if (value >= beta)
-				{
-					if (!search.TestTimeOut()){
-						pline.NewPV(htValue.AV, line);
-						search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, htValue.AV, htValue.PV);
-					}
-					return beta;
-				}
-				if (value > alpha)
-				{
-					if (!search.TestTimeOut())
-						pline.NewPV(htValue.AV, line);
-					alpha = value;
-					SearchPV = false;
-				}
-			}
+			//if (htValue.AV != 64)
+			//{
+			//	assert((BitBoardPossible & (1ULL << htValue.AV)) != 0);
+			//	BitBoardPossible ^= (1ULL << htValue.AV);
+			//	flipped = flip(P, O, htValue.AV);
+			//	value = -PVS(search, O ^ flipped, P ^ (1ULL << htValue.AV) ^ flipped, -beta, -alpha, depth-1, selectivity, line);
+			//	if (value >= beta)
+			//	{
+			//		if (!search.stop){
+			//			pline.NewPV(htValue.AV, line);
+			//			search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, htValue.AV, htValue.PV);
+			//		}
+			//		return beta;
+			//	}
+			//	if (value > alpha)
+			//	{
+			//		if (!search.stop)
+			//			pline.NewPV(htValue.AV, line);
+			//		alpha = value;
+			//		SearchPV = false;
+			//	}
+			//}
+		}
+
+		if (htValue.PV == 64 && depth >= 4 && PopCount(BitBoardPossible) > 1)
+		{
+			PVS(search, P, O, -64, 64, depth-2, 6);
+			search.HashTableLookUp(P, O, htValue);
 		}
 
 		CMoveList mvList(search, P, O, BitBoardPossible, depth, htValue);
-		BestMove1 = mvList.BestMove();
-		BestMove2 = mvList.NextBestMove();
 		for (auto& mv : mvList)
 		{
-			if (search.TestTimeOut())
-				return alpha;
 			if (SearchPV)
-				value = -PVS(search, mv.P, mv.O, -beta, -alpha, depth-1, selectivity, line);
+				value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, depth-1, selectivity, line);
 			else
 			{
-				value = -ZWS(search, mv.P, mv.O, -alpha-1, depth-1, selectivity);
+				value = -ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, depth-1, selectivity);
 				if (value > alpha)
-					value = -PVS(search, mv.P, mv.O, -beta, -alpha, depth-1, selectivity, line);
+					value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, depth-1, selectivity, line);
 			}
 			if (value >= beta)
 			{
-				if (!search.TestTimeOut()){
+				if (!search.stop){
 					pline.NewPV(mv.move, line);
 					//if (mv.move == BestMove1) BestMove1 = BestMove2;
 					search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, beta, 64, mv.move, 64);
@@ -771,7 +780,7 @@ namespace Midgame
 			}
 			if (value > alpha)
 			{
-				if (!search.TestTimeOut())
+				if (!search.stop)
 					pline.NewPV(mv.move, line);
 				//if (mv.move == BestMove1);
 				//else if (mv.move == BestMove2)
@@ -784,7 +793,7 @@ namespace Midgame
 				SearchPV = false;
 			}
 		}
-		if (!search.TestTimeOut())
+		if (!search.stop)
 		{
 			if (SearchPV)
 				search.HashTableUpdate(P, O, search.NodeCounter - LocalNodeCounter, depth, selectivity, -64, alpha, 64, 64);

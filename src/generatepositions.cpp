@@ -54,7 +54,7 @@ private:
 	}
 };
 
-std::set<ULLULL> PositionSet;
+std::set<CPosition> PositionSet;
 std::atomic<std::size_t> size;
 std::atomic_flag spinlock;
 CHashTable * HashTable;
@@ -64,6 +64,7 @@ void Work(const unsigned long long N, const int Empties, const bool ETH)
 	auto local_rnd = std::bind(std::uniform_int_distribution<unsigned int>(0,64), std::mt19937_64(std::chrono::system_clock::now().time_since_epoch().count() + std::this_thread::get_id().hash()));
 	unsigned long long P, O, BitBoardPossible;
 	int moves;
+	size.store(0, std::memory_order_release);
 	
 	do
 	{
@@ -88,15 +89,15 @@ void Work(const unsigned long long N, const int Empties, const bool ETH)
 		}
 
 		while (spinlock.test_and_set(std::memory_order_acquire));
-		if (size < N){
-			if (PositionSet.count(ULLULL(P, O)) == 0){
-				PositionSet.insert(ULLULL(P, O));
-				size++;
+		if (size.load() < N){
+			if (PositionSet.count(CPosition(P, O)) == 0){
+				PositionSet.insert(CPosition(P, O));
+				size.fetch_add(1, std::memory_order_seq_cst);
 			}
 		}
 		spinlock.clear(std::memory_order_release);
 
-	} while (size < N);
+	} while (size.load() < N);
 }
 
 void GenerateRandomPositions(const std::string & filename, const unsigned long long N, const int Empties, const bool ETH)
@@ -136,8 +137,8 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 	case DataType::Old:
 		for (auto& it : PositionSet){
 			data_OLD.Reset();
-			data_OLD.P = it.first;
-			data_OLD.O = it.second;
+			data_OLD.P = it.P;
+			data_OLD.O = it.O;
 			tmp_OLD.push_back(data_OLD);
 		}
 		std::random_shuffle(tmp_OLD.begin(), tmp_OLD.end());
@@ -147,8 +148,8 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 	case DataType::Position_Score:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE.Reset();
-			data_POSITON_SCORE.P = it.first;
-			data_POSITON_SCORE.O = it.second;
+			data_POSITON_SCORE.P = it.P;
+			data_POSITON_SCORE.O = it.O;
 			tmp_POSITON_SCORE.push_back(data_POSITON_SCORE);
 		}
 		std::random_shuffle(tmp_POSITON_SCORE.begin(), tmp_POSITON_SCORE.end());
@@ -158,8 +159,8 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 	case DataType::Position_Score_PV:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE_PV.Reset();
-			data_POSITON_SCORE_PV.P = it.first;
-			data_POSITON_SCORE_PV.O = it.second;
+			data_POSITON_SCORE_PV.P = it.P;
+			data_POSITON_SCORE_PV.O = it.O;
 			tmp_POSITON_SCORE_PV.push_back(data_POSITON_SCORE_PV);
 		}
 		std::random_shuffle(tmp_POSITON_SCORE_PV.begin(), tmp_POSITON_SCORE_PV.end());
@@ -169,8 +170,8 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 	case DataType::Position_FullScore:
 		for (auto& it : PositionSet){
 			data_POSITON_FULL_SCORE.Reset();
-			data_POSITON_FULL_SCORE.P = it.first;
-			data_POSITON_FULL_SCORE.O = it.second;
+			data_POSITON_FULL_SCORE.P = it.P;
+			data_POSITON_FULL_SCORE.O = it.O;
 			tmp_POSITON_FULL_SCORE.push_back(data_POSITON_FULL_SCORE);
 		}
 		std::random_shuffle(tmp_POSITON_FULL_SCORE.begin(), tmp_POSITON_FULL_SCORE.end());
@@ -184,8 +185,8 @@ void perft(unsigned long long P, unsigned long long O, const char depth)
 {
 	if (depth == 0)
 	{
-		if (PositionSet.count(ULLULL(P, O)) == 0)
-			PositionSet.insert(ULLULL(P, O));
+		if (PositionSet.count(CPosition(P, O)) == 0)
+			PositionSet.insert(CPosition(P, O));
 		return;
 	}
 
@@ -254,8 +255,8 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 	case DataType::Old:
 		for (auto& it : PositionSet){
 			data_OLD.Reset();
-			data_OLD.P = it.first;
-			data_OLD.O = it.second;
+			data_OLD.P = it.P;
+			data_OLD.O = it.O;
 			tmp_OLD.push_back(data_OLD);
 		}
 		write_to_file(filename, tmp_OLD);
@@ -264,8 +265,8 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 	case DataType::Position_Score:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE.Reset();
-			data_POSITON_SCORE.P = it.first;
-			data_POSITON_SCORE.O = it.second;
+			data_POSITON_SCORE.P = it.P;
+			data_POSITON_SCORE.O = it.O;
 			tmp_POSITON_SCORE.push_back(data_POSITON_SCORE);
 		}
 		write_to_file(filename, tmp_POSITON_SCORE);
@@ -274,8 +275,8 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 	case DataType::Position_Score_PV:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE_PV.Reset();
-			data_POSITON_SCORE_PV.P = it.first;
-			data_POSITON_SCORE_PV.O = it.second;
+			data_POSITON_SCORE_PV.P = it.P;
+			data_POSITON_SCORE_PV.O = it.O;
 			tmp_POSITON_SCORE_PV.push_back(data_POSITON_SCORE_PV);
 		}
 		write_to_file(filename, tmp_POSITON_SCORE_PV);
@@ -284,8 +285,8 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 	case DataType::Position_FullScore:
 		for (auto& it : PositionSet){
 			data_POSITON_FULL_SCORE.Reset();
-			data_POSITON_FULL_SCORE.P = it.first;
-			data_POSITON_FULL_SCORE.O = it.second;
+			data_POSITON_FULL_SCORE.P = it.P;
+			data_POSITON_FULL_SCORE.O = it.O;
 			tmp_POSITON_FULL_SCORE.push_back(data_POSITON_FULL_SCORE);
 		}
 		write_to_file(filename, tmp_POSITON_FULL_SCORE);

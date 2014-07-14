@@ -116,19 +116,19 @@ template <> void Work<CDataset_Position_Score>(CPositionManager<CDataset_Positio
 		if (verbose)
 		{
 			while (Spinlock.test_and_set());
-			printf("%9d| ");
-			print_board(data->P, data->O);
-			printf(" |%2d@%3.1f%%|  %+2.2d\n", SelectivityTable[selectivity].percentile, search.score);
+			search.print_result(9, NumSolved + 1, false);
 			Spinlock.clear();
 		}
 		else
 		{
 			if ((NumSolved & 0xF) == 0)
 			{
-				while (Spinlock.test_and_set());
-				std::cout << "\r";
-				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-				Spinlock.clear();
+				if (!Spinlock.test_and_set())
+				{
+					std::cout << "\r";
+					std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+					Spinlock.clear();
+				}
 			}
 		}
 	}
@@ -168,17 +168,19 @@ template <> void Work<CDataset_Position_Score_PV>(CPositionManager<CDataset_Posi
 		if (verbose)
 		{
 			while (Spinlock.test_and_set());
-			std::cout << search.result(9, NumSolved + 1, false) << std::endl;
+			search.print_result(9, NumSolved + 1, false);
 			Spinlock.clear();
 		}
 		else
 		{
 			if ((NumSolved & 0xF) == 0)
 			{
-				while (Spinlock.test_and_set());
-				std::cout << "\r";
-				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-				Spinlock.clear();
+				if (!Spinlock.test_and_set())
+				{
+					std::cout << "\r";
+					std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+					Spinlock.clear();
+				}
 			}
 		}
 	}
@@ -195,10 +197,12 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 			data->depth = depth;
 			data->selectivity = selectivity;
 			NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-			while (Spinlock.test_and_set());
-			std::cout << "\r";
-			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-			Spinlock.clear();
+			if (!Spinlock.test_and_set())
+			{
+				std::cout << "\r";
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
 			continue;
 		}
 		if (data->score[36] != DATASET_DEFAULT_score) // Only best move score aviable.
@@ -274,10 +278,12 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 			data->depth = depth;
 			data->selectivity = selectivity;
 			NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-			while (Spinlock.test_and_set());
-			std::cout << "\r";
-			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-			Spinlock.clear();
+			if (!Spinlock.test_and_set())
+			{
+				std::cout << "\r";
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
 			continue;
 		}
 
@@ -298,10 +304,12 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 				data->score[27] = search.score;
 				NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 				NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
-				while (Spinlock.test_and_set());
-				std::cout << "\r";
-				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-				Spinlock.clear();
+				if (!Spinlock.test_and_set())
+				{
+					std::cout << "\r";
+					std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+					Spinlock.clear();
+				}
 				continue;
 			}
 			std::swap(P, O);
@@ -328,10 +336,12 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
 		if ((NumSolved & 0xF) == 0)
 		{
-			while (Spinlock.test_and_set());
-			std::cout << "\r";
-			std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
-			Spinlock.clear();
+			if (!Spinlock.test_and_set())
+			{
+				std::cout << "\r";
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
 		}
 	}
 }
@@ -370,7 +380,7 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 		ht = new CHashTable(20);
 
 	if (verbose)
-		std::cout << CSearch(0, 0, -64, 64, 0, 5).header(9, false) << std::endl;
+		CSearch(0, 0, -64, 64, 0, 5).print_header(9, false);
 
 	startTime = std::chrono::high_resolution_clock::now(); //Start Time
 
@@ -398,5 +408,5 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 	std::cout << PositionCounter.load(std::memory_order_acquire) << " positions solved in: " << time_format(duration) << std::endl;
 	std::cout << PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;
 	std::cout << ThousandsSeparator(NodeCounter) << " Nodes." << std::endl;
-	std::cout << NodeCounter * 1000 / duration.count() << " nodes per second." << std::endl;
+	std::cout << ThousandsSeparator(NodeCounter * 1000 / duration.count()) << " nodes per second." << std::endl;
 }

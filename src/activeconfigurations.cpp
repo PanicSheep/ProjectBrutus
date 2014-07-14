@@ -14,7 +14,7 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	std::chrono::high_resolution_clock::time_point OverallstartTime, OverallendTime;
 	vector<CDataset_Position_Score> A;
-	vector<int> Appearances(Features::Size);
+	vector<int> Appearances(Features::ReducedSize);
 	vector<int> local_Appearances;
 	int Array[Features::Symmetries];
 	int max = 0;
@@ -35,12 +35,12 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 	#pragma omp parallel private(Array, local_Appearances)
 	{
 		int local_max = 0;
-		local_Appearances = vector<int>(Features::Size);
+		local_Appearances = vector<int>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1000)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 
 			for (int j = 0; j < Features::Symmetries; ++j)
 				local_Appearances[Array[j]]++;
@@ -48,14 +48,14 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
+			for (int i = 0; i < Features::ReducedSize; ++i)
 				Appearances[i] += local_Appearances[i];
 		}
 
 		#pragma omp barrier
 
 		#pragma omp for nowait schedule(static, 1000)
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			if (Appearances[i] > local_max)
 				local_max = Appearances[i];
 
@@ -68,18 +68,18 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 
 	int * counter = new int[max+1];
 	memset(counter, 0, sizeof(int) * (max+1));
-	for (int i = 0; i < Features::Size; ++i)
+	for (int i = 0; i < Features::ReducedSize; ++i)
 		counter[Appearances[i]]++;
 
-	printf("Configurations: %d\n", Features::Size);
+	printf("Configurations: %d\n", Features::ReducedSize);
 	printf("Max: %d\n\n", max);
 	printf(" Threshold | Active Configs | Percentage \n");
 	printf("-----------+----------------+------------\n");
 	int sum = 0;
 	for (int i = max; i >= 0; --i)
 	{
-		if ((static_cast<int>(100.0 * sum / Features::Size) != static_cast<int>(100.0 * (sum + counter[i]) / Features::Size)) || (i <= 50))
-			printf(" % 9d | % 14d | % 9.2f%%\n", i, sum, 100.0 * (sum + counter[i]) / Features::Size);
+		if ((static_cast<int>(100.0 * sum / Features::ReducedSize) != static_cast<int>(100.0 * (sum + counter[i]) / Features::ReducedSize)) || (i <= 50))
+			printf(" % 9d | % 14d | % 9.2f%%\n", i, sum, 100.0 * (sum + counter[i]) / Features::ReducedSize);
 		sum += counter[i];
 	}
 	OverallendTime = std::chrono::high_resolution_clock::now();
@@ -98,6 +98,9 @@ void Print_help()
 
 int main(int argc, char* argv[])
 {
+	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
+	Features::Initialize();
+
 	bool b_FileName = false;
 	vector<string> FileNames;
 
@@ -122,12 +125,12 @@ int main(int argc, char* argv[])
 	//}
 
 	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d19_100M.b"));
-	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d7_1M.b"));
+	FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d7_1M.ps"));
 	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d8_1M.b"));
 	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
 	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d10_1M.b"));
-	//CalculateActiveConfigurations(FileNames);
-	//return 0;
+	CalculateActiveConfigurations(FileNames);
+	return 0;
 
 	if (b_FileName)
 		CalculateActiveConfigurations(FileNames);

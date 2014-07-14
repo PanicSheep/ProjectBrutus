@@ -9,7 +9,7 @@ public:
 	unsigned long long P, O;
 	signed char score;
 	CPOSITON_SCORE() : P(0), O(0), score(DATASET_DEFAULT_score) {};
-	CPOSITON_SCORE(const CDataset_Old               & data) : P(data.P), O(data.O), score(data.score) {}
+	CPOSITON_SCORE(const CDataset_Old               & data)  : P(data.P), O(data.O), score(data.score) {}
 	CPOSITON_SCORE(const CDataset_Position_Score     & data) : P(data.P), O(data.O), score(data.score) {}
 	CPOSITON_SCORE(const CDataset_Position_Score_PV  & data) : P(data.P), O(data.O), score(data.score) {}
 	CPOSITON_SCORE(const CDataset_Position_FullScore& data) : P(data.P), O(data.O)
@@ -60,56 +60,46 @@ void Load_Matrix(const vector<string>& file_matrix, vector<CPOSITON_SCORE>& A)
 	}
 }
 
-double Matrix_norm(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, vector<double>& x)
+double Matrix_norm(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x)
 {
 	double tmp;
 	double sum = 0;
 	int Array[Features::Symmetries];
-	const int size = A.size();
+	const std::size_t size = A.size();
 
-	for (int i = 0; i < Features::Size; ++i)
-		if (!Present[i])
-			x[i] = 0;
+	for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+		if (!Actives[i])
+			assert(x[i] == 0);
 
-	#pragma omp parallel private(Array, tmp)
+	#pragma omp parallel for private(Array, tmp) reduction(+:sum) schedule(static, 1024)
+	for (int i = 0; i < size; ++i)
 	{
-		double local_sum = 0;
+		FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 
-		#pragma omp for nowait schedule(static, 1024)
-		for (int i = 0; i < size; ++i)
-		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
-
-			tmp = 0;
-			for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
-				tmp += x[Array[j]];
-			local_sum += tmp * tmp;
-		}
-
-		#pragma omp critical
-		{
-			sum += local_sum;
-		}
+		tmp = 0;
+		for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
+			tmp += x[Array[j]];
+		sum += tmp * tmp;
 	}
 
 	return sqrt(sum);
 }
 
-int Calc_Present_Configurations(const vector<CPOSITON_SCORE>& A, vector<bool>& Present, const int Threshold)
+std::size_t Calc_Active_Configurations(const vector<CPOSITON_SCORE>& A, vector<bool>& Actives, const int Threshold)
 {
 	int counter = 0;
 	int Array[Features::Symmetries];
-	vector<int> Appearances(Features::Size);
+	vector<int> Appearances(Features::ReducedSize);
 	const int size = A.size();
 
 	#pragma omp parallel private(Array)
 	{
-		vector<int> local_Appearances = vector<int>(Features::Size);
+		vector<int> local_Appearances = vector<int>(Features::ReducedSize);
 		
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 
 			for (int j = 0; j < Features::Symmetries; ++j)
 				local_Appearances[Array[j]]++;
@@ -117,42 +107,42 @@ int Calc_Present_Configurations(const vector<CPOSITON_SCORE>& A, vector<bool>& P
 
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
+			for (int i = 0; i < Features::ReducedSize; ++i)
 				Appearances[i] += local_Appearances[i];
 		}
 	}
 
-	for (int i = 0; i < Features::Size; ++i)
-		if (Present[i] = (Appearances[i] >= Threshold))
+	for (int i = 0; i < Features::ReducedSize; ++i)
+		if (Actives[i] = (Appearances[i] >= Threshold))
 			counter++;
 
 	return counter;
 }
 
-void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x0, vector<double>& C, vector<double>& r0)
+void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x0, vector<double>& C, vector<double>& r0)
 {
 	double tmp;
 	int Array[Features::Symmetries];
-	const int size = A.size();
+	const std::size_t size = A.size();
 	
-	for (int i = 0; i < Features::Size; ++i)
-		if (!Present[i])
+	for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+		if (!Actives[i])
 			assert(x0[i] == 0);
 
 	#pragma omp parallel private(Array, tmp)
 	{
-		vector<double> local_C = vector<double>(Features::Size);
-		vector<double> local_r0 = vector<double>(Features::Size);
+		vector<double> local_C = vector<double>(Features::ReducedSize);
+		vector<double> local_r0 = vector<double>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArraySorted(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArraySorted(A[i].P, A[i].O, Array);
 			
 			tmp = static_cast<double>(A[i].score);
-			for (int j = 0; j < Features::Symmetries; ++j) // This equals -=A*x0
+			for (std::size_t j = 0; j < Features::Symmetries; ++j) // This equals -=A*x0
 				tmp -= x0[Array[j]];
-			for (int j = 0; j < Features::Symmetries; ++j)
+			for (std::size_t j = 0; j < Features::Symmetries; ++j)
 				local_r0[Array[j]] += tmp;
 
 			int j = 0;
@@ -173,38 +163,37 @@ void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, con
 
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
-				if (Present[i])
-					r0[i] += local_r0[i];
+			for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+				r0[i] += local_r0[i];
 		}
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
-				if (Present[i])
-					C[i] += local_C[i];
+			for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+				C[i] += local_C[i];
 		}
 	}
-	for (int i = 0; i < Features::Size; ++i){
-		if (Present[i])
-			C[i] = 1.0 / C[i];
-		else
-			C[i] = 0.0;		
-	}
+
+	for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+		if (!Actives[i])
+			r0[i] = 0;
+
+	for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+		C[i] = Actives[i] ? 1.0 / C[i] : 1.0;
 }
-void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, vector<double>& C, vector<double>& r0)
+void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, vector<double>& C, vector<double>& r0)
 {
 	int Array[Features::Symmetries];
 	const int size = A.size();
 
 	#pragma omp parallel private(Array)
 	{
-		vector<double> local_C = vector<double>(Features::Size);
-		vector<double> local_r0 = vector<double>(Features::Size);
+		vector<double> local_C = vector<double>(Features::ReducedSize);
+		vector<double> local_r0 = vector<double>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArraySorted(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArraySorted(A[i].P, A[i].O, Array);
 			
 			if (A[i].score)
 				for (int j = 0; j < Features::Symmetries; ++j)
@@ -228,26 +217,26 @@ void Calc_C_r0(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, vec
 
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
-				if (Present[i])
+			for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+				if (Actives[i])
 					r0[i] += local_r0[i];
 		}
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
-				if (Present[i])
+			for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+				if (Actives[i])
 					C[i] += local_C[i];
 		}
 	}
-	for (int i = 0; i < Features::Size; ++i){
-		if (Present[i])
+	for (int i = 0; i < Features::ReducedSize; ++i){
+		if (Actives[i])
 			C[i] = 1.0 / C[i];
 		else
-			C[i] = 0.0;
+			C[i] = 1.0;
 	}
 }
 
-double relative_residual(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
+double relative_residual(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x)
 {
 	double b = 0;
 	double relres = 0;
@@ -255,50 +244,38 @@ double relative_residual(const vector<CPOSITON_SCORE>& A, const vector<bool>& Pr
 	int Array[Features::Symmetries];
 	const int size = A.size();
 
-	#pragma omp parallel private(Array, tmp)
+	#pragma omp parallel for private(Array, tmp) reduction(+:b,relres) schedule(static, 1024)
+	for (int i = 0; i < size; ++i)
 	{
-		double local_b = 0;
-		double local_relres = 0;
-
-		#pragma omp for nowait schedule(static, 1024)
-		for (int i = 0; i < size; ++i)
-		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+		FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 			
-			local_b += static_cast<double>(A[i].score) * static_cast<double>(A[i].score);
-			tmp = -static_cast<double>(A[i].score);
-			for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
-				if (Present[Array[j]])
-					tmp += x[Array[j]];
-			local_relres += tmp * tmp;
-		}
-		
-		#pragma omp critical
-		{
-			b += local_b;
-			relres += local_relres;
-		}
+		b += static_cast<double>(A[i].score) * static_cast<double>(A[i].score);
+		tmp = -static_cast<double>(A[i].score);
+		for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
+			if (Actives[Array[j]])
+				tmp += x[Array[j]];
+		relres += tmp * tmp;
 	}
 
 	return sqrt(relres / b);
 }
 
-vector<double> ATAx(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x)
+vector<double> ATAx(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x)
 {
 	double tmp;
 	int Array[Features::Symmetries];
 	const int size = A.size();
 
-	vector<double> result = vector<double>(Features::Size);
+	vector<double> result = vector<double>(Features::ReducedSize);
 
 	#pragma omp parallel private(Array, tmp)
 	{
-		vector<double> local_result = vector<double>(Features::Size);
+		vector<double> local_result = vector<double>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 
 			tmp = 0;
 			for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
@@ -309,31 +286,34 @@ vector<double> ATAx(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present
 
 		#pragma omp critical
 		{
-			for (int i = 0; i < Features::Size; ++i)
-				if (Present[i])
-					result[i] += local_result[i];
+			for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+				result[i] += local_result[i];
 		}
 	}
+
+	for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+		if (!Actives[i])
+			result[i] = 0;
 
 	return result;
 }
 
-void Test_Restart(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, const vector<double>& C, vector<double>& r, vector<double>& h, vector<double>& d)
+void Test_Restart(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x, const vector<double>& C, vector<double>& r, vector<double>& h, vector<double>& d)
 {
-	vector<double> r_new = vector<double>(Features::Size);
-	vector<double> r_diff = vector<double>(Features::Size);
+	vector<double> r_new = vector<double>(Features::ReducedSize);
+	vector<double> r_diff = vector<double>(Features::ReducedSize);
 	double tmp;
 	int Array[Features::Symmetries];
 	const int size = A.size();
 
 	#pragma omp parallel private(Array, tmp)
 	{
-		vector<double> local_r = vector<double>(Features::Size);
+		vector<double> local_r = vector<double>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 			
 			tmp = static_cast<double>(A[i].score);
 			for (int j = 0; j < Features::Symmetries; ++j) // This equals A*x
@@ -345,7 +325,7 @@ void Test_Restart(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, 
 		#pragma omp critical
 		{
 			for (int i = 0; i < r_new.size(); ++i)
-				if (Present[i])
+				if (Actives[i])
 					r_new[i] += local_r[i];
 		}
 	}
@@ -364,7 +344,7 @@ void Test_Restart(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, 
 	}
 }
 
-void DoStatsMuSigma(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present, const vector<double>& x, double& mu, double& sigma, double& avg_abs_err)
+void DoStatsMuSigma(const vector<CPOSITON_SCORE>& A, const vector<bool>& Actives, const vector<double>& x, double& mu, double& sigma, double& avg_abs_err)
 {
 	CRunningStatistic<double> stats = CRunningStatistic<double>();
 	avg_abs_err = 0;
@@ -383,7 +363,7 @@ void DoStatsMuSigma(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
-			FillConfigurationArray(A[i].P, A[i].O, Array);
+			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
 
 			++local_N;
 			tmp = -static_cast<double>(A[i].score);
@@ -408,13 +388,13 @@ void DoStatsMuSigma(const vector<CPOSITON_SCORE>& A, const vector<bool>& Present
 void SolveInRAM(const vector<string> file_matrix, const char* file_start_x, const char* file_end_x, const int Iterations, const int Threshold)
 {
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
-	vector<double> C(Features::Size);
-	vector<double> d(Features::Size);
-	vector<double> r(Features::Size);
-	vector<double> h(Features::Size);
+	vector<double> C(Features::ReducedSize);
+	vector<double> d(Features::ReducedSize);
+	vector<double> r(Features::ReducedSize);
+	vector<double> h(Features::ReducedSize);
 	vector<double> x;
-	vector<double> z(Features::Size);
-	vector<bool> Present(Features::Size);
+	vector<double> z(Features::ReducedSize);
+	vector<bool> Actives(Features::ReducedSize);
 	vector<CPOSITON_SCORE> A;
 	double alpha, beta, tmp1, tmp2, tmp_dot2, tol, res, mu, sigma, avg_abs_err;
 	tol = 1e-5;
@@ -422,10 +402,12 @@ void SolveInRAM(const vector<string> file_matrix, const char* file_start_x, cons
 	printf("Matrices:\n");
 	for (auto it = file_matrix.cbegin(); it != file_matrix.cend(); ++it)
 		printf("\t%s\n", it->c_str());
+
 	if (file_start_x)
 		printf("Using starting vector:\n\t%s\n", file_start_x);
 	else
 		printf("Not using a starting vector.\n");
+
 	printf("Max iterations: %d\n", Iterations);
 	printf("Active configuration threshold: %d\n\n", Threshold);
 
@@ -437,108 +419,103 @@ void SolveInRAM(const vector<string> file_matrix, const char* file_start_x, cons
 	
 	printf("Number of positions: %d\n", A.size());
 
-	printf("Calculating present configurations...");
+	printf("Calculating active configurations...");
 	startTime = std::chrono::high_resolution_clock::now();
-	const int Number_of_Present_Configurations = Calc_Present_Configurations(A, Present, Threshold);
+	const int Number_of_Active_Configurations = Calc_Active_Configurations(A, Actives, Threshold);
 	endTime = std::chrono::high_resolution_clock::now();
 	printf("done!\t %14s\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 
-	printf("Configurations: %d\n", Features::Size);
-	printf("Active configurations: %d\n", Number_of_Present_Configurations);
-	printf("Percentage: %.2f%%\n\n", Number_of_Present_Configurations * 100.0 / Features::Size);
+	printf("Configurations: %d\n", Features::ReducedSize);
+	printf("Active configurations: %d\n", Number_of_Active_Configurations);
+	printf("Active percentage: %.2f%%\n\n", Number_of_Active_Configurations * 100.0 / Features::ReducedSize);
 
 	if (file_start_x)
 	{
 		printf("Loading vector x_0...");
 		startTime = std::chrono::high_resolution_clock::now();
 		read_vector(file_start_x, x);
-		for (int i = 0; i < Features::Size; ++i)
-			if (!Present[i])
+		for (std::size_t i = 0; i < Features::ReducedSize; ++i)
+			if (!Actives[i])
 				x[i] = 0;
 		endTime = std::chrono::high_resolution_clock::now();
 		printf("done!\t\t\t %14s\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 
 		printf("Loading matrix C and vectors r_0...");
 		startTime = std::chrono::high_resolution_clock::now();
-		Calc_C_r0(A, Present, x, C, r);
+		Calc_C_r0(A, Actives, x, C, r);
 		endTime = std::chrono::high_resolution_clock::now();
 		printf("done!\t %14s\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 	}
 	else
 	{
-		x = vector<double>(Features::Size);
+		x = vector<double>(Features::ReducedSize);
 		printf("Loading matrix C and vectors r_0...");
 		startTime = std::chrono::high_resolution_clock::now();
-		Calc_C_r0(A, Present, C, r);
+		Calc_C_r0(A, Actives, C, r);
 		endTime = std::chrono::high_resolution_clock::now();
 		printf("done!\t %14s\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 	}
 
 	printf("Calculating vectors h_0 and d_0...");
 	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < Features::Size; ++i)
+	for (int i = 0; i < Features::ReducedSize; ++i)
 		h[i] = C[i] * r[i];
-	for (int i = 0; i < Features::Size; ++i)
+	for (int i = 0; i < Features::ReducedSize; ++i)
 		d[i] = h[i];
 	endTime = std::chrono::high_resolution_clock::now();
 	printf("done!\t\t %14s\n\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 
 	printf(" it | norm(res) | avg(abs(err)) |  avg(err)  |   std(err)   |      time     \n");
 	printf("----+-----------+---------------+------------+--------------+---------------\n");
+	
+	res = norm(r);
+	DoStatsMuSigma(A, Actives, x, mu, sigma, avg_abs_err);
+	printf("%4d| %.2e |  %.4e  | % .2e | % .4e |\n", 0, res, avg_abs_err, mu, sigma);
+
 	for (int k = 1; k <= Iterations; ++k)
 	{
 		startTime = std::chrono::high_resolution_clock::now();
 
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			z[i] = 0;
 
-		z = ATAx(A, Present, d);
+		z = ATAx(A, Actives, d);
 		tmp1 = dot(r, h);
 		alpha = tmp1 / dot(d, z);
-		beta = 1.0 / tmp1;
-		//tmp2 = dot(d, z);
-		//alpha = tmp1 / tmp2;
-		//beta = 1.0 / tmp1;
-		//tmp_dot2 = 0.0;
 
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			x[i] += alpha * d[i];
 
 		write_to_file(file_end_x, x);
 
-		//tmp1 = 0.0;
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			r[i] -= alpha * z[i];
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			h[i] = C[i] * r[i];
-			//tmp1 += r[i] * h[i];
-			//tmp_dot2 += r[i] * r[i];
 
-		beta *= dot(r, h);
-		//beta *= tmp1;
+		beta = dot(r, h) / tmp1;
 
-		for (int i = 0; i < Features::Size; ++i)
+		for (int i = 0; i < Features::ReducedSize; ++i)
 			d[i] = h[i] + beta * d[i];
 
-		res = sqrt(dot(r));
-		//res = sqrt(tmp_dot2);
+		res = norm(r);
 
 		if (k % 10 == 0)
 		{
-			//Test_Restart(A, Present, x, C, r, h, d);
+			//Test_Restart(A, Actives, x, C, r, h, d);
 			//res = sqrt(dot(r));
-			DoStatsMuSigma(A, Present, x, mu, sigma, avg_abs_err);
+			DoStatsMuSigma(A, Actives, x, mu, sigma, avg_abs_err);
 			endTime = std::chrono::high_resolution_clock::now();
 			//printf(" it | norm(res) | avg(abs(err)) |  avg(err)  |   std(err)   |      time     \n");
 			printf("%4d| %.2e |  %.4e  | % .2e | % .4e | %14s\n", k, res, avg_abs_err, mu, sigma, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
-			//printf("%4d| %.2e |  %.4e  | % .2e | % .4e | %14s\n", k, Matrix_norm(A, Present, r), avg_abs_err, mu, sigma, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
+			//printf("%4d| %.2e |  %.4e  | % .2e | % .4e | %14s\n", k, Matrix_norm(A, Actives, r), avg_abs_err, mu, sigma, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 		}
 		else
 		{
 			endTime = std::chrono::high_resolution_clock::now();
 			//printf(" it | norm(res) | avg(abs(err)) |  avg(err)  |   std(err)   |      time     \n");
 			printf("%4d| %.2e |               |            |              | %14s\n", k, res, time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
-			//printf("%4d| %.2e |               |            |              | %14s\n", k, Matrix_norm(A, Present, r), time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
+			//printf("%4d| %.2e |               |            |              | %14s\n", k, Matrix_norm(A, Actives, r), time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 		}
 
 		if (res < tol) break;
@@ -553,7 +530,7 @@ void SolveInRAM(const vector<string> file_matrix, const char* file_start_x, cons
 //void Compare(const char* file_x, list<string> file)
 //{
 //	RunningStatistic<double> stats = RunningStatistic<double>();
-//	TinyVector<double, Features::Size> x = TinyVector<double, Features::Size>();
+//	TinyVector<double, Features::ReducedSize> x = TinyVector<double, Features::ReducedSize>();
 //	unsigned long long dist[129][129];
 //	unsigned long long P, O;
 //	short score;
@@ -629,6 +606,10 @@ void Print_help()
 
 int main(int argc, char* argv[])
 {
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
+	Features::Initialize();
+
 	bool b_FileName = false;
 	bool b_Initial = false;
 	bool b_x = false;
@@ -674,8 +655,6 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 	}
-
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	//if (b_c){
 	//	Compare(file_end_x, FileNames);

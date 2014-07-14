@@ -231,11 +231,14 @@ void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashT
 
 void Print_help()
 {
-	std::cout << std::endl << "Calculates the feature weights." << std::endl
+	std::cout << std::endl << "Calculates ProbCut statistics." << std::endl
 						   << "Attributes:" << std::endl
 						   << "-f\tposition files." << std::endl
-						   << "-d\treduced depth." << std::endl 
+						   << "-d\treduced depth." << std::endl
 						   << "-D\tnon reduced depth." << std::endl 
+						   << "-n\tnumber of positions." << std::endl
+						   << "-bit\tbit size of hash table." << std::endl
+						   << "-v\tverbose." << std::endl
 						   << "-h\tprints this help." << std::endl << std::endl;
 }
 
@@ -244,10 +247,12 @@ int main(int argc, char* argv[])
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	std::vector<std::string> FileNames;
-	int d;
-	int n = 1000000;
+	int d, D, s, S;
+	int n = 1000;
 	int bit = 24;
 	bool v = false;
+	std::vector<CComparisonPair*> ComparisonPairs;
+	CComparisonPair* tmp;
 
 	for (int i = 0; i < argc; ++i)
 	{
@@ -259,6 +264,12 @@ int main(int argc, char* argv[])
 		}
 		else if (std::string(argv[i]) == "-d")
 			d = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-s")
+			s = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-D")
+			D = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-S")
+			S = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-n")
 			n = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-bit")
@@ -270,82 +281,36 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 	}
+	tmp = new CComparisonPair(d/*d*/, s/*s*/, D/*D*/, S/*S*/);
 
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
+	for (auto& filename : FileNames)
+		tmp->Add(filename);
 
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d13_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d14_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d15_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d16_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d17_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d18_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d19_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d20_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d21_1M.b"));
-	//FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d22_1M.b"));
-	//d = 8;
-	//n = 100000;
-	std::vector<CComparisonPair*> ComparisonPairs;
-	CComparisonPair* tmp;
+	ComparisonPairs.push_back(tmp);
 
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
-	for (int d = 0; d <= 6; d++){
-		tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_1M.ps"));
-		ComparisonPairs.push_back(tmp);
-	}
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
 
-	////for (int s = 6; s >= 0; s--)
-	////	for (int S = 6; S >= 0; S--)
-	//		//for (int D = 9; D <= 16; D++)
-	//			for (int d = 0; d <= 3; d++)
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d13_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d14_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d15_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d16_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d17_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d18_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d19_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d20_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d21_1M.b"));
+	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d22_1M.b"));
+	////d = 8;
+	////n = 100000;
+	//CComparisonPair* tmp;
+
+	//////for (int s = 6; s >= 0; s--)
+	//////	for (int S = 6; S >= 0; S--)
+	//		for (int D = CSearch::END; D <= CSearch::END; D++)
+	//			for (int d = 0; d <= 0; d+=2)
 	//			{
-	//				tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//				tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d10_1M.ps"));
+	//				tmp = new CComparisonPair(d/*d*/, 0/*s*/, D/*D*/, 0/*S*/);
+	//				//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d10_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d11_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d12_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_1M.ps"));
@@ -353,7 +318,7 @@ int main(int argc, char* argv[])
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_1M.ps"));
+	//				tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_10M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_1M.ps"));
 	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_1M.ps"));
@@ -389,8 +354,8 @@ int main(int argc, char* argv[])
 	//				//if ((d == 0) && (D % 2 == 1)) 
 	//				//	d--;
 	//			}
-	//n = 1000;
-	//v = false;
+	////n = 1000;
+	////v = false;
 
 	//tmp = new CComparisonPair(16/*d*/, 6/*s*/, 16/*D*/, 0/*S*/);
 	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d23_1M.ps"));

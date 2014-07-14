@@ -59,15 +59,15 @@ int main(int argc, char* argv[])
 	Features::Initialize();
 	Midgame::Initialize();
 
-	Filename = std::string("G:\\Reversi\\pos\\perft5.psp");
-	b_file = true;
-	n = 764;
-	d = 16;
-	s = 6;
-	t = 4;
-	v = false;
-	SkipSolved = false;
-	Save = false;
+	//Filename = std::string("G:\\Reversi\\pos\\perft5.psp");
+	//b_file = true;
+	//n = 764;
+	//d = 16;
+	//s = 6;
+	//t = 4;
+	//v = false;
+	//SkipSolved = false;
+	//Save = false;
 	
 	std::string ending_input = Filename.substr(Filename.rfind(".") + 1, Filename.length());
 

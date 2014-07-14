@@ -15,7 +15,7 @@ struct CSelectivity
 };
 
 static const CSelectivity SelectivityTable[10] = {
-	CSelectivity(99.f, ""), // 0
+	CSelectivity(99.f, ""),    // 0
 	CSelectivity(3.3f, "99%"), // 1
 	CSelectivity(2.6f, "98%"), // 2
 	CSelectivity(2.0f, "95%"), // 3
@@ -44,12 +44,14 @@ public:
 	signed char depth;										  //   8 Bit
 	unsigned char selectivity;								  //   8 Bit
 	signed char score;										  //   8 Bit
+	bool stop;												  //   8 Bit
+	int probCutLevel = 0;
 	                                                          // -------
-	                                                          // 368 Bit
+	                                                          //  Bit
 	NodeType nodeType;
 	CLine PV_line;
 
-	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, std::chrono::high_resolution_clock::time_point endTime, CHashTable* hashTable, unsigned char PV_depth) : 
+	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, std::chrono::high_resolution_clock::time_point endTime, CHashTable* hashTable, unsigned char PV_depth) :
 		P(P), O(O),
 		NodeCounter(0),
 		startTime(std::chrono::high_resolution_clock::now()),
@@ -60,6 +62,7 @@ public:
 		depth(depth),
 		selectivity(selectivity),
 		score(-128),
+		stop(false),
 		nodeType(nodeType),
 		PV_line(CLine(PV_depth))
 	{}
@@ -97,13 +100,14 @@ public:
 			depth = other.depth;
 			selectivity = other.selectivity;
 			score = other.score;
+			stop = other.stop;
 			nodeType = other.nodeType;
 			PV_line = other.PV_line;
 		}
 		return *this;
 	}
 
-	inline bool TestTimeOut() { return std::chrono::high_resolution_clock::now() > endTime; }
+	inline bool TestTimeOut() { return stop |= (std::chrono::high_resolution_clock::now() > endTime); }
 
 	inline bool HashTableLookUp(const unsigned long long P, const unsigned long long O, HashTableValueType & HashValue) const { return hashTable->LookUp(P, O, HashValue); }
 	void HashTableUpdate(const unsigned long long P, const unsigned long long O, const unsigned long long NodeCounter, signed char depth, unsigned char selectivity, signed char alpha, signed char beta, unsigned char PV, unsigned char AV) 

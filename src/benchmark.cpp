@@ -874,9 +874,14 @@ std::vector<CDataset_Position_Score> LoadData(const std::string & filename)
 
 	return Data;
 }
-
 int main(int argc, char* argv[])
 {
+	//for (int d = 17; d < 60; d++)
+	//{
+	//	for (int probcut_depth = (d / 4) * 2 + (d & 1) - 4; probcut_depth <= (d / 4) * 2 + (d & 1); probcut_depth += 2)
+	//		printf("probcut %02u %02u =  0.000000 1.000000 %1.6f true\n", d, probcut_depth, Midgame::sigma(d, probcut_depth));
+	//}
+	//return 0;
 
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
@@ -885,19 +890,38 @@ int main(int argc, char* argv[])
 	Midgame::Initialize();
 
 	srand(time(NULL));
+
+	int DEPTH = 60;
+	int SELECTIVITY = 0;
+	int BIT = 24;
+	double percentage = 0.98;
+	int LOW = 0;
+	int HIGH = 60;
+
+	for (int i = 0; i < argc; ++i)
+	{
+		     if (std::string(argv[i]) == "-d") DEPTH = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-s") SELECTIVITY = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-p") percentage = atof(argv[++i]);
+		else if (std::string(argv[i]) == "-bit") BIT = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-l") LOW = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-h") HIGH = atoi(argv[++i]);
+	}
 	
 	//PreheatCPU(2);
-	//CHashTable * ht = new CHashTable(24);
+	//CHashTable * ht = new CHashTable(26);
 	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-1-19.ps", true, ht);
 	//ht->print_stats();
 	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-20-39.ps", true, ht);
 	//ht->print_stats();
+	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-40-59.ps", true, ht);
+	//ht->print_stats();
 	//delete ht;
 
-	//CHashTable * ht = new CHashTable(24);
-	//CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
-	//s.Evaluate(true);
-	//delete ht;
+	CHashTable * ht = new CHashTable(BIT);
+	CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
+	s.Evaluate(true);
+	delete ht;
 
 	//std::vector<std::string> Filenames({
 	//	//"C:\\Reversi\\pos\\perft5.psp"
@@ -937,26 +961,25 @@ int main(int argc, char* argv[])
 	//	"C:\\Reversi\\pos\\rnd_d16_1M.ps",
 	//});
 	std::vector<std::string> Filenames1({
-		"C:\\Reversi\\pos\\rnd_d22_1M.ps",
-		"C:\\Reversi\\pos\\rnd_d21_1M.ps",
+		//"C:\\Reversi\\pos\\perft5.psp",
 	});
 	CPositionManager2 PosMan1;
-	PosMan1.Append(Filenames1, 5000);
+	PosMan1.Append(Filenames1, 764);
 
-	std::vector<std::string> Filenames2({
-		"C:\\Reversi\\pos\\rnd_d20_1M.ps",
-		"C:\\Reversi\\pos\\rnd_d19_1M.ps",
-	});
-	CPositionManager2 PosMan2;
-	PosMan2.Append(Filenames2, 2500);
+	//std::vector<std::string> Filenames2({
+	//	"C:\\Reversi\\pos\\rnd_d20_1M.ps",
+	//	"C:\\Reversi\\pos\\rnd_d19_1M.ps",
+	//});
+	//CPositionManager2 PosMan2;
+	//PosMan2.Append(Filenames2, 0);
 
-	std::vector<std::string> Filenames3({
-		"C:\\Reversi\\pos\\rnd_d18_1M.ps",
-		"C:\\Reversi\\pos\\rnd_d17_1M.ps",
-		"C:\\Reversi\\pos\\rnd_d16_1M.ps",
-	});
-	CPositionManager2 PosMan3;
-	PosMan3.Append(Filenames3, 6250);
+	//std::vector<std::string> Filenames3({
+	//	"C:\\Reversi\\pos\\rnd_d18_1M.ps",
+	//	"C:\\Reversi\\pos\\rnd_d17_1M.ps",
+	//	"C:\\Reversi\\pos\\rnd_d16_1M.ps",
+	//});
+	//CPositionManager2 PosMan3;
+	//PosMan3.Append(Filenames3, 0);
 
 	//if (Test_All_Features()) std::cout << "All Tests succeded!\n";
 	
@@ -1062,10 +1085,13 @@ int main(int argc, char* argv[])
 	//	}
 	//	else
 	//	{
-	//		std::cout << "Player's move: ";
-	//		std::cin >> s;
+	//		CSearch search(P, O, -64, 64, std::chrono::milliseconds(4900), hashTable, 5);
+	//		search.Evaluate(true);
+	//		std::cout << "ProjectBrutus' move: ";
+	//		move = search.PV(0);
+	//		std::cout << FIELD_NAME(move) << "\n";
+	//		std::cout << "Score: " << (int)search.score << "   PV: " << search.GetPV(0, 5) << std::endl;
 	//		std::cout << std::endl;
-	//		move = FIELD_INDEX(s);
 	//		PlayStone(P, O, move);
 	//		PlayerToPlay = !PlayerToPlay;
 	//	}
@@ -1098,39 +1124,41 @@ int main(int argc, char* argv[])
 
 	//std::cout << "\n\n GAME OVER!\nProjectBrutu's disccount: " << PopCount(PlayerToPlay ? O : P) << "\nPlayer's disccount: " << PopCount(PlayerToPlay ? P : O) << std::endl;
 
-	const int DEPTH = CSearch::END;
-	const int SELECTIVITY = 6;
+	int BestTime = 3600000;
 	std::string BestConfig = "";
 	std::vector<CCutOffLimits*> ToGo, Done;
-	for (int i = 0; i < Endgame::MPC_table.size(); i++)
-		ToGo.push_back(&Endgame::MPC_table[i]);
+	for (int i = 0; i < Midgame::MPC_table.size(); i++)
+		if (Midgame::MPC_table[i].D >= LOW && Midgame::MPC_table[i].D <= HIGH)
+			ToGo.push_back(&Midgame::MPC_table[i]);
 	std::random_shuffle(ToGo.begin(), ToGo.end());
 
-	for (int j = 0; j < Endgame::MPC_table.size(); j++)
-		BestConfig.append(Endgame::MPC_table[j].InUse ? "1" : "0");
+	for (int j = 0; j < Midgame::MPC_table.size(); j++)
+		BestConfig.append(Midgame::MPC_table[j].InUse ? "1" : "0");
 	std::cout << BestConfig << std::endl;
-	PosMan1.Solve(DEPTH, SELECTIVITY);
+	//PosMan1.Solve(DEPTH, SELECTIVITY);
 	//PosMan2.Solve(DEPTH, SELECTIVITY);
 	//PosMan3.Solve(DEPTH, SELECTIVITY);
 	//PosMan2.Solve(DEPTH + 3, 6);
 	//unsigned long long Minimum = PosMan1.m_NodeCounter;
-	unsigned long long Minimum = PosMan1.m_NodeCounter + PosMan2.m_NodeCounter + PosMan3.m_NodeCounter;
+	//unsigned long long Minimum = PosMan1.m_NodeCounter + PosMan2.m_NodeCounter + PosMan3.m_NodeCounter;
 	unsigned long long sum;
-	//CHashTable * hashTable = new CHashTable(24);
-	//CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, 6, hashTable, 5);
-	//search.Evaluate(true);
-	//delete hashTable;
-	//unsigned long long Minimum = search.NodeCounter;
+	CHashTable * hashTable = new CHashTable(BIT);
+	CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, hashTable, 5);
+	search.Evaluate(true);
+	delete hashTable;
+	unsigned long long Minimum = search.NodeCounter;
+	//unsigned long long Minimum = PosMan1.m_NodeCounter;
+	BestTime = std::chrono::duration_cast<std::chrono::milliseconds>(search.endTime - search.startTime).count();
 	std::cout << std::endl;
 	
 	CCutOffLimits * elem;
 	while (ToGo.size())
 	{
 		elem = ToGo.back();
-		Endgame::Change_MPC_table(elem);
+		Midgame::Change_MPC_table(elem);
 		std::cout << BestConfig << " : " << (int)elem->D << " " << (int)elem->d << std::endl;
 		//std::string filename[4] = {"G:\\Reversi\\pos\\fforum-1-19.ps", "G:\\Reversi\\pos\\fforum-20-39.ps", "G:\\Reversi\\pos\\fforum-40-59.ps", "G:\\Reversi\\pos\\fforum-60-79.ps"};
-		//CHashTable* hashTable = new CHashTable(20);
+		//CHashTable* hashTable = new CHashTable(BIT);
 		//hashTable->Load("G:\\Reversi2\\Opening.ht");
 
 		//FForum_Benchmark("G:\\Reversi\\pos\\fforum-1-19.ps", true, hashTable);
@@ -1138,19 +1166,20 @@ int main(int argc, char* argv[])
 		//FForum_Benchmark("G:\\Reversi\\pos\\fforum-20-39.ps", true, hashTable);
 		//hashTable->print_stats();
 
-		//CHashTable * hashTable = new CHashTable(24);
-		//CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, 6, hashTable, 5);
-		//search.Evaluate(true);
-		//delete hashTable;
+		CHashTable * hashTable = new CHashTable(BIT);
+		CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, std::chrono::high_resolution_clock::now() + std::chrono::milliseconds((int)(BestTime * 1.6)), hashTable, 5);
+		search.Evaluate(true);
+		delete hashTable;
 
-		PosMan1.Reset();
+		//PosMan1.Reset();
 		//PosMan2.Reset();
 		//PosMan3.Reset();
-		PosMan1.Solve(DEPTH, SELECTIVITY);
+		//PosMan1.Solve(DEPTH, SELECTIVITY);
 		//PosMan2.Solve(DEPTH, SELECTIVITY);
 		//PosMan3.Solve(DEPTH, SELECTIVITY);
-		sum = PosMan1.m_NodeCounter + PosMan2.m_NodeCounter + PosMan3.m_NodeCounter;
-		if (sum < Minimum * 0.99){
+		//sum = PosMan1.m_NodeCounter;
+		sum = search.NodeCounter;
+		if (sum < Minimum * percentage){
 		//if (search.NodeCounter < Minimum * 0.98){
 			std::cout << "####################################" << std::endl;
 			std::cout << "############ Found one! ############" << std::endl;
@@ -1158,18 +1187,21 @@ int main(int argc, char* argv[])
 			std::cout << "############ Found one! ############" << std::endl;
 			std::cout << "####################################" << std::endl;
 			BestConfig = "";
-			for (int j = 0; j < Endgame::MPC_table.size(); j++)
-				BestConfig.append(Endgame::MPC_table[j].InUse ? "1" : "0");
-			Minimum = sum;// + PosMan2.m_NodeCounter;
+			for (int j = 0; j < Midgame::MPC_table.size(); j++)
+				BestConfig.append(Midgame::MPC_table[j].InUse ? "1" : "0");
+			Minimum = sum;
+			BestTime = std::chrono::duration_cast<std::chrono::milliseconds>(search.endTime - search.startTime).count();
 			//Minimum = search.NodeCounter;
 			ToGo.pop_back();
+			std::random_shuffle(Done.begin(), Done.end());
+			std::reverse(ToGo.begin(), ToGo.end());
 			while (Done.size())
 			{
 				ToGo.push_back(Done.back());
 				Done.pop_back();
 			}
 			Done.push_back(elem);
-			std::random_shuffle(ToGo.begin(), ToGo.end());
+			std::reverse(ToGo.begin(), ToGo.end());
 		}
 		else if (sum > Minimum * 1.5)
 		//else if (search.NodeCounter > Minimum * 2.0)
@@ -1177,12 +1209,12 @@ int main(int argc, char* argv[])
 			std::cout << "*****************" << std::endl;
 			std::cout << "*** Bad Fish! ***" << std::endl;
 			std::cout << "*****************" << std::endl;
-			Endgame::Change_MPC_table(elem);
+			Midgame::Change_MPC_table(elem);
 			ToGo.pop_back();
 		}
 		else
 		{
-			Endgame::Change_MPC_table(elem);
+			Midgame::Change_MPC_table(elem);
 			Done.push_back(elem);
 			ToGo.pop_back();
 		}

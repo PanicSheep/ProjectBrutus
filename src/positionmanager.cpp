@@ -230,9 +230,7 @@ void Progress(const string & filename)
 
 void CountUnique(const string & filename)
 {
-	typedef pair<unsigned long long, unsigned long long> ULLULL;
-	struct comp { inline bool operator()(const ULLULL & lhs, const ULLULL & rhs) { return (lhs.first < rhs.first) || ((lhs.first == rhs.first) && (lhs.second < rhs.second)); } };
-	set<ULLULL, comp> PositionSet;
+	set<CPosition> PositionSet;
 	std::vector<CDataset_Old> tmp_OLD;
 	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
@@ -244,25 +242,25 @@ void CountUnique(const string & filename)
 	case DataType::Old:
 		read_vector(filename, tmp_OLD);
 		for (auto& item : tmp_OLD)
-			PositionSet.insert(ULLULL(item.P, item.O));
+			PositionSet.insert(CPosition(item.P, item.O));
 		tmp_OLD.clear();
 		break;
 	case DataType::Position_Score:
 		read_vector(filename, tmp_POSITON_SCORE);
 		for (auto& item : tmp_POSITON_SCORE)
-			PositionSet.insert(ULLULL(item.P, item.O));
+			PositionSet.insert(CPosition(item.P, item.O));
 		tmp_POSITON_SCORE.clear();
 		break;
 	case DataType::Position_Score_PV:
 		read_vector(filename, tmp_POSITON_SCORE_PV);
 		for (auto& item : tmp_POSITON_SCORE_PV)
-			PositionSet.insert(ULLULL(item.P, item.O));
+			PositionSet.insert(CPosition(item.P, item.O));
 		tmp_POSITON_SCORE_PV.clear();
 		break;
 	case DataType::Position_FullScore:
 		read_vector(filename, tmp_POSITON_FULL_SCORE);
 		for (auto& item : tmp_POSITON_FULL_SCORE)
-			PositionSet.insert(ULLULL(item.P, item.O));
+			PositionSet.insert(CPosition(item.P, item.O));
 		tmp_POSITON_FULL_SCORE.clear();
 		break;
 	}

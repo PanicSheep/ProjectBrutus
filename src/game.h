@@ -67,6 +67,7 @@ namespace Midgame
 {
 	extern std::vector<CCutOffLimits> MPC_table;
 	void Initialize();
+	double sigma(int D, int d);
 	void Change_MPC_table(CCutOffLimits * pair);
 	void Change_MPC_table(int D, int d);
 	void Change_MPC_table(int D, int d, bool InUse);

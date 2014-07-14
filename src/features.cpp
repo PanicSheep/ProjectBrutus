@@ -1560,7 +1560,7 @@ void FillFullConfigurationArray(const unsigned long long P, const unsigned long 
 	//	Offset += FullSize_X;
 	//}
 }
-void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* const Array)
+void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* Array)
 {
 	using namespace Features;
 	unsigned long long BitBoardPossible;
@@ -1894,15 +1894,211 @@ void FillReducedConfigurationArraySorted(const unsigned long long P, const unsig
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O)
 {
+	using namespace Features;
+	int Offset = 0;
+
+	int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	float * weights = Features::Weights[BoxIndex];
 	float sum = 0.0f;
-	unsigned char BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
 
-	int Array[Features::Symmetries];
-	FillFullConfigurationArray(P, O, Array);
+	if (Feature_C){
+		sum += weights[Offset + FullIndex_LowerC(P, O)];
+		sum += weights[Offset + FullIndex_UpperC(P, O)];
+		sum += weights[Offset + FullIndex_LeftC (P, O)];
+		sum += weights[Offset + FullIndex_RightC(P, O)];
+		Offset += FullSize_C;
+	}
+	if (Feature_L1){
+		sum += weights[Offset + FullIndex_LowerL1(P, O)];
+		sum += weights[Offset + FullIndex_UpperL1(P, O)];
+		sum += weights[Offset + FullIndex_LeftL1 (P, O)];
+		sum += weights[Offset + FullIndex_RightL1(P, O)];
+		Offset += FullSize_L1;
+	}
+	if (Feature_L2){
+		sum += weights[Offset + FullIndex_LowerL2(P, O)];
+		sum += weights[Offset + FullIndex_UpperL2(P, O)];
+		sum += weights[Offset + FullIndex_LeftL2 (P, O)];
+		sum += weights[Offset + FullIndex_RightL2(P, O)];
+		Offset += FullSize_L2;
+	}
+	if (Feature_L3){
+		sum += weights[Offset + FullIndex_LowerL3(P, O)];
+		sum += weights[Offset + FullIndex_UpperL3(P, O)];
+		sum += weights[Offset + FullIndex_LeftL3 (P, O)];
+		sum += weights[Offset + FullIndex_RightL3(P, O)];
+		Offset += FullSize_L3;
+	}
+	if (Feature_A){
+		sum += weights[Offset + FullIndex_RightLowerA(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperA (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerA (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperA(P, O)];
+		Offset += FullSize_A;
+	}
+	if (Feature_Sq){
+		sum += weights[Offset + FullIndex_RightLowerSq(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperSq (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerSq (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperSq(P, O)];
+		Offset += FullSize_Sq;
+	}
+	if (Feature_B){
+		sum += weights[Offset + FullIndex_LowerRightB(P, O)];
+		sum += weights[Offset + FullIndex_LowerLeftB (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerB (P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperB (P, O)];
+		sum += weights[Offset + FullIndex_UpperLeftB (P, O)];
+		sum += weights[Offset + FullIndex_UpperRightB(P, O)];
+		sum += weights[Offset + FullIndex_RightUpperB(P, O)];
+		sum += weights[Offset + FullIndex_RightLowerB(P, O)];
+		Offset += FullSize_B;
+	}
+	if (Feature_D4){
+		sum += weights[Offset + FullIndex_RightLowerD4(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperD4 (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerD4 (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperD4(P, O)];
+		Offset += FullSize_D4;
+	}
+	if (Feature_D5){
+		sum += weights[Offset + FullIndex_RightLowerD5(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperD5 (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerD5 (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperD5(P, O)];
+		Offset += FullSize_D5;
+	}
+	if (Feature_D6){
+		sum += weights[Offset + FullIndex_RightLowerD6(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperD6 (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerD6 (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperD6(P, O)];
+		Offset += FullSize_D6;
+	}
+	if (Feature_D7){
+		sum += weights[Offset + FullIndex_RightLowerD7(P, O)];
+		sum += weights[Offset + FullIndex_LeftUpperD7 (P, O)];
+		sum += weights[Offset + FullIndex_LeftLowerD7 (P, O)];
+		sum += weights[Offset + FullIndex_RightUpperD7(P, O)];
+		Offset += FullSize_D7;
+	}
 
-	for (int i = 0; i < Features::Symmetries; ++i)
-		sum += Features::Weights[BoxIndex][Array[i]];
-	
+	return static_cast<int>(std::floorf(sum + 0.5f));
+}
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, float* const Array)
+{
+	using namespace Features;
+	int Offset = 0;
+	int Index = 0;
+
+	int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	float * weights = Features::Weights[BoxIndex];
+	float sum = 0.0f;
+
+	if (Feature_C){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_LowerC(P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperC(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftC (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightC(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_C;
+	}
+	if (Feature_L1){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_LowerL1(P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperL1(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftL1 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightL1(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_L1;
+	}
+	if (Feature_L2){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_LowerL2(P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperL2(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftL2 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightL2(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_L2;
+	}
+	if (Feature_L3){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_LowerL3(P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperL3(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftL3 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightL3(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_L3;
+	}
+	if (Feature_A){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerA(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperA (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerA (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperA(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_A;
+	}
+	if (Feature_Sq){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerSq(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperSq (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerSq (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperSq(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_Sq;
+	}
+	if (Feature_B){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_LowerRightB(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LowerLeftB (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerB (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperB (P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperLeftB (P, O)];
+		Array[Index] += weights[Offset + FullIndex_UpperRightB(P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperB(P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightLowerB(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_B;
+	}
+	if (Feature_D4){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerD4(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperD4 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerD4 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperD4(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_D4;
+	}
+	if (Feature_D5){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerD5(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperD5 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerD5 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperD5(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_D5;
+	}
+	if (Feature_D6){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerD6(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperD6 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerD6 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperD6(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_D6;
+	}
+	if (Feature_D7){
+		Array[Index] = 0.0;
+		Array[Index] += weights[Offset + FullIndex_RightLowerD7(P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftUpperD7 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_LeftLowerD7 (P, O)];
+		Array[Index] += weights[Offset + FullIndex_RightUpperD7(P, O)];
+		sum += Array[Index++];
+		Offset += FullSize_D7;
+	}
+
 	return static_cast<int>(std::floorf(sum + 0.5f));
 }
 
@@ -2105,14 +2301,14 @@ bool Congruent(const unsigned long long P1, const unsigned long long P2)
 	return false;
 }
 
-bool Test_Patterns_PopCount(const int symmeties, const unsigned long long * const Pattern)
+bool Test_Patterns_PopCount(const int symmetries, const unsigned long long * const Pattern)
 {
 	bool Success = true;
-	unsigned long long * POPCOUNT = new unsigned long long[symmeties];
+	unsigned long long * POPCOUNT = new unsigned long long[symmetries];
 
-	for (int i = 0; i < symmeties; i++)
+	for (int i = 0; i < symmetries; i++)
 		POPCOUNT[i] = PopCount(Pattern[i]);
-	for (int i = 0; i < symmeties; i++)
+	for (int i = 0; i < symmetries; i++)
 	{
 		if (POPCOUNT[0] != POPCOUNT[i]){
 			std::cerr << "ERROR: Pattern are inconsistent!" << std::endl;
@@ -2124,11 +2320,11 @@ bool Test_Patterns_PopCount(const int symmeties, const unsigned long long * cons
 	return Success;
 }
 
-bool Test_Pattern_Congruence(const int symmeties, const unsigned long long * const Pattern)
+bool Test_Pattern_Congruence(const int symmetries, const unsigned long long * const Pattern)
 {
 	bool Success = true;
 
-	for (int i = 0; i < symmeties; i++)
+	for (int i = 0; i < symmetries; i++)
 	{
 		if (!Congruent(Pattern[0], Pattern[i])){
 			std::cerr << "ERROR: Pattern are not congruent!" << std::endl;
@@ -2159,11 +2355,11 @@ void For_each_configuration_in_pattern_do_fkt(const unsigned long long Pattern, 
 
 }
 
-bool Test_Index_Range(const int symmeties, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
+bool Test_Index_Range(const int symmetries, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
 {
 	bool Success = true;
 
-	for (int k = 0; k < symmeties; k++)
+	for (int k = 0; k < symmetries; k++)
 	{
 		For_each_configuration_in_pattern_do_fkt(Pattern[k],
 			[Feature, k, size, &Success](const unsigned long long P, const unsigned long long O)
@@ -2185,16 +2381,16 @@ bool Test_Index_Range(const int symmeties, const int size, unsigned long long * 
 	return Success;
 }
 
-bool Test_Feature_symmetrie(const int symmeties, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
+bool Test_Feature_symmetrie(const int symmetries, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
 {
 	bool Success = true;
 
 	For_each_configuration_in_pattern_do_fkt(Pattern[0],
-		[Feature, symmeties, Pattern, &Success](const unsigned long long P, const unsigned long long O)
+		[Feature, symmetries, Pattern, &Success](const unsigned long long P, const unsigned long long O)
 			{
 				int indexA = Feature[0](P, O);
 				int indexB;
-				for (int k = 0; k < symmeties; ++k)
+				for (int k = 0; k < symmetries; ++k)
 				{
 					if (Pattern[k] == horizontal_flip(Pattern[0])){
 						indexB = Feature[k](horizontal_flip(P), horizontal_flip(O));
@@ -2252,7 +2448,7 @@ bool Test_Feature_symmetrie(const int symmeties, unsigned long long * Pattern, i
 	return Success;
 }
 
-bool Test_Feature_symmetrie_FullIndex(int * tmpWeights, const int symmeties, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O), int Offset)
+bool Test_Feature_symmetrie_FullIndex(int * tmpWeights, const int symmetries, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O), int Offset)
 {
 	bool Success = true;
 
@@ -2267,7 +2463,7 @@ bool Test_Feature_symmetrie_FullIndex(int * tmpWeights, const int symmeties, uns
 				int indexA, indexB;
 				int weightA = tmpWeights[indexA = Offset + Feature[0](P, O)];
 				int weightB;
-				for (int k = 0; k < symmeties; ++k)
+				for (int k = 0; k < symmetries; ++k)
 				{
 					if (Pattern[k] == horizontal_flip(Pattern[0])){
 						weightB = tmpWeights[indexB = Offset + Feature[k](horizontal_flip(P), horizontal_flip(O))];
@@ -2304,12 +2500,12 @@ bool Test_Feature_symmetrie_FullIndex(int * tmpWeights, const int symmeties, uns
 	return Success;
 }
 
-bool Test_Index_Covering(const int symmeties, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
+bool Test_Index_Covering(const int symmetries, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O))
 {
 	bool Success = true;
 	int * taken = new int[size];
 
-	for (int k = 0; k < symmeties; k++)
+	for (int k = 0; k < symmetries; k++)
 	{
 		for (int i = 0; i < size; i++)
 			taken[i] = 0;
@@ -2329,7 +2525,7 @@ bool Test_Index_Covering(const int symmeties, const int size, unsigned long long
 	return Success;
 }
 
-bool Test(const int symmeties, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O), bool IsPattern)
+bool Test(const int symmetries, const int size, unsigned long long * Pattern, int(*Feature[])(const unsigned long long P, const unsigned long long O), bool IsPattern)
 {
 	using namespace Features;
 	bool Success = true;
@@ -2337,20 +2533,20 @@ bool Test(const int symmeties, const int size, unsigned long long * Pattern, int
 	unsigned long long * BitConfig = new unsigned long long[POPCOUNT];
 
 	// Test patern's population count to be equal
-	Success &= Test_Patterns_PopCount(symmeties, Pattern);
+	Success &= Test_Patterns_PopCount(symmetries, Pattern);
 
 	// Test congruence of patterns
-	Success &= Test_Pattern_Congruence(symmeties, Pattern);
+	Success &= Test_Pattern_Congruence(symmetries, Pattern);
 
 	// Test the range of all the features
-	Success &= Test_Index_Range(symmeties, size, Pattern, Feature);
+	Success &= Test_Index_Range(symmetries, size, Pattern, Feature);
 
 	// Test if all the symmetries of all configurations of all the features result in the same index
-	Success &= Test_Feature_symmetrie(symmeties, Pattern, Feature);
+	Success &= Test_Feature_symmetrie(symmetries, Pattern, Feature);
 
 	// Test if all possible indices are taken at least once
 	if (IsPattern)
-		Success &= Test_Index_Covering(symmeties, size, Pattern, Feature);
+		Success &= Test_Index_Covering(symmetries, size, Pattern, Feature);
 
 	return Success;
 
@@ -2358,7 +2554,7 @@ bool Test(const int symmeties, const int size, unsigned long long * Pattern, int
 	bool HasSymmetry;
 	unsigned long long P, O, tmp;
 	int * taken = new int[size];
-	for (int k = 0; k < symmeties; k++)
+	for (int k = 0; k < symmetries; k++)
 	{
 		for (int i = 0; i < size; i++)
 			taken[i] = 0;

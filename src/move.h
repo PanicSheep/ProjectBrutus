@@ -13,11 +13,10 @@ class CMoveList
 public:
 	struct Move
 	{
-		unsigned long long P;
-		unsigned long long O;
-		unsigned long long PossibleMoves;
-		int Value;
+		//unsigned long long P, O;
+		unsigned long long flipped;
 		unsigned char move;
+		int Value;
 	};	
 		
 	static const int w_PossibleMoves = 15;

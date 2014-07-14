@@ -154,6 +154,7 @@
     <ClCompile Include="..\src\featureweightfitter.cpp" />
     <ClCompile Include="..\src\flip.cpp" />
     <ClCompile Include="..\src\position.cpp" />
+    <ClCompile Include="..\src\PossibleMoves.cpp" />
     <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,11 +167,6 @@
     <ClInclude Include="..\src\PossibleMoves.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\src\PossibleMoves.lib">
-      <FileType>Document</FileType>
-    </Library>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

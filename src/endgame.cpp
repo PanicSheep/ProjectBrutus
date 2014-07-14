@@ -8,39 +8,39 @@ namespace Endgame
 {
 	std::vector<CCutOffLimits> MPC_table({
 		CCutOffLimits(10,  0, -0.955690f, 0.982075f, 7.229145f, true),
-		CCutOffLimits(10,  1,  0.608850f, 1.044230f, 6.540396f, true),
+		CCutOffLimits(10,  1,  0.608850f, 1.044230f, 6.540396f, false),
 		CCutOffLimits(10,  2, -1.790080f, 1.035370f, 5.835613f, true),
-		CCutOffLimits(10,  3,  0.726926f, 1.017016f, 5.481348f, true),
-		CCutOffLimits(11,  0,  0.836652f, 0.994059f, 7.082141f, true),
+		CCutOffLimits(10,  3,  0.726926f, 1.017016f, 5.481348f, false),
+		CCutOffLimits(11,  0,  0.836652f, 0.994059f, 7.082141f, false),
 		CCutOffLimits(11,  1,  2.652704f, 0.980076f, 6.404368f, false),
 		CCutOffLimits(11,  2,  0.060596f, 1.040618f, 5.798437f, false),
 		CCutOffLimits(11,  3,  2.803727f, 1.023115f, 5.376995f, true),
 		CCutOffLimits(11,  4, -0.017008f, 1.007512f, 4.919953f, true),
 		CCutOffLimits(12,  0, -1.404029f, 1.037020f, 7.301017f, true),
 		CCutOffLimits(12,  1,  0.861866f, 1.021294f, 6.560548f, false),
-		CCutOffLimits(12,  2, -2.119963f, 1.013227f, 5.966220f, true),
+		CCutOffLimits(12,  2, -2.119963f, 1.013227f, 5.966220f, false),
 		CCutOffLimits(12,  3,  0.915875f, 1.060153f, 5.651452f, true),
 		CCutOffLimits(12,  4, -2.216285f, 1.045512f, 5.106089f, false),
-		CCutOffLimits(12,  5,  0.705978f, 1.021842f, 4.836680f, true),
+		CCutOffLimits(12,  5,  0.705978f, 1.021842f, 4.836680f, false),
 		CCutOffLimits(13,  0,  1.413220f, 0.964083f, 7.142576f, true),
 		CCutOffLimits(13,  1,  3.153194f, 1.029896f, 6.457468f, false),
 		CCutOffLimits(13,  2, -0.251685f, 1.022943f, 5.792326f, false),
-		CCutOffLimits(13,  3,  3.176289f, 0.998355f, 5.524462f, true),
+		CCutOffLimits(13,  3,  3.176289f, 0.998355f, 5.524462f, false),
 		CCutOffLimits(13,  4, -0.224287f, 1.050109f, 5.046984f, true),
 		CCutOffLimits(13,  5,  2.920321f, 1.026998f, 4.753281f, false),
 		CCutOffLimits(13,  6, -0.117578f, 1.012825f, 4.342136f, false),
-		CCutOffLimits(14,  0, -0.858567f, 1.008158f, 7.282141f, true),
+		CCutOffLimits(14,  0, -0.858567f, 1.008158f, 7.282141f, false),
 		CCutOffLimits(14,  1,  0.192599f, 0.993065f, 6.610465f, false),
-		CCutOffLimits(14,  2, -2.691474f, 1.064405f, 6.015619f, true),
+		CCutOffLimits(14,  2, -2.691474f, 1.064405f, 6.015619f, false),
 		CCutOffLimits(14,  3,  1.266951f, 1.039642f, 5.652557f, false),
-		CCutOffLimits(14,  4, -2.623739f, 1.025726f, 5.227389f, true),
+		CCutOffLimits(14,  4, -2.623739f, 1.025726f, 5.227389f, false),
 		CCutOffLimits(14,  5,  0.903164f, 1.064284f, 4.992097f, true),
 		CCutOffLimits(14,  6, -2.454023f, 1.050153f, 4.535461f, false),
 		CCutOffLimits(15,  0,  1.179192f, 1.018373f, 7.163458f, true),
 		CCutOffLimits(15,  1,  2.538466f, 1.002338f, 6.421089f, false),
-		CCutOffLimits(15,  2,  0.431105f, 0.990603f, 5.836637f, true),
-		CCutOffLimits(15,  3,  3.690411f, 1.045506f, 5.581817f, true),
-		CCutOffLimits(15,  4, -0.615447f, 1.033543f, 5.042296f, false),
+		CCutOffLimits(15,  2,  0.431105f, 0.990603f, 5.836637f, false),
+		CCutOffLimits(15,  3,  3.690411f, 1.045506f, 5.581817f, false),
+		CCutOffLimits(15,  4, -0.615447f, 1.033543f, 5.042296f, true),
 		CCutOffLimits(15,  5,  3.379743f, 1.004002f, 4.908287f, false),
 		CCutOffLimits(15,  6, -0.335630f, 1.053034f, 4.473601f, false),
 		CCutOffLimits(16,  0, -1.126149f, 0.984720f, 7.193613f, true),
@@ -50,11 +50,11 @@ namespace Endgame
 		CCutOffLimits(16,  4, -3.204021f, 1.075319f, 5.280633f, false),
 		CCutOffLimits(16,  5,  1.357198f, 1.046045f, 5.004946f, true),
 		CCutOffLimits(16,  6, -2.936041f, 1.032093f, 4.667277f, false),
-		CCutOffLimits(17,  0,  0.920282f, 0.995588f, 7.021305f, true),
+		CCutOffLimits(17,  0,  0.920282f, 0.995588f, 7.021305f, false),
 		CCutOffLimits(17,  1,  2.715802f, 0.973366f, 6.542318f, true),
 		CCutOffLimits(17,  2,  0.083205f, 1.042347f, 5.844496f, false),
-		CCutOffLimits(17,  3,  3.052708f, 1.019415f, 5.547676f, true),
-		CCutOffLimits(17,  4,  0.067480f, 1.002611f, 5.091725f, true),
+		CCutOffLimits(17,  3,  3.052708f, 1.019415f, 5.547676f, false),
+		CCutOffLimits(17,  4,  0.067480f, 1.002611f, 5.091725f, false),
 		CCutOffLimits(17,  5,  3.909372f, 1.050908f, 4.975393f, false),
 		CCutOffLimits(17,  6, -0.819175f, 1.039098f, 4.470674f, false),
 		CCutOffLimits(18,  0, -1.592779f, 1.038661f, 7.181811f, false),
@@ -66,7 +66,7 @@ namespace Endgame
 		CCutOffLimits(18,  6, -3.524015f, 1.080564f, 4.741089f, false),
 		CCutOffLimits(19,  0,  1.586007f, 0.965885f, 7.028058f, false),
 		CCutOffLimits(19,  1,  3.260213f, 1.024397f, 6.553807f, false),
-		CCutOffLimits(19,  2, -0.063446f, 1.017345f, 5.811272f, true),
+		CCutOffLimits(19,  2, -0.063446f, 1.017345f, 5.811272f, false),
 		CCutOffLimits(19,  3,  3.260832f, 0.990744f, 5.640768f, false),
 		CCutOffLimits(19,  4, -0.288293f, 1.053177f, 5.113163f, false),
 		CCutOffLimits(19,  5,  3.291963f, 1.026315f, 4.946041f, false),
@@ -74,7 +74,7 @@ namespace Endgame
 		CCutOffLimits(20,  0, -0.951239f, 1.009906f, 7.132139f, false),
 		CCutOffLimits(20,  1, -0.148935f, 0.989733f, 6.680770f, false),
 		CCutOffLimits(20,  2, -2.833894f, 1.062117f, 6.046139f, false),
-		CCutOffLimits(20,  3,  1.050450f, 1.035706f, 5.757993f, false),
+		CCutOffLimits(20,  3,  1.050450f, 1.035706f, 5.757993f, true),
 		CCutOffLimits(20,  4, -2.765163f, 1.020927f, 5.308957f, false),
 		CCutOffLimits(20,  5,  1.035966f, 1.070758f, 5.120746f, false),
 		CCutOffLimits(20,  6, -2.859929f, 1.052501f, 4.693923f, false),
@@ -85,12 +85,12 @@ namespace Endgame
 		CCutOffLimits(21,  4, -0.462419f, 1.029706f, 5.121321f, false),
 		CCutOffLimits(21,  5,  3.536810f, 0.999587f, 5.045815f, false),
 		CCutOffLimits(21,  6, -0.504488f, 1.059326f, 4.581100f, false),
-		CCutOffLimits(22,  0, -0.478459f, 1.010294f, 7.132730f, false),
+		CCutOffLimits(22,  0, -0.478459f, 1.010294f, 7.132730f, true),
 		CCutOffLimits(22,  1,  0.222635f, 1.042224f, 6.683277f, false),
 		CCutOffLimits(22,  2, -2.040013f, 1.030831f, 5.942886f, false),
-		CCutOffLimits(22,  3,  0.257676f, 1.007646f, 5.781188f, false),
-		CCutOffLimits(22,  4, -3.340425f, 1.075136f, 5.313757f, false),
-		CCutOffLimits(22,  5,  1.253716f, 1.045036f, 5.141610f, true),
+		CCutOffLimits(22,  3,  0.257676f, 1.007646f, 5.781188f, true),
+		CCutOffLimits(22,  4, -3.340425f, 1.075136f, 5.313757f, true),
+		CCutOffLimits(22,  5,  1.253716f, 1.045036f, 5.141610f, false),
 		CCutOffLimits(22,  6, -3.105332f, 1.028820f, 4.777626f, false),
 	});
 
@@ -1016,7 +1016,7 @@ namespace Endgame
 		{
 			if (search.TestTimeOut())
 				return alpha;
-			value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity);
+			value = -ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, selectivity);
 			if (value > alpha)
 			{
 				if (!search.TestTimeOut())
@@ -2206,12 +2206,12 @@ namespace Endgame
 			if (search.TestTimeOut())
 				return alpha;
 			if (SearchPV)
-				value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity);
+				value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, selectivity);
 			else
 			{
-				value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity);
+				value = -ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, selectivity);
 				if (value > alpha)
-					value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity);
+					value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, selectivity);
 			}
 			if (value >= beta)
 			{
@@ -2333,12 +2333,12 @@ namespace Endgame
 			if (search.TestTimeOut())
 				return alpha;
 			if (SearchPV)
-				value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line);
+				value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, selectivity, line);
 			else
 			{
-				value = -ZWS(search, mv.P, mv.O, -alpha-1, selectivity);
+				value = -ZWS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -alpha-1, selectivity);
 				if (value > alpha)
-					value = -PVS(search, mv.P, mv.O, -beta, -alpha, selectivity, line);
+					value = -PVS(search, O ^ mv.flipped, P ^ (1ULL << mv.move) ^ mv.flipped, -beta, -alpha, selectivity, line);
 			}
 			if (value >= beta)
 			{

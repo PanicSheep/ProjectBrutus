@@ -42,6 +42,12 @@ struct CPosition
 {
 	unsigned long long P, O;
 	CPosition(unsigned long long P, unsigned long long O) : P(P), O(O) {}
+	bool operator==(const CPosition& other) const { return (this->P == other.P) && (this->O == other.O); }
+	bool operator!=(const CPosition& other) const { return (this->P != other.P) || (this->O != other.O); }
+	bool operator<=(const CPosition& other) const { return (this->P <= other.P) || ((this->P == other.P) && (this->O <= other.O)); }
+	bool operator>=(const CPosition& other) const { return (this->P >= other.P) || ((this->P == other.P) && (this->O >= other.O)); }
+	bool operator< (const CPosition& other) const { return (this->P <  other.P) || ((this->P == other.P) && (this->O <  other.O)); }
+	bool operator> (const CPosition& other) const { return (this->P >  other.P) || ((this->P == other.P) && (this->O >  other.O)); }
 };
 
 

@@ -13,7 +13,6 @@
 #include <thread>
 #include <vector>
 
-typedef std::pair<unsigned long long, unsigned long long> ULLULL;
 
 void GenerateRandomPositions(const std::string & filename, const unsigned long long N, const int Empties, const bool ETH);
 

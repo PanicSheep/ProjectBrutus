@@ -33,3 +33,5 @@ inline double dot(const std::vector<double>& a)
 		sum += a[i] * a[i];
 	return sum;
 }
+
+inline double norm(const std::vector<double>& a) { return std::sqrt(dot(a)); }

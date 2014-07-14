@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{78D1EAC3-7191-4C69-9A8C-862BA2429496}</ProjectGuid>
+    <ProjectGuid>{7C2BB978-4785-4F97-9056-6611D68C5318}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>PositionManager</RootNamespace>
+    <RootNamespace>PatternStatistics</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -84,7 +84,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,7 +97,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,7 +112,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,13 +129,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <MinimalRebuild>true</MinimalRebuild>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,24 +139,36 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\datamanipulation.cpp" />
-    <ClCompile Include="..\src\flip.cpp" />
-    <ClCompile Include="..\src\generatepositions.cpp" />
-    <ClCompile Include="..\src\position.cpp" />
-    <ClCompile Include="..\src\positionmanager.cpp" />
-    <ClCompile Include="..\src\PossibleMoves.cpp" />
-    <ClCompile Include="..\src\utility.cpp" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="..\src\configfile.h" />
+    <ClInclude Include="..\src\count_last_flip.h" />
     <ClInclude Include="..\src\datamanipulation.h" />
+    <ClInclude Include="..\src\features.h" />
     <ClInclude Include="..\src\flip.h" />
-    <ClInclude Include="..\src\generatepositions.h" />
+    <ClInclude Include="..\src\game.h" />
+    <ClInclude Include="..\src\hashtable.h" />
+    <ClInclude Include="..\src\move.h" />
     <ClInclude Include="..\src\position.h" />
-    <ClInclude Include="..\src\positionmanager.h" />
     <ClInclude Include="..\src\PossibleMoves.h" />
     <ClInclude Include="..\src\search.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\configfile.cpp" />
+    <ClCompile Include="..\src\count_last_flip.cpp" />
+    <ClCompile Include="..\src\datamanipulation.cpp" />
+    <ClCompile Include="..\src\endgame.cpp" />
+    <ClCompile Include="..\src\features.cpp" />
+    <ClCompile Include="..\src\flip.cpp" />
+    <ClCompile Include="..\src\game.cpp" />
+    <ClCompile Include="..\src\hashtable.cpp" />
+    <ClCompile Include="..\src\midgame.cpp" />
+    <ClCompile Include="..\src\move.cpp" />
+    <ClCompile Include="..\src\patternstatistics.cpp" />
+    <ClCompile Include="..\src\position.cpp" />
+    <ClCompile Include="..\src\PossibleMoves.cpp" />
+    <ClCompile Include="..\src\search.cpp" />
+    <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

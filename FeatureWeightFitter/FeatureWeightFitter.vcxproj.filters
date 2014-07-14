@@ -36,6 +36,9 @@
     <ClCompile Include="..\src\datamanipulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\PossibleMoves.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\featureweightfitter.h">
@@ -65,10 +68,5 @@
     <ClInclude Include="..\src\PossibleMoves.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\src\PossibleMoves.lib">
-      <Filter>Header Files</Filter>
-    </Library>
   </ItemGroup>
 </Project>

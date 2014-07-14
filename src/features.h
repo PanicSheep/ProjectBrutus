@@ -36,6 +36,8 @@ namespace Features
 	const bool Feature_Quadrants         = false; 
 	const bool Feature_NumberOfOwnStones = false;
 
+	const std::string Names[] = { "C", "L1", "L2", "L3", "A", "Sq", "B", "D4", "D5", "D6", "D7" };
+
 	const int ReducedSize_C = 29646;
 	const int ReducedSize_L1 = 3321;
 	const int ReducedSize_L2 = 3321;
@@ -96,6 +98,21 @@ namespace Features
 	const int Symmetry_Parity = 1;
 	const int Symmetry_Quadrants = 4;
 	const int Symmetry_NumberOfOwnStones = 1;
+
+	const int NumberOfFeatures = 0
+		+ (Feature_C ? 1 : 0)
+		+ (Feature_L1 ? 1 : 0)
+		+ (Feature_L2 ? 1 : 0)
+		+ (Feature_L3 ? 1 : 0)
+		+ (Feature_A ? 1 : 0)
+		+ (Feature_Sq ? 1 : 0)
+		+ (Feature_B ? 1 : 0)
+		+ (Feature_D3 ? 1 : 0)
+		+ (Feature_D4 ? 1 : 0)
+		+ (Feature_D5 ? 1 : 0)
+		+ (Feature_D6 ? 1 : 0)
+		+ (Feature_D7 ? 1 : 0)
+		+ (Feature_X ? 1 : 0);
 
 	const int ReducedSize = 0
 		+ (Feature_C ? ReducedSize_C : 0)
@@ -208,9 +225,10 @@ public:
 	int EvaluateFeatures(const unsigned long long P, const unsigned long long O) const;
 };
 
-void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* const Array);
+void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* Array);
 void FillReducedConfigurationArraySorted(const unsigned long long P, const unsigned long long O, int* const Array);
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O);
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, float* const Array);
 
 bool Test_All_Features();
