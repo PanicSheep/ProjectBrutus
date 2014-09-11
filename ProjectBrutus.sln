@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectBrutus", "ProjectBru
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FeatureWeightFitter", "FeatureWeightFitter\FeatureWeightFitter.vcxproj", "{321B278C-9B4B-4210-A5C7-81C20863F6C2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ActiveConfigurations", "ActiveConfigurations\ActiveConfigurations.vcxproj", "{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Solver", "Solver\Solver.vcxproj", "{74613E5C-3C3D-49B6-AACE-ACBA2822B3C4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PositionManager", "PositionManager\PositionManager.vcxproj", "{78D1EAC3-7191-4C69-9A8C-862BA2429496}"
@@ -45,14 +43,6 @@ Global
 		{321B278C-9B4B-4210-A5C7-81C20863F6C2}.Release|Win32.Build.0 = Release|Win32
 		{321B278C-9B4B-4210-A5C7-81C20863F6C2}.Release|x64.ActiveCfg = Release|x64
 		{321B278C-9B4B-4210-A5C7-81C20863F6C2}.Release|x64.Build.0 = Release|x64
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Debug|Win32.Build.0 = Debug|Win32
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Debug|x64.ActiveCfg = Debug|x64
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Debug|x64.Build.0 = Debug|x64
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Release|Win32.ActiveCfg = Release|Win32
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Release|Win32.Build.0 = Release|Win32
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Release|x64.ActiveCfg = Release|x64
-		{E887C0D1-16F3-4E9E-8298-BA6B60B7B391}.Release|x64.Build.0 = Release|x64
 		{74613E5C-3C3D-49B6-AACE-ACBA2822B3C4}.Debug|Win32.ActiveCfg = Debug|Win32
 		{74613E5C-3C3D-49B6-AACE-ACBA2822B3C4}.Debug|Win32.Build.0 = Debug|Win32
 		{74613E5C-3C3D-49B6-AACE-ACBA2822B3C4}.Debug|x64.ActiveCfg = Debug|x64

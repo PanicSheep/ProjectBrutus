@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <cassert>
@@ -13,6 +14,10 @@ template <typename T> inline T ABS(const T & a) { return a > 0 ? a : -a; }
 template <typename T> inline T MIN(const T & a, const T & b) { return a < b ? a : b; }
 template <typename T> inline T MAX(const T & a, const T & b) { return a > b ? a : b; }
 template <typename T> inline T BIND(const T & a, const T & min, const T & max) { return a < min ? min : (a > max ? max : a); }
+inline int RoundInt(const double d) { return static_cast<int>(std::round (d)); }
+inline int RoundInt(const float  f) { return static_cast<int>(std::roundf(f)); }
+//inline int RoundInt(double d) { int i = static_cast<int>(d); return i + (d - i >= .5 ) - (d - i <= -.5 ); }
+//inline int RoundInt(float  f) { int i = static_cast<int>(f); return i + (f - i >= .5f) - (f - i <= -.5f); }
 
 static const std::string field_name[65] = {
 	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
@@ -122,6 +127,7 @@ unsigned long long codiagonal_flip(unsigned long long b);
 unsigned long long vertical_flip(unsigned long long b);
 unsigned long long horizontal_flip(unsigned long long b);
 std::string SCIENTIFIC_NOTATION(double Number);
+std::string ScientificNotaion(long double value, long double error, int error_digits);
 std::string time_format(const std::chrono::milliseconds duration);
 std::string short_time_format(std::chrono::duration<long long, std::pico> duration);
 std::string board(const unsigned long long P, const unsigned long long O);
@@ -132,3 +138,4 @@ void print_progressbar(const int width, const float fraction);
 std::string progressbar_percentage(const int width, const float fraction);
 std::string ThousandsSeparator(unsigned long long n);
 std::string DateTimeNow();
+long long pow(long long base, unsigned long long exp);

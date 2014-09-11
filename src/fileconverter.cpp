@@ -7,7 +7,7 @@ void Convert_2(const std::string & s_input, const std::string & s_output)
 {
 	std::vector<INPUT > vec_in = read_vector<INPUT>(s_input);
 	std::vector<OUTPUT> vec_out;
-	for (auto& elem : vec_in)
+	for (const auto& elem : vec_in)
 		vec_out.push_back(static_cast<OUTPUT>(elem));
 	write_to_file(s_output, vec_out);
 }
@@ -23,6 +23,9 @@ void Convert_1(const std::string & s_input, const std::string & s_output)
 	case DataType::Position_Score:     return Convert_2<INPUT, CDataset_Position_Score    >(s_input, s_output);
 	case DataType::Position_Score_PV:  return Convert_2<INPUT, CDataset_Position_Score_PV >(s_input, s_output);
 	case DataType::Position_FullScore: return Convert_2<INPUT, CDataset_Position_FullScore>(s_input, s_output);
+	case DataType::Edax:               return Convert_2<INPUT, CDataset_Edax              >(s_input, s_output);
+	//case DataType::Position:           return Convert_2<INPUT, CPosition                  >(s_input, s_output);
+	//case DataType::PositionScore:      return Convert_2<INPUT, CPositionScore             >(s_input, s_output);
 	}
 }
 
@@ -36,6 +39,9 @@ void Convert(const std::string & s_input, const std::string & s_output)
 	case DataType::Position_Score:     return Convert_1<CDataset_Position_Score    >(s_input, s_output);
 	case DataType::Position_Score_PV:  return Convert_1<CDataset_Position_Score_PV >(s_input, s_output);
 	case DataType::Position_FullScore: return Convert_1<CDataset_Position_FullScore>(s_input, s_output);
+	case DataType::Edax:               return Convert_1<CDataset_Edax              >(s_input, s_output);
+	//case DataType::Position:           return Convert_1<CPosition                  >(s_input, s_output);
+	//case DataType::PositionScore:      return Convert_1<CPositionScore             >(s_input, s_output);
 	}
 }
 
@@ -64,13 +70,10 @@ int main(int argc, char* argv[])
 			"-h\tDisplays help." << std::endl;
 	}
 
-	//s_input  = "F:\\Reversi\\pos\\rnd_d0_100M.b";
-	//s_output = "F:\\Reversi\\pos\\rnd_d0_100M.ps";
-	//b_s_input = true;
-	//b_s_output = true;
-
 	if (b_s_input && b_s_output)
 		Convert(s_input, s_output);
+	else
+		std::cerr << "Not enough parameters provided." << std::endl;
 
 	return 0;
 }

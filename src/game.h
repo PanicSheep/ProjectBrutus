@@ -50,6 +50,8 @@ struct CCutOffLimits
 namespace Endgame
 {
 	extern std::vector<CCutOffLimits> MPC_table;
+	extern float mu;
+
 	void Change_MPC_table(CCutOffLimits * pair);
 	void Change_MPC_table(int D, int d);
 	void Change_MPC_table(int D, int d, bool InUse);

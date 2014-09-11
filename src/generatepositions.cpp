@@ -64,7 +64,6 @@ void Work(const unsigned long long N, const int Empties, const bool ETH)
 	auto local_rnd = std::bind(std::uniform_int_distribution<unsigned int>(0,64), std::mt19937_64(std::chrono::system_clock::now().time_since_epoch().count() + std::this_thread::get_id().hash()));
 	unsigned long long P, O, BitBoardPossible;
 	int moves;
-	size.store(0, std::memory_order_release);
 	
 	do
 	{

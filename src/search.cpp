@@ -197,79 +197,91 @@ void CSearch::Evaluate(const bool verbose)
 	startTime = std::chrono::high_resolution_clock::now();
 	const int Empties = NumberOfEmptyStones(P, O);
 
-	if (verbose)
+	if (depth >= Empties)
 	{
-		if (depth >= Empties)
+		if (Empties < 11)
 		{
-			if (Empties < 11)
-			{
-				score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line);
-				print_stats(*this, score, depth, selectivity);
-				if (TestTimeOut()) return;
-			}
-			else
-			{
-				//for (int d = (Empties % 2 ? 3 : 4); d <= Empties - 10; d += 2){
-				//	score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 0, PV_line);
-				//	print_stats(*this, score, d, 0);
-				//	if (TestTimeOut()) return;
-				//}
-
-				for (int d = (Empties % 2 ? 3 : 4); d <= Empties - 10; d += 2){
-					score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 6, PV_line);
-					print_stats(*this, score, d, 6);
-					if (TestTimeOut()) return;
-				}
-				for (int s = 6; s >= selectivity; s -= 2){
-					score = EvaluateEnd(*this, P, O, alpha, beta, s, PV_line);
-					print_stats(*this, score, depth, s);
-					if (TestTimeOut()) return;
-				}
-				//score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line, startTime);
-			}
+			score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line);
+			if (verbose) print_stats(*this, score, depth, selectivity);
+			if (TestTimeOut()) return;
 		}
 		else
 		{
-			//EvaluateLimitedDepth(*this, depth, selectivity);
-			for (int d = ((depth % 2) ? 3 : 4); d < depth; d += 2){
+			for (int d = (Empties % 2 ? 3 : 4); d <= Empties - 10; d += 2){
 				score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 6, PV_line);
-				print_stats(*this, score, d, 6);
+				if (verbose) print_stats(*this, score, d, 6);
 				if (TestTimeOut()) return;
 			}
 			for (int s = 6; s >= selectivity; s -= 2){
-				score = EvaluateLimitedDepth(*this, P, O, alpha, beta, depth, s, PV_line);
-				print_stats(*this, score, depth, s);
+				score = EvaluateEnd(*this, P, O, alpha, beta, s, PV_line);
+				if (verbose) print_stats(*this, score, depth, s);
 				if (TestTimeOut()) return;
 			}
 		}
+	}
+	else
+	{
+		for (int d = ((depth % 2) ? 3 : 4); d < depth; d += 2){
+			score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 6, PV_line);
+			if (verbose) print_stats(*this, score, d, 6);
+			if (TestTimeOut()) return;
+		}
+		for (int s = 6; s >= selectivity; s -= 2){
+			score = EvaluateLimitedDepth(*this, P, O, alpha, beta, depth, s, PV_line);
+			if (verbose) print_stats(*this, score, depth, s);
+			if (TestTimeOut()) return;
+		}
+	}
 
-		endTime = std::chrono::high_resolution_clock::now();
-		print_stats(*this, score, depth, selectivity);
+	endTime = std::chrono::high_resolution_clock::now();
+	if (verbose) print_stats(*this, score, depth, selectivity);
+}
+
+void CSearch::EvaluateDirect(const bool verbose)
+{
+	startTime = std::chrono::high_resolution_clock::now();
+	const int Empties = NumberOfEmptyStones(P, O);
+
+	if (depth >= Empties)
+	{
+		score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line);
+		if (verbose) print_stats(*this, score, depth, selectivity);
 		if (TestTimeOut()) return;
 	}
 	else
 	{
-		if (depth >= Empties)
-		{
-			if (Empties < 11)
-				score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line);
-			else
-			{
-				for (int d = (Empties % 2 ? 3 : 4); d <= Empties - 10; d += 2)
-					score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 6, PV_line);
-				for (int s = 6; s >= selectivity; s -= 2)
-					score = EvaluateEnd(*this, P, O, alpha, beta, s, PV_line);
-			}
-		}
-		else
-		{
-			//EvaluateLimitedDepth(*this, depth, selectivity);
-			for (int d = ((depth % 2) ? 3 : 4); d < depth; d += 2)
-				score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, 6, PV_line);
-			for (int s = 6; s >= selectivity; s -= 2)
-				score = EvaluateLimitedDepth(*this, P, O, alpha, beta, depth, s, PV_line);
-		}
-
-		endTime = std::chrono::high_resolution_clock::now();
+		score = EvaluateLimitedDepth(*this, P, O, alpha, beta, depth, selectivity, PV_line);
+		if (verbose) print_stats(*this, score, depth, selectivity);
+		if (TestTimeOut()) return;
 	}
+
+	endTime = std::chrono::high_resolution_clock::now();
+	if (verbose) print_stats(*this, score, depth, selectivity);
+}
+
+void CSearch::EvaluateIterativeDeepening(const bool verbose)
+{
+	startTime = std::chrono::high_resolution_clock::now();
+	const int Empties = NumberOfEmptyStones(P, O);
+
+	if (depth >= Empties)
+	{
+		for (int d = (Empties % 2 ? 3 : 4); d <= Empties - 10; d += 2){
+			score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, selectivity, PV_line);
+			if (verbose) print_stats(*this, score, d, selectivity);
+			if (TestTimeOut()) return;
+		}
+		score = EvaluateEnd(*this, P, O, alpha, beta, selectivity, PV_line);
+	}
+	else
+	{
+		for (int d = ((depth % 2) ? 3 : 4); d <= depth; d += 2){
+			score = EvaluateLimitedDepth(*this, P, O, alpha, beta, d, selectivity, PV_line);
+			if (verbose) print_stats(*this, score, d, selectivity);
+			if (TestTimeOut()) return;
+		}
+	}
+
+	endTime = std::chrono::high_resolution_clock::now();
+	if (verbose) print_stats(*this, score, depth, selectivity);
 }

@@ -505,7 +505,7 @@ namespace Endgame
 			{
 				if (FlipCount = count_last_flip(O, x))
 				{
-					++NodeCounter;
+					NodeCounter+=2; // Once for passing, once for playing
 					return Score - FlipCount - 2;
 				}
 				else

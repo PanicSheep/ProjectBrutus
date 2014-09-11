@@ -6,229 +6,466 @@
 #include <functional>
 #include <iostream>
 #include <vector>
+#include <map>
 
 namespace Features
 {
-	template <unsigned int power> inline unsigned int Power3() { return 3 * Power3<power-1>(); }
-	template <> inline unsigned int Power3<0>() { return 1; }
-	
-	const bool Feature_C                 = true; 
-	const bool Feature_L1                = true; 
-	const bool Feature_L2                = true; 
-	const bool Feature_L3                = true; 
-	const bool Feature_A                 = true; 
-	const bool Feature_Sq                = true; 
-	const bool Feature_B                 = true; 
-	const bool Feature_D3                = false; 
-	const bool Feature_D4                = true; 
-	const bool Feature_D5                = true; 
-	const bool Feature_D6                = true; 
-	const bool Feature_D7                = true; 
-	const bool Feature_X                 = false; 
-	const bool Feature_PlayersBoarder    = false; 
-	const bool Feature_OpponentsBoarder  = false; 
-	const bool Feature_PlayersExposeds   = false; 
-	const bool Feature_OpponentsExposeds = false;
-	const bool Feature_Possible          = false; 
-	const bool Feature_Possible_E        = false; 
-	const bool Feature_Possible_XC       = false; 
-	const bool Feature_Parity            = false; 
-	const bool Feature_Quadrants         = false; 
-	const bool Feature_NumberOfOwnStones = false;
+	const int BOXES = 15;
 
-	const std::string Names[] = { "C", "L1", "L2", "L3", "A", "Sq", "B", "D4", "D5", "D6", "D7" };
-
-	const int ReducedSize_C = 29646;
-	const int ReducedSize_L1 = 3321;
-	const int ReducedSize_L2 = 3321;
-	const int ReducedSize_L3 = 3321;
-	const int ReducedSize_A = 131220;
-	const int ReducedSize_Sq = 10206;
-	const int ReducedSize_B = 59049;
-	const int ReducedSize_D3 = 18;
-	const int ReducedSize_D4 = 45;
-	const int ReducedSize_D5 = 135;
-	const int ReducedSize_D6 = 378;
-	const int ReducedSize_D7 = 1134;
-	const int ReducedSize_X = 1296;
-	//const int ReducedSize_PlayersBoarder = 65;
-	//const int ReducedSize_OpponentsBoarder = 65;
-	//const int ReducedSize_PlayersExposeds = 65;
-	//const int ReducedSize_OpponentsExposeds = 65;
-	//const int ReducedSize_Possible = 65;
-	//const int ReducedSize_Possible_E = 5;
-	//const int ReducedSize_Possible_XC = 13;
-	//const int ReducedSize_Parity = 5;
-	//const int ReducedSize_Quadrants = 17;
-	//const int ReducedSize_NumberOfOwnStones = 65;
-	const int FullSize_C = 59049;
-	const int FullSize_L1 = 6561;
-	const int FullSize_L2 = 6561;
-	const int FullSize_L3 = 6561;
-	const int FullSize_A = 531441;
-	const int FullSize_Sq = 19683;
-	const int FullSize_B = 59049;
-	const int FullSize_D3 = 27;
-	const int FullSize_D4 = 81;
-	const int FullSize_D5 = 243;
-	const int FullSize_D6 = 729;
-	const int FullSize_D7 = 2187;
-	const int FullSize_X = 6561;
-
-	const int Symmetry_C = 4;
-	const int Symmetry_L1 = 4;
-	const int Symmetry_L2 = 4;
-	const int Symmetry_L3 = 4;
-	const int Symmetry_A = 4;
-	const int Symmetry_Sq = 4;
-	const int Symmetry_B = 8;
-	const int Symmetry_D3 = 4;
-	const int Symmetry_D4 = 4;
-	const int Symmetry_D5 = 4;
-	const int Symmetry_D6 = 4;
-	const int Symmetry_D7 = 4;
-	const int Symmetry_X = 1;
-	const int Symmetry_PlayersBoarder = 1;
-	const int Symmetry_OpponentsBoarder = 1;
-	const int Symmetry_PlayersExposeds = 1;
-	const int Symmetry_OpponentsExposeds = 1;
-	const int Symmetry_Possible = 1;
-	const int Symmetry_Possible_E = 1;
-	const int Symmetry_Possible_XC = 1;
-	const int Symmetry_Parity = 1;
-	const int Symmetry_Quadrants = 4;
-	const int Symmetry_NumberOfOwnStones = 1;
-
-	const int NumberOfFeatures = 0
-		+ (Feature_C ? 1 : 0)
-		+ (Feature_L1 ? 1 : 0)
-		+ (Feature_L2 ? 1 : 0)
-		+ (Feature_L3 ? 1 : 0)
-		+ (Feature_A ? 1 : 0)
-		+ (Feature_Sq ? 1 : 0)
-		+ (Feature_B ? 1 : 0)
-		+ (Feature_D3 ? 1 : 0)
-		+ (Feature_D4 ? 1 : 0)
-		+ (Feature_D5 ? 1 : 0)
-		+ (Feature_D6 ? 1 : 0)
-		+ (Feature_D7 ? 1 : 0)
-		+ (Feature_X ? 1 : 0);
-
-	const int ReducedSize = 0
-		+ (Feature_C ? ReducedSize_C : 0)
-		+ (Feature_L1 ? ReducedSize_L1 : 0)
-		+ (Feature_L2 ? ReducedSize_L2 : 0)
-		+ (Feature_L3 ? ReducedSize_L3 : 0)
-		+ (Feature_A ? ReducedSize_A : 0)
-		+ (Feature_Sq ? ReducedSize_Sq : 0)
-		+ (Feature_B ? ReducedSize_B : 0)
-		+ (Feature_D3 ? ReducedSize_D3 : 0)
-		+ (Feature_D4 ? ReducedSize_D4 : 0)
-		+ (Feature_D5 ? ReducedSize_D5 : 0)
-		+ (Feature_D6 ? ReducedSize_D6 : 0)
-		+ (Feature_D7 ? ReducedSize_D7 : 0)
-		+ (Feature_X ? ReducedSize_X : 0);
-	
-	const int FullSize = 0
-		+ (Feature_C ? FullSize_C : 0)
-		+ (Feature_L1 ? FullSize_L1 : 0)
-		+ (Feature_L2 ? FullSize_L2 : 0)
-		+ (Feature_L3 ? FullSize_L3 : 0)
-		+ (Feature_A ? FullSize_A : 0)
-		+ (Feature_Sq ? FullSize_Sq : 0)
-		+ (Feature_B ? FullSize_B : 0)
-		+ (Feature_D3 ? FullSize_D3 : 0)
-		+ (Feature_D4 ? FullSize_D4 : 0)
-		+ (Feature_D5 ? FullSize_D5 : 0)
-		+ (Feature_D6 ? FullSize_D6 : 0)
-		+ (Feature_D7 ? FullSize_D7 : 0)
-		+ (Feature_X ? FullSize_X : 0);
-
-	const int Symmetries = 0
-		+ (Feature_C ? Symmetry_C : 0)
-		+ (Feature_L1 ? Symmetry_L1 : 0)
-		+ (Feature_L2 ? Symmetry_L2 : 0)
-		+ (Feature_L3 ? Symmetry_L3 : 0)
-		+ (Feature_A ? Symmetry_A : 0)
-		+ (Feature_Sq ? Symmetry_Sq : 0)
-		+ (Feature_B ? Symmetry_B : 0)
-		+ (Feature_D3 ? Symmetry_D3 : 0)
-		+ (Feature_D4 ? Symmetry_D4 : 0)
-		+ (Feature_D5 ? Symmetry_D5 : 0)
-		+ (Feature_D6 ? Symmetry_D6 : 0)
-		+ (Feature_D7 ? Symmetry_D7 : 0)
-		+ (Feature_X ? Symmetry_X : 0)
-		+ (Feature_PlayersBoarder ? Symmetry_PlayersBoarder : 0)
-		+ (Feature_OpponentsBoarder ? Symmetry_OpponentsBoarder : 0)
-		+ (Feature_PlayersExposeds ? Symmetry_PlayersExposeds : 0)
-		+ (Feature_OpponentsExposeds ? Symmetry_OpponentsExposeds : 0)
-		+ (Feature_Possible ? Symmetry_Possible : 0)
-		+ (Feature_Possible_E ? Symmetry_Possible_E : 0)
-		+ (Feature_Possible_XC ? Symmetry_Possible_XC : 0)
-		+ (Feature_Parity ? Symmetry_Parity : 0)
-		+ (Feature_Quadrants ? Symmetry_Quadrants : 0)
-		+ (Feature_NumberOfOwnStones ? Symmetry_NumberOfOwnStones : 0);
-
-	inline void SwapIf(int& A, int& B) { if (A > B) std::swap(A, B); }
-	inline void Sort(int& A0, int& A1, int& A2, int& A3)
+	class CIndexArray
 	{
-		SwapIf(A0,A1);
-		SwapIf(A2,A3);
+	public:
+		unsigned long long BitBoard;
+		std::vector<int> Indices;
+	};
 
-		SwapIf(A0,A2);
-		SwapIf(A1,A3);
-
-		SwapIf(A1,A2);
-	}
-	inline void Sort(int& A0, int& A1, int& A2, int& A3, int& A4, int& A5, int& A6, int& A7)
+	class FeatureMetaGroup
 	{
-		SwapIf(A0,A4);
-		SwapIf(A1,A5);
-		SwapIf(A2,A6);
-		SwapIf(A3,A7);
-			
-		SwapIf(A0,A2);
-		SwapIf(A1,A3);
-		SwapIf(A4,A6);
-		SwapIf(A5,A7);
-			
-		SwapIf(A2,A4);
-		SwapIf(A3,A5);
-		SwapIf(A0,A1);
-		SwapIf(A6,A7);
-			
-		SwapIf(A2,A3);
-		SwapIf(A4,A5);
+	public:
+		virtual unsigned long long BitPattern() const = 0;
+		virtual std::string Name() const = 0;
+		virtual int Elements() const = 0;
+		virtual int FullSize() const = 0;
+		virtual int ReducedSize() const = 0;
 
-		SwapIf(A1,A4);
-		SwapIf(A3,A6);
-			
-		SwapIf(A1,A2);
-		SwapIf(A3,A4);
-		SwapIf(A5,A6);
-	}
-	inline void Sort4(int* const Array, const int Index) { Sort(Array[Index], Array[Index+1], Array[Index+2], Array[Index+3]); }
-	inline void Sort8(int* const Array, const int Index) { Sort(Array[Index], Array[Index+1], Array[Index+2], Array[Index+3], Array[Index+4], Array[Index+5], Array[Index+6], Array[Index+7]); }
+		virtual void set_weights(std::vector<float>::const_iterator& weight_iter, const unsigned int BoxIndex) = 0;
 
-	void Initialize();
+		virtual float score(const unsigned long long P, const unsigned long long O, const unsigned int BoxIndex) const = 0;
+		virtual float score(const unsigned long long P, const unsigned long long O, const CIndexArray & Player, const CIndexArray & Opponent) const = 0;
+
+		virtual void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int * Array) const = 0;
+	};
+
+	template <unsigned long long BITPATTERN>
+	class FeatureGroup : public FeatureMetaGroup
+	{
+	private:
+		const unsigned long long m_BitPattern = BITPATTERN;
+		const std::string m_Name;
+		int m_Elements;
+		int m_FullSize;
+		int m_ReducedSize;
+		unsigned long long EigenBits, NonEigenBits;
+		std::vector<int> m_Generators; //All the symmetries to genereate all congruent bit pattern.
+		std::vector<int> m_Symmetries; //All the symmetries in m_BitPattern. id is not part of that.
+		std::vector<unsigned long long> m_BitBoards;
+		std::vector<std::vector<float>> m_weights;
+	public:
+		inline unsigned long long BitPattern() const { return m_BitPattern; }
+		inline std::string Name() const { return m_Name; }
+		inline int Elements() const { return m_Elements; }
+		inline int FullSize() const { return m_FullSize; }
+		inline int ReducedSize() const { return m_ReducedSize; }
+
+		FeatureGroup(const std::string & name) : m_Name(name), m_FullSize(pow(3, PopCount(m_BitPattern)))
+		{
+			if (PopCount(m_BitPattern) > 12){
+				std::cerr << "Pattern " << Name() << " too big." << std::endl;
+				throw "Pattern too big.";
+			}
+
+			std::map<unsigned long long, int> Elements;
+			for (int sym = 0; sym < 8; ++sym)
+			{
+				if (Elements.count(sym_flip_inv(m_BitPattern, sym)) == 0) {
+					Elements[sym_flip_inv(m_BitPattern, sym)] = 1;
+					m_Generators.push_back(sym);
+				}
+			}
+			m_Elements = m_Generators.size();
+
+			for (int sym = 1; sym < 8; ++sym)
+				if (sym_flip(m_BitPattern, sym) == m_BitPattern)
+					m_Symmetries.push_back(sym);
+
+			EigenBits = 0ULL;
+			NonEigenBits = 0ULL;
+			unsigned long long tmpPattern = m_BitPattern;
+			unsigned long long LSB, tmp;
+			while (tmpPattern)
+			{
+				LSB = GetLSB(tmpPattern);
+				RemoveLSB(tmpPattern);
+				tmp = Mirror(LSB, m_Symmetries);
+				if (LSB & tmp)
+					EigenBits |= LSB;
+				else{
+					NonEigenBits |= LSB;
+					tmpPattern ^= tmp;
+				}
+			}
+
+			if (m_Elements == 8)
+				m_ReducedSize = pow(3, PopCount(m_BitPattern & ~0x0000001818000000ULL)) 
+							  * pow(2, PopCount(m_BitPattern &  0x0000001818000000ULL));
+			else if (m_Elements == 4)
+			{
+				m_ReducedSize = pow(3, PopCount(NonEigenBits & ~0x0000001818000000ULL)) 
+							  * pow(2, PopCount(NonEigenBits &  0x0000001818000000ULL));
+				m_ReducedSize = m_ReducedSize * (m_ReducedSize + 1) / 2;
+				m_ReducedSize *= pow(3, PopCount(EigenBits & ~0x0000001818000000ULL)) 
+							   * pow(2, PopCount(EigenBits &  0x0000001818000000ULL));
+			}
+			else
+			{
+				std::cerr << "Pattern " << Name() << " not supported." << std::endl;
+				throw "Pattern not supported.";
+			}
+
+			//Initialize BitBoards
+			for (const auto& sym : m_Generators)
+				m_BitBoards.push_back(sym_flip(m_BitPattern, sym));
+
+			//Initialize weights
+			m_weights.resize(m_Elements * BOXES);
+			for (int i = 0; i < m_Elements * BOXES; ++i)
+				m_weights[i].resize(m_FullSize);
+		}
+
+		void set_weights(std::vector<float>::const_iterator& weight_iter, const unsigned int BoxIndex)
+		{
+			unsigned long long tmpP, tmpO, tmpBitBoard;
+			int FullIndex;
+			int ReducedIndex;
+			float w;
+			int counter;
+			int * Array = new int[m_Elements];
+			
+			For_each_configuration_in_pattern_do_fkt(m_BitPattern,
+				[&](unsigned long long P, unsigned long long O)
+				{
+					FillConfigurationArray(P, O, Array);
+					ReducedIndex = Array[0];
+					w = *(weight_iter + ReducedIndex);
+					counter = 0;
+					for (const int sym : m_Generators)
+					{
+						tmpP = sym_flip(P, sym);
+						tmpO = sym_flip(O, sym);
+						tmpBitBoard = sym_flip(m_BitPattern, sym);
+						FullIndex = SumPow3[PExt(tmpP, tmpBitBoard)] + 2 * SumPow3[PExt(tmpO, tmpBitBoard)];
+						m_weights[BoxIndex * m_Elements + counter++][FullIndex] = w;
+					}
+				}
+			);
+
+			delete[] Array;
+			weight_iter += m_ReducedSize;
+		}
+
+		//float score(const unsigned long long P, const unsigned long long O, const float * const weights) const
+		//{
+		//	// RoomForOptimization: pow(3, i) has to cast i from unsigned int to unsigned long long.
+		//	const unsigned int size1 = PopCount(m_BitPattern & ~0x0000001818000000ULL);
+		//	const unsigned int size2 = PopCount(m_BitPattern &  0x0000001818000000ULL);
+		//	float result = 0;
+		//	int index;
+		//	
+		//	if (m_Elements == 8)
+		//	{
+		//		unsigned long long tmpP, tmpO, tmpPattern, LSB;
+		//		for (int sym : m_Generators)
+		//		{
+		//			tmpP = sym_flip(P, sym);
+		//			tmpO = sym_flip(O, sym);
+		//
+		//			index = 0;
+		//			tmpPattern = m_BitPattern & ~0x0000001818000000ULL;
+		//			for (unsigned int i = 0; i < size1; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpP & LSB) index += 1 * pow(3, i);
+		//				if (tmpO & LSB) index += 2 * pow(3, i);
+		//			}
+		//			tmpPattern = m_BitPattern & 0x0000001818000000ULL;
+		//			for (unsigned int i = 0; i < size2; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpO & LSB) index += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+		//			}
+		//			result += weights[index];
+		//		}
+		//	}
+		//	else if (m_Elements == 4)
+		//	{
+		//		// RoomForOptimization: pow(*, i) has to cast i from unsigned int to unsigned long long.
+		//		const unsigned int size1 = PopCount(NonEigenBits & ~0x0000001818000000ULL);
+		//		const unsigned int size2 = PopCount(NonEigenBits &  0x0000001818000000ULL);
+		//		const unsigned int size3 = PopCount(   EigenBits & ~0x0000001818000000ULL);
+		//		const unsigned int size4 = PopCount(   EigenBits &  0x0000001818000000ULL);
+		//		const int diagtmp = pow(3, PopCount(   EigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(   EigenBits & 0x0000001818000000ULL));
+		//		const int sidetmp = pow(3, PopCount(NonEigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(NonEigenBits & 0x0000001818000000ULL));
+		//		unsigned long long tmpP, tmpO, tmpPattern, LSB;
+		//		int indexA, indexB, indexD;
+		//		for (int sym : m_Generators)
+		//		{
+		//			tmpP = sym_flip(P, sym);
+		//			tmpO = sym_flip(O, sym);
+		//								
+		//			// Side A of non-eigen fields
+		//			indexA = 0;
+		//			tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
+		//			for (int i = 0; i < size1; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpP & LSB) indexA += 1 * pow(3, i);
+		//				if (tmpO & LSB) indexA += 2 * pow(3, i);
+		//			}
+		//			tmpPattern = NonEigenBits & 0x0000001818000000ULL;
+		//			for (int i = 0; i < size2; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpO & LSB) indexA += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+		//			}
+		//			
+		//			// Side B of non-eigen fields
+		//			indexB = 0;
+		//			tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
+		//			for (int i = 0; i < size1; ++i)
+		//			{
+		//				LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpP & LSB) indexB += 1 * pow(3, i);
+		//				if (tmpO & LSB) indexB += 2 * pow(3, i);
+		//			}
+		//			tmpPattern = NonEigenBits & 0x0000001818000000ULL;
+		//			for (int i = 0; i < size2; ++i)
+		//			{
+		//				LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpO & LSB) indexB += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+		//			}
+		//
+		//			// Eigen fields
+		//			indexD = 0;
+		//			tmpPattern = EigenBits & ~0x0000001818000000ULL;
+		//			for (unsigned int i = 0; i < size3; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpP & LSB) indexD += 1 * pow(3, i);
+		//				if (tmpO & LSB) indexD += 2 * pow(3, i);
+		//			}
+		//			tmpPattern = EigenBits & 0x0000001818000000ULL;
+		//			for (unsigned int i = 0; i < size4; ++i)
+		//			{
+		//				LSB = GetLSB(tmpPattern);
+		//				RemoveLSB(tmpPattern);
+		//				if (tmpO & LSB) indexD += 1 * pow(2, i) * pow(3, size3); // RoomForOptimization: Move *pow(3, size3) out of loop.
+		//			}
+		//
+		//			index = indexA > indexB ? diagtmp*(sidetmp*indexB+indexA - (((indexB+1)*indexB) >> 1)) + indexD : diagtmp*(sidetmp*indexA+indexB - (((indexA+1)*indexA) >> 1)) + indexD;
+		//			
+		//			result += weights[index];
+		//		}
+		//	}
+		//	else
+		//	{
+		//		std::cerr << "Pattern " << Name() << " not supported." << std::endl;
+		//		throw "Pattern not supported.";
+		//	}
+		//
+		//	return result;
+		//}
+		float score(const unsigned long long P, const unsigned long long O, const unsigned int BoxIndex) const
+		{
+			unsigned long long tmpBitBoard;
+			float result = 0;
+			int index;
+
+			for (int sym = 0; sym < m_Elements; ++sym)
+			{
+				tmpBitBoard = m_BitBoards[sym];
+				index = SumPow3[PExt(P, tmpBitBoard)] + 2 * SumPow3[PExt(O, tmpBitBoard)];
+				result += m_weights[BoxIndex * m_Elements + sym][index];
+			}
+			return result;
+		}
+		float score(const unsigned long long P, const unsigned long long O, const CIndexArray & Player, const CIndexArray & Opponent) const
+		{
+			return 0;
+		}
+
+		void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int * Array) const
+		{
+			// RoomForOptimization: pow(*, i) has to cast i from unsigned int to unsigned long long.
+			const unsigned int size1 = PopCount(m_BitPattern & ~0x0000001818000000ULL);
+			const unsigned int size2 = PopCount(m_BitPattern &  0x0000001818000000ULL);
+			float result = 0;
+			int index;
+			
+			if (m_Elements == 8)
+			{
+				unsigned long long tmpP, tmpO, tmpPattern, LSB;
+				for (int sym : m_Generators)
+				{
+					tmpP = sym_flip(P, sym);
+					tmpO = sym_flip(O, sym);
+
+					index = 0;
+					tmpPattern = m_BitPattern & ~0x0000001818000000ULL;
+					for (unsigned int i = 0; i < size1; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpP & LSB) index += 1 * pow(3, i);
+						if (tmpO & LSB) index += 2 * pow(3, i);
+					}
+					tmpPattern = m_BitPattern & 0x0000001818000000ULL;
+					for (unsigned int i = 0; i < size2; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpO & LSB) index += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+					}
+					*(Array++) = index;
+				}
+			}
+			else
+			{
+				// RoomForOptimization: pow(*, i) has to cast i from unsigned int to unsigned long long.
+				const unsigned int size1 = PopCount(NonEigenBits & ~0x0000001818000000ULL);
+				const unsigned int size2 = PopCount(NonEigenBits &  0x0000001818000000ULL);
+				const unsigned int size3 = PopCount(   EigenBits & ~0x0000001818000000ULL);
+				const unsigned int size4 = PopCount(   EigenBits &  0x0000001818000000ULL);
+				const int diagtmp = pow(3, PopCount(   EigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(   EigenBits & 0x0000001818000000ULL));
+				const int sidetmp = pow(3, PopCount(NonEigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(NonEigenBits & 0x0000001818000000ULL));
+				unsigned long long tmpP, tmpO, tmpPattern, LSB;
+				int indexA, indexB, indexD;
+				for (int sym : m_Generators)
+				{
+					tmpP = sym_flip(P, sym);
+					tmpO = sym_flip(O, sym);
+										
+					// Side A of non-eigen fields
+					indexA = 0;
+					tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
+					for (int i = 0; i < size1; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpP & LSB) indexA += 1 * pow(3, i);
+						if (tmpO & LSB) indexA += 2 * pow(3, i);
+					}
+					tmpPattern = NonEigenBits & 0x0000001818000000ULL;
+					for (int i = 0; i < size2; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpO & LSB) indexA += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+					}
+					
+					// Side B of non-eigen fields
+					indexB = 0;
+					tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
+					for (int i = 0; i < size1; ++i)
+					{
+						LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
+						RemoveLSB(tmpPattern);
+						if (tmpP & LSB) indexB += 1 * pow(3, i);
+						if (tmpO & LSB) indexB += 2 * pow(3, i);
+					}
+					tmpPattern = NonEigenBits & 0x0000001818000000ULL;
+					for (int i = 0; i < size2; ++i)
+					{
+						LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
+						RemoveLSB(tmpPattern);
+						if (tmpO & LSB) indexB += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
+					}
+
+					// Eigen fields
+					indexD = 0;
+					tmpPattern = EigenBits & ~0x0000001818000000ULL;
+					for (unsigned int i = 0; i < size3; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpP & LSB) indexD += 1 * pow(3, i);
+						if (tmpO & LSB) indexD += 2 * pow(3, i);
+					}
+					tmpPattern = EigenBits & 0x0000001818000000ULL;
+					for (unsigned int i = 0; i < size4; ++i)
+					{
+						LSB = GetLSB(tmpPattern);
+						RemoveLSB(tmpPattern);
+						if (tmpO & LSB) indexD += 1 * pow(2, i) * pow(3, size3); // RoomForOptimization: Move *pow(3, size3) out of loop.
+					}
+
+					index = indexA > indexB ? diagtmp*(sidetmp*indexB+indexA - (((indexB+1)*indexB) >> 1)) + indexD : diagtmp*(sidetmp*indexA+indexB - (((indexA+1)*indexA) >> 1)) + indexD;
+					
+					*(Array++) = index;
+				}
+			}
+		}
+		
+	};
+	
+	extern std::vector<FeatureMetaGroup*> FeatureList;
+	extern std::size_t Elements;
+	extern std::size_t FullSize;
+	extern std::size_t ReducedSize;
+	extern std::string Names();
+
+	
+	unsigned long long sym_flip(const unsigned long long P, const int sym);
+	unsigned long long sym_flip_inv(const unsigned long long P, const int sym);
+	unsigned long long Mirror(const unsigned long long B, const std::vector<int> & Generator);
+	void For_each_configuration_in_pattern_do_fkt(const unsigned long long Pattern, std::function<void(const unsigned long long, const unsigned long long)> fkt);
+	
+	//inline void SwapIf(int& A, int& B) { if (A > B) std::swap(A, B); }
+	//inline void Sort(int& A0, int& A1, int& A2, int& A3)
+	//{
+	//	// Sorting network
+	//	SwapIf(A0,A1);
+	//	SwapIf(A2,A3);
+
+	//	SwapIf(A0,A2);
+	//	SwapIf(A1,A3);
+
+	//	SwapIf(A1,A2);
+	//}
+	//inline void Sort(int& A0, int& A1, int& A2, int& A3, int& A4, int& A5, int& A6, int& A7)
+	//{
+	//	// Sorting network
+	//	SwapIf(A0,A4);
+	//	SwapIf(A1,A5);
+	//	SwapIf(A2,A6);
+	//	SwapIf(A3,A7);
+	//		
+	//	SwapIf(A0,A2);
+	//	SwapIf(A1,A3);
+	//	SwapIf(A4,A6);
+	//	SwapIf(A5,A7);
+	//		
+	//	SwapIf(A2,A4);
+	//	SwapIf(A3,A5);
+	//	SwapIf(A0,A1);
+	//	SwapIf(A6,A7);
+	//		
+	//	SwapIf(A2,A3);
+	//	SwapIf(A4,A5);
+
+	//	SwapIf(A1,A4);
+	//	SwapIf(A3,A6);
+	//		
+	//	SwapIf(A1,A2);
+	//	SwapIf(A3,A4);
+	//	SwapIf(A5,A6);
+	//}
+	//inline void Sort4(int * const Array) { Sort(Array[0], Array[1], Array[2], Array[3]); }
+	//inline void Sort8(int * const Array) { Sort(Array[0], Array[1], Array[2], Array[3], Array[4], Array[5], Array[6], Array[7]); }
+
+	void Initialize(const int conf);
 	void Finalize();
 }
 
-class CActiveConfigurations
-{
-private:
-	int m_Array[Features::Symmetries];
-	unsigned long long m_P, m_O;
-public:
-	CActiveConfigurations(const unsigned long long P, const unsigned long long O);
-	int EvaluateFeatures() const;
-	int EvaluateFeatures(const unsigned long long P, const unsigned long long O) const;
-};
-
-void FillReducedConfigurationArray(const unsigned long long P, const unsigned long long O, int* Array);
-void FillReducedConfigurationArraySorted(const unsigned long long P, const unsigned long long O, int* const Array);
+void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int * Array);
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O);
-int EvaluateFeatures(const unsigned long long P, const unsigned long long O, float* const Array);
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, float * const Array);
 
-bool Test_All_Features();
+//bool Test_All_Features();

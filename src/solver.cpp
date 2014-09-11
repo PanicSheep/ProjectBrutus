@@ -9,6 +9,7 @@ int main(int argc, char* argv[])
 	int s = 0;
 	int n = 10;
 	int t = 4;
+	int conf = 0;
 	bool v = false;
 	bool SkipSolved = true;
 	bool Save = true;
@@ -38,36 +39,36 @@ int main(int argc, char* argv[])
 			SkipSolved = false;
 		else if (std::string(argv[i]) == "-nosave")
 			Save = false;
-		else if (std::string(argv[i]) == "-h")
+		else if (std::string(argv[i]) == "-conf")
+			conf = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-h"){
 			std::cout << "Solves a file of given reversi positions." << std::endl <<
-					"Arguments:" << std::endl <<
-					"-f\tFilename." << std::endl <<
-					"-n\tNumber of positions to solve (default: 100)" << std::endl <<
-					"-d\tDepth to solve for (default: Exact)" << std::endl <<
-					"-s\tSelectivity to solve for (default: no selectivity)" << std::endl <<
-					"-t\tNumber of threads" << std::endl <<
-					"-v\tVerbose" << std::endl <<
-					"-test\tRun as test." << std::endl <<
-					"-noskip\tDon't skip solved positions." << std::endl <<
-					"-nosave\tDon't save results." << std::endl <<
-					"-h\tDisplays help." << std::endl;
+				"Arguments:" << std::endl <<
+				"-f\tFilename." << std::endl <<
+				"-n\tNumber of positions to solve (default: 100)" << std::endl <<
+				"-d\tDepth to solve for (default: Exact)" << std::endl <<
+				"-s\tSelectivity to solve for (default: no selectivity)" << std::endl <<
+				"-t\tNumber of threads" << std::endl <<
+				"-v\tVerbose" << std::endl <<
+				"-test\tRun as test." << std::endl <<
+				"-noskip\tDon't skip solved positions." << std::endl <<
+				"-nosave\tDon't save results." << std::endl <<
+				"-h\tDisplays help." << std::endl;
+			return 0;
+		}
 	}
 
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize();
+	Features::Initialize(conf);
 	Midgame::Initialize();
 
-	//Filename = std::string("G:\\Reversi\\pos\\perft5.psp");
+	//Filename = std::string("C:\\Users\\Dominic\\Desktop\\edax\\4.3.2\\bin\\problem\\full-20.obf");
 	//b_file = true;
-	//n = 764;
-	//d = 16;
-	//s = 6;
-	//t = 4;
-	//v = false;
 	//SkipSolved = false;
 	//Save = false;
+	//n = 10;
 	
 	std::string ending_input = Filename.substr(Filename.rfind(".") + 1, Filename.length());
 
@@ -94,6 +95,7 @@ int main(int argc, char* argv[])
 		case DataType::Position_Score:     Solve<CDataset_Position_Score    >(Filename, n, d, s, t, v, SkipSolved, Save); break;
 		case DataType::Position_Score_PV:  Solve<CDataset_Position_Score_PV >(Filename, n, d, s, t, v, SkipSolved, Save); break;
 		case DataType::Position_FullScore: Solve<CDataset_Position_FullScore>(Filename, n, d, s, t, v, SkipSolved, Save); break;
+		case DataType::Edax:               Solve<CDataset_Edax              >(Filename, n, d, s, t, v, SkipSolved, Save); break;
 		}
 	}
 

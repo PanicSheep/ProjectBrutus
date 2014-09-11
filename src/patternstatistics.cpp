@@ -16,6 +16,7 @@
 #include <vector>
 #include <omp.h>
 #include <Windows.h>
+#include <random>
 
 template <typename K>
 class CMatrix
@@ -25,13 +26,14 @@ public:
 	CMatrix(const unsigned int n, const unsigned int m) : n(n), m(m) { m_elements = new K[n*m]; }
 	~CMatrix() { delete[] m_elements; }
 	K& operator()(const unsigned int i, const unsigned int j) { return m_elements[i*m+j]; }
-	std::vector<K> operator*(const std::vector<K>& v)
+	const K& operator()(const unsigned int i, const unsigned int j) const { return m_elements[i*m+j]; }
+	std::vector<K> operator*(const std::vector<K>& v) const
 	{
 		assert(v.size() == m);
 		std::vector<K> ret(n);
-		for (unsigned int i = 0; i < m; ++i){
+		for (unsigned int i = 0; i < n; ++i){
 			ret[i] = 0;
-			for (unsigned int j = 0; j < n; ++j)
+			for (unsigned int j = 0; j < m; ++j)
 				ret[i] += this->operator()(i, j) * v[j];
 		}
 		return ret;
@@ -40,136 +42,173 @@ private:
 	K * m_elements;
 };
 
-//void Penis(std::vector<CPosition>& Positions)
-//{
-//	CMatrix<float> X(Positions.size(), Features::NumberOfFeatures);
-//	CMatrix<float> XTX(Features::NumberOfFeatures, Features::NumberOfFeatures);
-//	std::vector<float> Y(Positions.size());
-//	std::vector<float> XTY(Features::NumberOfFeatures);
-//
-//	float scores[Features::NumberOfFeatures];
-//
-//	// Fill X and Y
-//	for (unsigned int i = 0; i < Positions.size(); ++i)
-//	{
-//		Y[i] = EvaluateFeatures(Positions[i].P, Positions[i].O, scores);
-//		for (unsigned int j = 0; j < Features::NumberOfFeatures; ++j)
-//			X(i, j) = scores[j];
-//	}
-//	
-//	// Calculate XTY = X^T * Y
-//	for (unsigned int i = 0; i < Positions.size(); ++i)
-//	{
-//		XTY[i] = 0;
-//		for (unsigned int j = 0; j < Features::NumberOfFeatures; ++j)
-//			XTY[i] += X(j, i) * Y[i];
-//	}
-//
-//	// Calculate XTX = X^T * X
-//	for (unsigned int i = 0; i < Features::NumberOfFeatures; ++i)
-//	{
-//		XTX(i) = 0;
-//		for (unsigned int j = 0; j < Features::NumberOfFeatures; ++j)
-//			XTX[i] += X(j, i) * X(i, j);
-//	}
-//}
-
-
-template <class T>
-void PatternStatistics(const std::string& filename, const int n, const bool verbose)
+template <typename K>
+std::vector<K> operator+(const std::vector<K>& a, const std::vector<K>& b)
 {
-	std::vector<T> positions = read_vector<T>(filename);
-	float scores[Features::NumberOfFeatures];
-	float E_of_X[Features::NumberOfFeatures];
-	float E_of_X_sq[Features::NumberOfFeatures];
-	int Feature_score, Stored_score, err;
-	std::size_t N = 0;
-
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) scores[i] = 0.0;
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X[i] = 0.0;
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X_sq[i] = 0.0;
-
-	printf("names:   ");
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) printf("\t %2s", Features::Names[i]);
-	printf("\n");
-
-	for (auto& pos : positions)
-	{
-		Feature_score = EvaluateFeatures(pos.P, pos.O, scores);
-		Stored_score = pos.score;
-		err = Feature_score - Stored_score;
-
-		printf("%+2.2d : %+2.2d\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\n", Stored_score, Feature_score, scores[0], scores[1], scores[2], scores[3], scores[4], scores[5], scores[6], scores[7], scores[8], scores[9], scores[10]);
-
-		++N;
-		for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X[i] += (static_cast<float>(std::abs(scores[i])) - E_of_X[i]) / static_cast<float>(N);
-		for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X_sq[i] += (static_cast<float>(std::abs(scores[i]))*static_cast<float>(std::abs(scores[i])) - E_of_X_sq[i]) / static_cast<float>(N);
-	}
-
-	printf("avg diff:\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\n", E_of_X[0], E_of_X[1], E_of_X[2], E_of_X[3], E_of_X[4], E_of_X[5], E_of_X[6], E_of_X[7], E_of_X[8], E_of_X[9], E_of_X[10]);
-	printf("std diff:\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\n", 
-		std::sqrt(E_of_X_sq[ 0] - E_of_X[ 0] * E_of_X[ 0]), 
-		std::sqrt(E_of_X_sq[ 1] - E_of_X[ 1] * E_of_X[ 1]), 
-		std::sqrt(E_of_X_sq[ 2] - E_of_X[ 2] * E_of_X[ 2]), 
-		std::sqrt(E_of_X_sq[ 3] - E_of_X[ 3] * E_of_X[ 3]), 
-		std::sqrt(E_of_X_sq[ 4] - E_of_X[ 4] * E_of_X[ 4]), 
-		std::sqrt(E_of_X_sq[ 5] - E_of_X[ 5] * E_of_X[ 5]), 
-		std::sqrt(E_of_X_sq[ 6] - E_of_X[ 6] * E_of_X[ 6]), 
-		std::sqrt(E_of_X_sq[ 7] - E_of_X[ 7] * E_of_X[ 7]), 
-		std::sqrt(E_of_X_sq[ 8] - E_of_X[ 8] * E_of_X[ 8]), 
-		std::sqrt(E_of_X_sq[ 9] - E_of_X[ 9] * E_of_X[ 9]), 
-		std::sqrt(E_of_X_sq[10] - E_of_X[10] * E_of_X[10]));
+	assert(a.size() == b.size());
+	std::vector<K> c(a.size());
+	for (int i = 0; i < a.size(); ++i)
+		c[i] = a[i] + b[i];
+	return c;
 }
 
-template <>
-void PatternStatistics<CDataset_Position_FullScore>(const std::string& filename, const int n, const bool verbose)
+template <typename K>
+std::vector<K> operator-(const std::vector<K>& a, const std::vector<K>& b)
 {
-	std::vector<CDataset_Position_FullScore> positions = read_vector<CDataset_Position_FullScore>(filename);
-	float scores[Features::NumberOfFeatures];
-	float E_of_X[Features::NumberOfFeatures];
-	float E_of_X_sq[Features::NumberOfFeatures];
-	int Feature_score, Stored_score, err;
-	std::size_t N = 0;
-
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) scores[i] = 0.0;
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X[i] = 0.0;
-	for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X_sq[i] = 0.0;
-
-	for (auto& pos : positions)
-	{
-		Feature_score = EvaluateFeatures(pos.P, pos.O, scores);
-		Stored_score = -128;
-		for (std::size_t i = 0; i < 64; ++i) if (pos.score[i] > Stored_score) Stored_score = pos.score[i];
-		err = Feature_score - Stored_score;
-
-		printf("%+2.2d : %+2.2d\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\n", Stored_score, Feature_score, scores[0], scores[1], scores[2], scores[3], scores[4], scores[5], scores[6], scores[7], scores[8], scores[9], scores[10]);
-
-		//++N;
-		//for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X[i] += (static_cast<float>(Feature_score) - E_of_X[i]) / static_cast<float>(N);
-		//for (std::size_t i = 0; i < Features::NumberOfFeatures; ++i) E_of_X_sq[i] += (static_cast<float>(Feature_score)*static_cast<float>(Feature_score) - E_of_X_sq[i]) / static_cast<float>(N);
-	}
+	assert(a.size() == b.size());
+	std::vector<K> c(a.size());
+	for (int i = 0; i < a.size(); ++i)
+		c[i] = a[i] - b[i];
+	return c;
 }
 
-void PatternStatistics(const std::vector<std::string>& FileNames, const int n, const bool verbose)
+template <typename K>
+std::vector<K> operator*(const long double a, const std::vector<K>& b)
+{
+	std::vector<K> c(b.size());
+	for (int i = 0; i < b.size(); ++i)
+		c[i] = a * b[i];
+	return c;
+}
+
+template <typename K>
+long double dot(const std::vector<K>& a, const std::vector<K>& b)
+{
+	assert(a.size() == b.size());
+	long double sum = 0.0;
+	const std::size_t size = a.size();
+	for (std::size_t i = 0; i < size; ++i)
+		sum += a[i] * b[i];
+	return sum;
+}
+
+template <typename K>
+long double dot(const std::vector<K>& a)
+{ 
+	long double sum = 0.0;
+	const std::size_t size = a.size();
+	for (std::size_t i = 0; i < size; ++i)
+		sum += a[i] * a[i];
+	return sum;
+}
+
+template <typename K>
+long double norm(const std::vector<K>& a) { return std::sqrtl(dot(a)); }
+
+template <typename K>
+std::vector<K> CG(const CMatrix<K>& A, const std::vector<K> b)
+{
+	auto rnd = std::bind(std::uniform_real_distribution<K>(-1, 1), std::mt19937_64(13));
+	long double alpha, beta, tmp;
+	std::vector<K> x(A.m);
+	for (auto& elem : x) elem = rnd();
+	std::vector<K> r = b - A * x;
+	std::vector<K> p = r;
+	std::vector<K> z;
+
+	for (int it = 0; it < 3 * A.m; ++it) {
+		z = A * p;
+		tmp = dot(r, r);
+		alpha = tmp / dot(p, z);
+		x = x + alpha * p;
+		r = r - alpha * z;
+		if (norm(r) < 1e-8) return x;
+		beta = dot(r, r) / tmp;
+		p = r + beta * p;
+	}
+	std::cerr << "ERROR: CG did not converge." << std::endl;
+	return x;
+}
+
+void PatternStatistics(std::vector<CPositionScore>& Positions)
+{
+	const std::size_t NumberOfPattern = Features::FeatureList.size();
+	CMatrix<double> X(Positions.size(), NumberOfPattern);
+	CMatrix<double> XTX(NumberOfPattern, NumberOfPattern);
+	std::vector<double> Y(Positions.size());
+	std::vector<double> XTY(NumberOfPattern);
+	std::vector<double> err(Positions.size());
+	std::vector<double> Std(NumberOfPattern);
+	std::vector<double> b;
+	std::vector<double> e;
+	long double sigma, s_sq;
+
+	float * scores = new float[NumberOfPattern];
+
+	// Fill X and Y and e
+	for (unsigned int i = 0; i < Positions.size(); ++i)
+	{
+		Y[i] = EvaluateFeatures(Positions[i].P, Positions[i].O, scores);
+		err[i] = Y[i] - Positions[i].score;
+		for (unsigned int j = 0; j < NumberOfPattern; ++j)
+			X(i, j) = scores[j];
+	}
+	
+	delete[] scores;
+
+	// Calculating standard deviation
+	sigma = StandardDeviation(err);
+	printf("stdev: %s\n", ScientificNotaion(sigma, sigma / std::sqrtl(2 * (err.size() - 1)), 2).c_str());
+
+	// Calculating avg abs err
+	printf("avg abs err: %3.3f\n\n", AverageAbs(err));
+	
+	// Calculate XTY = X^T * Y
+	for (unsigned int i = 0; i < NumberOfPattern; ++i)
+	{
+		XTY[i] = 0;
+		for (unsigned int j = 0; j < Positions.size(); ++j)
+			XTY[i] += X(j, i) * Y[j];
+	}
+
+	// Calculate XTX = X^T * X
+	for (unsigned int i = 0; i < NumberOfPattern; ++i)
+		for (unsigned int j = 0; j < NumberOfPattern; ++j)
+		{
+			XTX(i, j) = 0;
+			for (unsigned int k = 0; k < Positions.size(); ++k)
+				XTX(i, j) += X(k, i) * X(k, j);
+		}
+
+	b = CG(XTX, XTY);
+	e = Y - (X * b);
+	s_sq = dot(e, e) / static_cast<double>(Positions.size() - NumberOfPattern);
+
+	// Calculating Std
+	for (unsigned int i = 0; i < NumberOfPattern; ++i)
+	{
+		std::vector<double> unit(NumberOfPattern);
+		for (auto& elem : unit) elem = 0;
+		unit[i] = 1;
+		Std[i] = s_sq * CG(XTX, unit)[i];
+	}
+
+
+	printf(" Pattern  |    b    |    std    |     t     \n");
+	printf("----------+---------+-----------+-----------\n");
+
+	for (std::size_t i = 0; i < Features::FeatureList.size(); ++i)
+		printf(" %-9s| %1.5f | %1.2E | %1.2E \n", Features::FeatureList[i]->Name(), b[i], Std[i], b[i]/Std[i]);
+}
+
+void PatternStatistics(const std::vector<std::string>& FileNames, const int size, const bool verbose)
 {
 	std::cout << "Calculating pattern statistics.\n";
 	for (auto& filename : FileNames)
-		std::cout << filename << "\n" << std::endl;
-	std::cout << "Number of positions per file to process: " << n << "\n"
+		std::cout << filename << "\n";
+	std::cout << "Number of positions per file to process: " << size << "\n"
 			  << (verbose ? "Verbose\n" : "Non verbose\n")
 			  << "Start time: " << DateTimeNow() << std::endl;
 	
+	std::vector<CPositionScore> Positions;
+
 	for (auto& filename : FileNames)
 	{
-		std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
-		switch (Ending_to_DataType(ending))
-		{
-		//case DataType::Old:                Solve<CDataset_Old               >(Filename, n, d, s, t, v, test); break;
-		case DataType::Position_Score:     PatternStatistics<CDataset_Position_Score    >(filename, n, verbose); break;
-		case DataType::Position_Score_PV:  PatternStatistics<CDataset_Position_Score_PV >(filename, n, verbose); break;
-		case DataType::Position_FullScore: PatternStatistics<CDataset_Position_FullScore>(filename, n, verbose); break;
-		}
+		std::vector<CPositionScore> vec = read_vector<CPositionScore>(filename, size);
+		Positions.insert(Positions.end(), vec.begin(), vec.end());
 	}
+
+	PatternStatistics(Positions);
 }
 
 void Print_help()
@@ -178,21 +217,16 @@ void Print_help()
 						   << "Attributes:" << std::endl
 						   << "-f\tposition files." << std::endl
 						   << "-n\tnumber of positions." << std::endl
-						   << "-bit\tbit size of hash table." << std::endl
 						   << "-v\tverbose." << std::endl
 						   << "-h\tprints this help." << std::endl << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize();
-
 	std::vector<std::string> FileNames;
 	int n = 10000;
-	int bit = 24;
 	bool v = false;
+	int conf = 0;
 
 	for (int i = 0; i < argc; ++i)
 	{
@@ -204,18 +238,22 @@ int main(int argc, char* argv[])
 		}
 		else if (std::string(argv[i]) == "-n")
 			n = atoi(argv[++i]);
-		else if (std::string(argv[i]) == "-bit")
-			bit = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-v")
 			v = true;
+		else if (std::string(argv[i]) == "-conf")
+			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-h"){
 			Print_help();
 			return 0;
 		}
 	}
 
-	for (int i = 7; i < 49; ++i)
-		FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d" + std::to_string(i) + "_1M.ps"));
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
+	Features::Initialize(conf);
+
+	//for (int i = 7; i < 8; ++i)
+	//	FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d" + std::to_string(i) + "_1M.ps"));
 
 	PatternStatistics(FileNames, n, v);
 	return 0;

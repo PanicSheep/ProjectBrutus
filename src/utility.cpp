@@ -88,6 +88,18 @@ std::string SCIENTIFIC_NOTATION(double Number)
 	return sstm.str();
 }
 
+std::string ScientificNotaion(long double value, long double error, int error_digits)
+{
+	long double order_value = std::floorl(std::log10(value));
+	long double order_error = std::floorl(std::log10(error));
+	std::ostringstream os;
+	os << std::fixed << std::setprecision(order_value - order_error + error_digits - 1);
+	os << value * std::powl(10.0, -order_value);
+	os << "(" << std::setprecision(0) << error * std::powl(10.0, -order_error + error_digits - 1) << ")";
+	if (order_value != 0) os << "x10^" << order_value;
+	return os.str();
+}
+
 std::string time_format(const std::chrono::milliseconds duration)
 {
 	char time[15] = "          .   "; //d:hh:mm:ss.ccc
@@ -158,9 +170,8 @@ std::string short_time_format(std::chrono::duration<long long, std::pico> durati
 std::string board(const unsigned long long P, const unsigned long long O)
 {
 	std::string s;
-	for (unsigned int i = 0; i < 8; i++)
-	{
-		for (unsigned int j = 0; j < 8; j++)
+	for (unsigned int i = 0; i < 8; ++i)
+		for (unsigned int j = 0; j < 8; ++j)
 		{
 			if (P & (0x8000000000000000ULL >> (i * 8 + j)))
 				s.append("X");
@@ -169,7 +180,6 @@ std::string board(const unsigned long long P, const unsigned long long O)
 			else
 				s.append("-");
 		}
-	}
 	return s;
 }
 
@@ -266,4 +276,17 @@ std::string DateTimeNow()
 
 	std::time_t t = std::chrono::system_clock::to_time_t(p);
 	return std::string(std::ctime(&t));
+}
+
+long long pow(long long base, unsigned long long exp)
+{
+    long long result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
 }

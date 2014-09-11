@@ -2,21 +2,22 @@
 
 using namespace std;
 
-void Load_Matrix(const vector<string>& file_matrix, vector<CDataset_Position_Score>& A)
+void Load_Matrix(const vector<string>& file_matrix, vector<CPositionScore>& A)
 {
-	const vector<string>::const_iterator end = file_matrix.cend();
-	for (vector<string>::const_iterator it = file_matrix.cbegin(); it != end; ++it)
-		read_vector(it->c_str(), A);
+	vector<CPositionScore> tmp;
+	for (const auto& filename : file_matrix){
+		tmp = read_vector<CPositionScore>(filename);
+		A.insert(A.end(), tmp.begin(), tmp.end());
+	}
 }
 
 void CalculateActiveConfigurations(const vector<string> file_matrix)
 {
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	std::chrono::high_resolution_clock::time_point OverallstartTime, OverallendTime;
-	vector<CDataset_Position_Score> A;
+	vector<CPositionScore> A;
 	vector<int> Appearances(Features::ReducedSize);
 	vector<int> local_Appearances;
-	int Array[Features::Symmetries];
 	int max = 0;
 
 	printf("Matrices:\n");
@@ -32,17 +33,18 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 	const int size = A.size();
 
 	OverallstartTime = std::chrono::high_resolution_clock::now();
-	#pragma omp parallel private(Array, local_Appearances)
+	#pragma omp parallel private(local_Appearances)
 	{
 		int local_max = 0;
+		int * Array = new int[Features::Elements];
 		local_Appearances = vector<int>(Features::ReducedSize);
 
 		#pragma omp for nowait schedule(static, 1000)
 		for (int i = 0; i < size; ++i)
 		{
-			FillReducedConfigurationArray(A[i].P, A[i].O, Array);
+			FillConfigurationArray(A[i].P, A[i].O, Array);
 
-			for (int j = 0; j < Features::Symmetries; ++j)
+			for (int j = 0; j < Features::Elements; ++j)
 				local_Appearances[Array[j]]++;
 		}
 
@@ -64,6 +66,7 @@ void CalculateActiveConfigurations(const vector<string> file_matrix)
 			if (local_max > max)
 				max = local_max;
 		}
+		delete[] Array;
 	}
 
 	int * counter = new int[max+1];
@@ -118,19 +121,6 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 	}
-
-	//if (b_c){
-	//	Compare(file_end_x, FileNames);
-	//	return 0;
-	//}
-
-	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d19_100M.b"));
-	FileNames.push_back(string("G:\\Reversi\\pos\\rnd_d7_1M.ps"));
-	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d8_1M.b"));
-	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
-	//FileNames.push_back(string("F:\\Reversi\\pos\\rnd_d10_1M.b"));
-	CalculateActiveConfigurations(FileNames);
-	return 0;
 
 	if (b_FileName)
 		CalculateActiveConfigurations(FileNames);

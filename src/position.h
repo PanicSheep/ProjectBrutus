@@ -24,25 +24,26 @@ inline void ResetPosition(unsigned long long & P, unsigned long long & O, const 
 }
 
 inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return PopCount(~(P | O)); }
-inline unsigned char parity(const unsigned long long E)
+inline unsigned long long parity(unsigned long long E)
 {
-	unsigned long long p = E;
-	p ^= p >>  1;
-	p ^= p >>  2;
-	p ^= p >>  8;
-	p ^= p >> 16;
-	p &= 0x0000001100000011ULL;
-	p |= p >>  3;
-	p |= p >> 30;
-	return p & 0xFULL;
+	// 6x SHIFT, 4x XOR, 2x AND, 2x OR <==> 14 OPs
+	E ^= E >>  1;
+	E ^= E >>  2;
+	E ^= E >>  8;
+	E ^= E >> 16;
+	E &= 0x0000001100000011ULL;
+	E |= E >>  3;
+	E |= E >> 30;
+	return E & 0xFULL;
 }
-inline unsigned char parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
+inline unsigned long long parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
 //unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);
 void PossibleMoves(const unsigned long long P, const unsigned long long O, unsigned long long & PossibleMovesP, unsigned long long & PossibleMovesO);
 void PlayStone(unsigned long long & P, unsigned long long & O, const unsigned char coordinate);
 
 inline unsigned long long StableStones_corner_and_co(const unsigned long long O)
 {
+	// 5x AND, 4x SHIFT, 4x OR <==> 13 OPs
 	return (
 			((O & 0x0100000000000001ULL) << 1) |
 			((O & 0x8000000000000080ULL) >> 1) |
@@ -63,14 +64,15 @@ inline unsigned long long StableStones(const unsigned long long P, const unsigne
 
 inline unsigned long long SMEAR_BITBOARD(unsigned long long B)
 {
+	// 4x SHIFT, 4x OR, 2x AND <==> 10 OPs
 	B |= (B >> 1) & 0x7F7F7F7F7F7F7F7FULL | (B << 1) & 0xFEFEFEFEFEFEFEFEULL;
 	return B | (B >> 8) | (B << 8);
 }
 
-inline unsigned long long PlayersBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P) & ~(P | O); }
-inline unsigned long long OpponentsBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(O) & ~(P | O); }
-inline unsigned long long Boarders(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P | O) & ~(P | O); }
+inline unsigned long long PlayersBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P) & ~(P | O); } // 13 OPs
+inline unsigned long long OpponentsBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(O) & ~(P | O); } // 13 OPs
+inline unsigned long long Boarders(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P | O) & ~(P | O); } // 14 OPs
 
-inline unsigned long long PlayersExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & P; }
-inline unsigned long long OpponentsExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & O; }
-inline unsigned long long Exposeds(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & (P | O); }
+inline unsigned long long PlayersExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & P; } // 13 OPs
+inline unsigned long long OpponentsExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & O; } // 13 OPs
+inline unsigned long long Exposeds(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & (P | O); } // 14 OPs

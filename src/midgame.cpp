@@ -3,6 +3,7 @@
 namespace Midgame
 {
 	std::vector<CCutOffLimits> MPC_table;
+	float mu;
 
 	void Initialize()
 	{
@@ -28,6 +29,9 @@ namespace Midgame
 					MPC_table.push_back(CCutOffLimits(D, d, b, a, sigma, InUse));
 				}
 			}
+
+		s = ConfigFile::Configurations["probcut mu"];
+		mu = std::stoi(s);
 	}
 
 	void Change_MPC_table(CCutOffLimits * pair)
@@ -75,7 +79,6 @@ namespace Midgame
         int score;
 		double folded_sigma;
 		double t = SelectivityTable[selectivity].T;
-		double mu = -0.5;
 
 		++search.NodeCounter;
 		zero_eval = EvaluateFeatures(P, O);
@@ -186,14 +189,13 @@ namespace Midgame
 	bool StabilityCutoff(const unsigned long long P, const unsigned long long O, const int NumberOfEmptyStones, const int alpha)
 	{
 		static const char stability_cutoff_limits[64] = {
-			-99, -99, -99, -99, -99, -15, -16, -15,
-			-16, -17, -18, -17, -18, -19, -20, -19,
-			-20, -21, -22, -21, -22, -23, -24, -23,
-			-24, -25, -26, -25, -26, -27, -28, -27,
-			-28, -29, -30, -29, -30, -31, -32, -31,
-			-32, -33, -34, -33, -34, -35, -36, -35,
-			-36, -99, -99, -99, -99, -99, -99, -99,
-			-99, -99, -99, -99, -99, -99, -99, -99
+			 99, 99, 99, 99,  6,  8, 10, 12,
+			 14, 16, 20, 22, 24, 26, 28, 30,
+			 32, 34, 36, 38, 40, 42, 44, 46,
+			 48, 48, 50, 50, 52, 52, 54, 54,
+			 56, 56, 58, 58, 60, 60, 62, 62,
+			 64, 64, 64, 64, 64, 64, 64, 64,
+			 99, 99, 99, 99, 99, 99, 99, 99
 		};
 		int OwnMinusOpponents = PopCount(P) - PopCount(O);
 		if ((OwnMinusOpponents <= stability_cutoff_limits[NumberOfEmptyStones]) && StableStones_corner_and_co(O)) //Worth checking stability
@@ -215,11 +217,6 @@ namespace Midgame
 		return false;
 	}
 
-	int ZWS_0(const CActiveConfigurations & actives, const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha)
-	{
-		++NodeCounter;
-		return (actives.EvaluateFeatures(P, O) > alpha) ? alpha+1 : alpha;
-	}
 	int ZWS_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha)
 	{
 		++NodeCounter;
@@ -243,15 +240,13 @@ namespace Midgame
 				return (EvaluateGameOver(P, NumberOfEmptyStones(P, O)) > alpha) ? alpha+1 : alpha;
 			}
 		}
-
-		CActiveConfigurations actives(P, O);
-
+		
 		while (BitBoardPossible)
 		{
 			Move = BitScanLSB(BitBoardPossible);
 			RemoveLSB(BitBoardPossible);
 			flipped = flip(P, O, Move);
-			if (-ZWS_0(actives, O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -alpha-1) > alpha)
+			if (-ZWS_0(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -alpha-1) > alpha)
 				return alpha+1;
 		}
 
@@ -393,11 +388,6 @@ namespace Midgame
 		return alpha;
 	}
 
-	inline int PVS_0(const CActiveConfigurations & actives, const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, int beta)
-	{
-		++NodeCounter;
-		return BIND(actives.EvaluateFeatures(P, O), alpha, beta);
-	}
 	inline int PVS_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, int beta)
 	{
 		++NodeCounter;
@@ -422,14 +412,12 @@ namespace Midgame
 			}
 		}
 
-		CActiveConfigurations actives(P, O);
-
 		while (BitBoardPossible)
 		{
 			BitScanLSB(&Move, BitBoardPossible);
 			RemoveLSB(BitBoardPossible);
 			flipped = flip(P, O, Move);
-			value = -PVS_0(actives, O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -beta, -alpha);
+			value = -PVS_0(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -beta, -alpha);
 			if (value >= beta) return beta;
 			if (value > alpha) alpha = value;
 		}
@@ -457,14 +445,12 @@ namespace Midgame
 			}
 		}
 
-		CActiveConfigurations actives(P, O);
-
 		while (BitBoardPossible)
 		{
 			BitScanLSB(&Move, BitBoardPossible);
 			RemoveLSB(BitBoardPossible);
 			flipped = flip(P, O, Move);
-			value = -PVS_0(actives, O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -beta, -alpha);
+			value = -PVS_0(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -beta, -alpha);
 			if (value >= beta) return beta;
 			if (value > alpha)
 			{

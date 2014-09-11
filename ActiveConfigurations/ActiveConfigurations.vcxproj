@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\activeconfigurations.cpp" />
     <ClCompile Include="..\src\configfile.cpp" />
+    <ClCompile Include="..\src\datamanipulation.cpp" />
     <ClCompile Include="..\src\features.cpp" />
     <ClCompile Include="..\src\flip.cpp" />
     <ClCompile Include="..\src\position.cpp" />

@@ -31,8 +31,11 @@ public:
 		m_PositionCounter.store(0, std::memory_order_release);
 		m_Duration.store(0, std::memory_order_release);
 		m_Spinlock.clear();
-		for (auto& filename : Filenames)
-			read_vector(filename, size, m_Positions);
+		std::vector<CPosition> tmp;
+		for (auto& filename : Filenames){
+			tmp = read_vector<CPosition>(filename, size);
+			m_Positions.insert(m_Positions.begin(), tmp.begin(), tmp.end());
+		}
 	}
 
 	void Reset()
@@ -116,7 +119,10 @@ public:
 		std::cout << m_PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;
 		std::cout << m_Duration.load(std::memory_order_acquire) << " ms CPU time." << std::endl;
 		std::cout << ThousandsSeparator(m_NodeCounter) << " Nodes." << std::endl;
-		std::cout << ThousandsSeparator(m_NodeCounter * 1000 / duration.count()) << " nodes per second." << std::endl;
+		if (duration.count() == 0)
+			std::cout << "### nodes per second." << std::endl;
+		else
+			std::cout << ThousandsSeparator(m_NodeCounter * 1000 / duration.count()) << " nodes per second." << std::endl;
 	}
 };
 
@@ -835,45 +841,6 @@ void HugeBenchmak()
 		delete ht;
 }
 
-std::vector<CDataset_Position_Score> LoadData(const std::string & filename)
-{
-	std::vector<CDataset_Old> tmp_OLD;
-	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
-	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
-	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
-	std::vector<CDataset_Position_Score> Data;
-	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
-
-	switch (Ending_to_DataType(Ending))
-	{
-	case DataType::Old:
-		read_vector(filename, tmp_OLD);
-		for (auto& item : tmp_OLD)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_OLD.clear();
-		break;
-	case DataType::Position_Score:
-		read_vector(filename, tmp_POSITON_SCORE);
-		for (auto& item : tmp_POSITON_SCORE)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_SCORE.clear();
-		break;
-	case DataType::Position_Score_PV:
-		read_vector(filename, tmp_POSITON_SCORE_PV);
-		for (auto& item : tmp_POSITON_SCORE_PV)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_SCORE_PV.clear();
-		break;
-	case DataType::Position_FullScore:
-		read_vector(filename, tmp_POSITON_FULL_SCORE);
-		for (auto& item : tmp_POSITON_FULL_SCORE)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_FULL_SCORE.clear();
-		break;
-	}
-
-	return Data;
-}
 int main(int argc, char* argv[])
 {
 	//for (int d = 17; d < 60; d++)
@@ -883,13 +850,114 @@ int main(int argc, char* argv[])
 	//}
 	//return 0;
 
+
+	std::vector<std::string> FileNames;
+	int n = 10000;
+	bool v = false;
+	int conf = 45;
+	int depth = 0;
+	bool b_fforum = true;
+	bool b_exact = false;
+
+	for (int i = 0; i < argc; ++i)
+	{
+		if (std::string(argv[i]) == "-f"){
+			++i;
+			while ((i < argc) && ((char)(*argv[i]) != '-'))
+				FileNames.push_back(std::string(argv[i++]));
+			--i;
+		}
+		else if (std::string(argv[i]) == "-n")
+			n = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-d")
+			depth = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-v")
+			v = true;
+		else if (std::string(argv[i]) == "-conf")
+			conf = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-fforum")
+			b_fforum = true;
+		else if (std::string(argv[i]) == "-exact")
+			b_exact = true;
+	}
+
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize();
+	Features::Initialize(conf);
 	Midgame::Initialize();
-
 	srand(time(NULL));
+
+	std::cout << Features::Elements << std::endl;
+	std::cout << Features::Names() << std::endl;
+
+	if (b_fforum){
+		PreheatCPU(2);
+		CHashTable * const ht = new CHashTable(24);
+		FForum_Benchmark("G:\\Reversi\\pos\\fforum-1-19.ps", true, ht);
+		ht->print_stats();
+		FForum_Benchmark("G:\\Reversi\\pos\\fforum-20-39.ps", true, ht);
+		ht->print_stats();
+		FForum_Benchmark("G:\\Reversi\\pos\\fforum-40-59.ps", true, ht);
+		ht->print_stats();
+		delete ht;
+	}
+	if (b_exact){
+		PreheatCPU(2);
+		CHashTable * ht = new CHashTable(24);
+		CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
+		s.Evaluate(true);
+		delete ht;
+	}
+
+	CHashTable * const ht = new CHashTable(24);
+	unsigned long long NodeCounter;
+	std::vector<CPositionScore> Positions;
+	std::vector<int> err;
+	std::chrono::high_resolution_clock::time_point startTime, endTime;
+	std::chrono::milliseconds duration;
+
+	printf("            Filename            |     Node counter     |    Runtime     \n");
+	printf("--------------------------------+----------------------+----------------\n");
+
+	for (auto& filename : FileNames)
+	{
+		Positions = read_vector<CPositionScore>(filename, n);
+		NodeCounter = 0;
+		err.clear();
+		startTime = std::chrono::high_resolution_clock::now();
+		#pragma omp parallel for schedule(static, 1) reduction(+ : NodeCounter)
+		for (int i = 0; i < Positions.size(); ++i)
+		{
+			CSearch s(Positions[i].P, Positions[i].O, -64, 64, depth, 0, ht, 5);
+			s.EvaluateIterativeDeepening(v);
+			NodeCounter += s.NodeCounter;
+			#pragma omp critical
+				err.push_back(s.score - Positions[i].score);
+		}
+		endTime = std::chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+		printf(" %30s | %20s | %14s \n", filename.c_str(), ThousandsSeparator(NodeCounter).c_str(), time_format(duration).c_str());
+	}
+	delete ht;
+	//long double sigma = StandardDeviation(err);
+	//std::cout << "s: " << sigma << std::endl;
+	//std::cout << "stdev: " << ScientificNotaion(sigma, sigma / std::sqrtl(2 * (err.size() + 1)), 2) << std::endl;
+	return 0;
+
+
+	printf("   Routine     |  [ns]  |   Runtime [s] \n");
+	printf("---------------+--------+---------------\n");
+	//for (int i = 0; i < 5; i++)	PossibleMoves_Benchmark(8000000);
+	//for (int i = 0; i < 5; i++)	PossibleMoves2_Benchmark(8000000);
+	//for (int i = 0; i < 5; i++)	Flip_Benchmark(10000000);
+	//for (int i = 0; i < 5; i++)	Parity_Benchmark(10000000);
+	//for (int i = 0; i < 5; i++)	Count_last_flip_Benchmark(20000000);
+	//for (int i = 0; i < 5; i++)	PopCount_Benchmark(30000000);
+	//for (int i = 0; i < 5; i++)	PopCount_max15_Benchmark(30000000);
+	//for (int i = 0; i < 5; i++)	BitScanLSB_Benchmark(200000000);
+	//for (int i = 0; i < 5; i++)	RemoveLSB_Benchmark(200000000);
+	for (int i = 0; i < 5; i++)	EvaluateFeatures_Benchmark(150000);
 
 	int DEPTH = 60;
 	int SELECTIVITY = 0;
@@ -897,31 +965,36 @@ int main(int argc, char* argv[])
 	double percentage = 0.98;
 	int LOW = 0;
 	int HIGH = 60;
+	bool TimeCriteria = false;
 
 	for (int i = 0; i < argc; ++i)
 	{
-		     if (std::string(argv[i]) == "-d") DEPTH = atoi(argv[++i]);
+		if (std::string(argv[i]) == "-fforum"){
+			PreheatCPU(2);
+			CHashTable * const ht = new CHashTable(24);
+			FForum_Benchmark("pos\\fforum-1-19.ps", true, ht);
+			ht->print_stats();
+			FForum_Benchmark("pos\\fforum-20-39.ps", true, ht);
+			ht->print_stats();
+			FForum_Benchmark("pos\\fforum-40-59.ps", true, ht);
+			ht->print_stats();
+			delete ht;
+		}
+		else if (std::string(argv[i]) == "-exact"){
+			PreheatCPU(2);
+			CHashTable * ht = new CHashTable(BIT);
+			CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
+			s.Evaluate(true);
+			delete ht;
+		}
+		else if (std::string(argv[i]) == "-d") DEPTH = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-s") SELECTIVITY = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-p") percentage = atof(argv[++i]);
 		else if (std::string(argv[i]) == "-bit") BIT = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-l") LOW = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-h") HIGH = atoi(argv[++i]);
+		else if (std::string(argv[i]) == "-time") TimeCriteria = true;
 	}
-	
-	//PreheatCPU(2);
-	//CHashTable * ht = new CHashTable(26);
-	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-1-19.ps", true, ht);
-	//ht->print_stats();
-	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-20-39.ps", true, ht);
-	//ht->print_stats();
-	//FForum_Benchmark("G:\\Reversi\\pos\\fforum-40-59.ps", true, ht);
-	//ht->print_stats();
-	//delete ht;
-
-	CHashTable * ht = new CHashTable(BIT);
-	CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
-	s.Evaluate(true);
-	delete ht;
 
 	//std::vector<std::string> Filenames({
 	//	//"C:\\Reversi\\pos\\perft5.psp"
@@ -961,7 +1034,7 @@ int main(int argc, char* argv[])
 	//	"C:\\Reversi\\pos\\rnd_d16_1M.ps",
 	//});
 	std::vector<std::string> Filenames1({
-		//"C:\\Reversi\\pos\\perft5.psp",
+		"pos\\perft5.psp",
 	});
 	CPositionManager2 PosMan1;
 	PosMan1.Append(Filenames1, 764);
@@ -1128,8 +1201,7 @@ int main(int argc, char* argv[])
 	std::string BestConfig = "";
 	std::vector<CCutOffLimits*> ToGo, Done;
 	for (int i = 0; i < Midgame::MPC_table.size(); i++)
-		if (Midgame::MPC_table[i].D >= LOW && Midgame::MPC_table[i].D <= HIGH)
-			ToGo.push_back(&Midgame::MPC_table[i]);
+		if (Midgame::MPC_table[i].D >= LOW && Midgame::MPC_table[i].D <= HIGH) ToGo.push_back(&Midgame::MPC_table[i]);
 	std::random_shuffle(ToGo.begin(), ToGo.end());
 
 	for (int j = 0; j < Midgame::MPC_table.size(); j++)
@@ -1139,14 +1211,15 @@ int main(int argc, char* argv[])
 	//PosMan2.Solve(DEPTH, SELECTIVITY);
 	//PosMan3.Solve(DEPTH, SELECTIVITY);
 	//PosMan2.Solve(DEPTH + 3, 6);
-	//unsigned long long Minimum = PosMan1.m_NodeCounter;
+	//float Minimum = PosMan1.m_NodeCounter;
 	//unsigned long long Minimum = PosMan1.m_NodeCounter + PosMan2.m_NodeCounter + PosMan3.m_NodeCounter;
-	unsigned long long sum;
+	float sum;
 	CHashTable * hashTable = new CHashTable(BIT);
 	CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, hashTable, 5);
 	search.Evaluate(true);
 	delete hashTable;
-	unsigned long long Minimum = search.NodeCounter;
+	float Minimum = search.NodeCounter;
+	//std::cout << "value : " << Minimum << std::endl;
 	//unsigned long long Minimum = PosMan1.m_NodeCounter;
 	BestTime = std::chrono::duration_cast<std::chrono::milliseconds>(search.endTime - search.startTime).count();
 	std::cout << std::endl;
@@ -1167,8 +1240,17 @@ int main(int argc, char* argv[])
 		//hashTable->print_stats();
 
 		CHashTable * hashTable = new CHashTable(BIT);
-		CSearch search(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, std::chrono::high_resolution_clock::now() + std::chrono::milliseconds((int)(BestTime * 1.6)), hashTable, 5);
-		search.Evaluate(true);
+		CSearch search;
+		if (TimeCriteria)
+		{
+			search = CSearch(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, std::chrono::high_resolution_clock::now() + std::chrono::milliseconds((int)(BestTime * 1.6)), hashTable, 5);
+			search.Evaluate(true);
+		}
+		else
+		{
+			search = CSearch(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, DEPTH, SELECTIVITY, hashTable, 5);
+			search.Evaluate(true);
+		}		
 		delete hashTable;
 
 		//PosMan1.Reset();
@@ -1179,6 +1261,7 @@ int main(int argc, char* argv[])
 		//PosMan3.Solve(DEPTH, SELECTIVITY);
 		//sum = PosMan1.m_NodeCounter;
 		sum = search.NodeCounter;
+		//std::cout << "value : " << sum << std::endl;
 		if (sum < Minimum * percentage){
 		//if (search.NodeCounter < Minimum * 0.98){
 			std::cout << "####################################" << std::endl;
@@ -1190,8 +1273,8 @@ int main(int argc, char* argv[])
 			for (int j = 0; j < Midgame::MPC_table.size(); j++)
 				BestConfig.append(Midgame::MPC_table[j].InUse ? "1" : "0");
 			Minimum = sum;
-			BestTime = std::chrono::duration_cast<std::chrono::milliseconds>(search.endTime - search.startTime).count();
-			//Minimum = search.NodeCounter;
+			//BestTime = std::chrono::duration_cast<std::chrono::milliseconds>(search.endTime - search.startTime).count();
+			Minimum = search.NodeCounter;
 			ToGo.pop_back();
 			std::random_shuffle(Done.begin(), Done.end());
 			std::reverse(ToGo.begin(), ToGo.end());

@@ -5,6 +5,7 @@
 #include "line.h"
 #include "position.h"
 #include "utility.h"
+#include "statistics.h"
 #include <string>
 
 struct CSelectivity
@@ -50,7 +51,7 @@ public:
 	                                                          //  Bit
 	NodeType nodeType;
 	CLine PV_line;
-
+	
 	CSearch(unsigned long long P, unsigned long long O, signed char alpha, signed char beta, signed char depth, unsigned char selectivity, std::chrono::high_resolution_clock::time_point endTime, CHashTable* hashTable, unsigned char PV_depth) :
 		P(P), O(O),
 		NodeCounter(0),
@@ -124,6 +125,8 @@ public:
 	//int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, std::chrono::high_resolution_clock::time_point startTime);
 	//int EvaluateLimitedDepth(CSearch & search, const unsigned long long P, const unsigned long long O, const int alpha, const int beta, const signed char depth, const unsigned char selectivity, CLine & pline, std::chrono::high_resolution_clock::time_point startTime);
 	void Evaluate(const bool verbose = false);
+	void EvaluateDirect(const bool verbose = false);
+	void EvaluateIterativeDeepening(const bool verbose = false);
 private:
 	void print_stats(CSearch & search, int score, const signed char depth, const unsigned char selectivity);
 };

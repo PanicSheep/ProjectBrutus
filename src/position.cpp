@@ -90,11 +90,9 @@ void PossibleMoves(const unsigned long long P, const unsigned long long O, unsig
 
 void PlayStone(unsigned long long & P, unsigned long long & O, const unsigned char coordinate)
 {
-	unsigned long long flipped;
-
-    flipped = flip(P, O, coordinate);
-	P ^= (1ULL << coordinate) ^ flipped;
-    O ^= flipped;
+	unsigned long long flipped = flip(P, O, coordinate);
+	P ^= flipped ^ (1ULL << coordinate);
+	O ^= flipped;
 	std::swap(P, O);
 }
 

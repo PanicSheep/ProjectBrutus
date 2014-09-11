@@ -96,6 +96,63 @@ public:
 	}
 };
 
+template <>
+class CPositionManager<CDataset_Edax>
+{
+private:
+    CPositionManager(const CPositionManager&); // not defined
+    CPositionManager& operator=(const CPositionManager&); // not defined
+public:
+	std::atomic<std::size_t> m_index_counter;
+	std::vector<CDataset_Edax> m_Positions;
+	FILE* m_file;
+	fpos_t m_pos;
+
+	CPositionManager(const std::string& Filename, const std::size_t Size, const unsigned char depth, const unsigned char selectivity, const bool SkipSolved)
+	{
+		m_index_counter.store(0, std::memory_order_release);
+		fopen_s(&m_file, Filename.c_str(), "r+b");
+		if (SkipSolved)
+			LoopOverSolvedPositions(depth, selectivity);
+		LoadPositions(Size);
+	}
+	~CPositionManager() { fclose(m_file); }
+
+	void LoopOverSolvedPositions(const signed char depth, const unsigned char selectivity) {}
+
+	void LoadPositions(const std::size_t Size)
+	{
+		CDataset_Edax* DataArray = new CDataset_Edax[Size];
+		fgetpos(m_file, &m_pos);
+		std::size_t ValidData = fread(DataArray, sizeof(CDataset_Edax), Size, m_file);
+		m_Positions.insert(m_Positions.end(), DataArray, DataArray + ValidData);
+		delete[] DataArray;
+	}
+
+	void SavePositions()
+	{
+		const std::size_t size = m_Positions.size();
+
+		CDataset_Edax* DataArray = new CDataset_Edax[size];
+		for (std::size_t i = 0; i < size; ++i)
+			DataArray[i] = m_Positions[i];
+		fsetpos(m_file, &m_pos);
+		fwrite(DataArray, sizeof(CDataset_Edax), size, m_file);
+		delete[] DataArray;
+	}
+
+	CDataset_Edax * TryGetWork()
+	{
+		std::size_t Index = m_index_counter.fetch_add(1, std::memory_order_release);
+		if (Index < m_Positions.size())
+			return &(m_Positions[Index]);
+		else // Out of work
+			return NULL;
+	}
+};
+
+
+
 template <class DATASET>
 void Work(CPositionManager<DATASET>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose);
 
@@ -239,7 +296,6 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 							CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth-1, selectivity, HashTable, 1);
 							search.Evaluate();
 							data->score[Move] = search.score;
-							data->PV[Move] = search.PV(0);
 							NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 						}
 					}
@@ -249,7 +305,6 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 			{
 				data->score[search.PV(0)] = data->score[36];
 				data->score[36] = DATASET_DEFAULT_score;
-				data->PV[search.PV(0)] = search.PV(1);
 
 				unsigned long long P = data->P;
 				unsigned long long O = data->O;
@@ -269,7 +324,6 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 						CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, 1);
 						search.Evaluate();
 						data->score[Move] = search.score;
-						data->PV[Move] = search.PV(0);
 						NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 					}
 				}
@@ -325,7 +379,6 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 				CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, 1);
 				search.Evaluate();
 				data->score[Move] = search.score;
-				data->PV[Move] = search.PV(0);
 				NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
 			}
 		}
@@ -333,6 +386,48 @@ template <> void Work<CDataset_Position_FullScore>(CPositionManager<CDataset_Pos
 		HashTable->AdvanceDate();
 		data->depth = depth;
 		data->selectivity = selectivity;
+		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
+		if ((NumSolved & 0xF) == 0)
+		{
+			if (!Spinlock.test_and_set())
+			{
+				std::cout << "\r";
+				std::cerr << progressbar_percentage(50, static_cast<float>(NumSolved) / static_cast<float>(PositionManager.m_Positions.size()));
+				Spinlock.clear();
+			}
+		}
+	}
+}
+
+template <> void Work<CDataset_Edax>(CPositionManager<CDataset_Edax>& PositionManager, const signed char depth, const unsigned char selectivity, CHashTable * HashTable, const bool verbose)
+{
+	unsigned long long NumSolved;
+	CDataset_Edax * data;
+	while (data = PositionManager.TryGetWork())
+	{
+		unsigned long long P = data->P;
+		unsigned long long O = data->O;
+		unsigned long long flipped;
+		unsigned char Move;
+
+		if (PossibleMoves(P, O) == 0)
+			continue;
+
+		unsigned long long BitBoardPossible = PossibleMoves(P, O);
+		while (BitBoardPossible)
+		{
+			Move = BitScanLSB(BitBoardPossible);
+			RemoveLSB(BitBoardPossible);
+			if (flipped = flip(P, O, Move))
+			{
+				CSearch search(O ^ flipped, P ^ (1ULL << Move) ^ flipped, -64, 64, depth - 1, selectivity, HashTable, 1);
+				search.Evaluate();
+				data->score[Move] = search.score;
+				NodeCounter.fetch_add(search.NodeCounter, std::memory_order_relaxed);
+			}
+		}
+
+		HashTable->AdvanceDate();
 		NumSolved = PositionCounter.fetch_add(1, std::memory_order_relaxed);
 		if ((NumSolved & 0xF) == 0)
 		{
@@ -408,5 +503,8 @@ void Solve(const std::string& Filename, const int n, const signed char depth, co
 	std::cout << PositionCounter.load(std::memory_order_acquire) << " positions solved in: " << time_format(duration) << std::endl;
 	std::cout << PositionCounter.load(std::memory_order_acquire) * 1000.0 / duration.count() << " positions per second." << std::endl;
 	std::cout << ThousandsSeparator(NodeCounter) << " Nodes." << std::endl;
-	std::cout << ThousandsSeparator(NodeCounter * 1000 / duration.count()) << " nodes per second." << std::endl;
+	if (duration.count() == 0)
+		std::cout << "### nodes per second." << std::endl;
+	else
+		std::cout << ThousandsSeparator(NodeCounter * 1000 / duration.count()) << " nodes per second." << std::endl;
 }

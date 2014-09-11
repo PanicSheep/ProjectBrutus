@@ -1,6 +1,34 @@
 #pragma once
 #include <atomic>
 
+template <typename T>
+long double StandardDeviation(const std::vector<T>& vec)
+{
+	long double E_of_X = 0;
+	long double E_of_X_sq = 0;
+	std::size_t N = 0;
+
+	for (const auto& elem : vec){
+		++N;
+		E_of_X += (static_cast<long double>(elem) - E_of_X) / static_cast<long double>(N);
+		E_of_X_sq += (static_cast<long double>(elem)*static_cast<long double>(elem) - E_of_X_sq) / static_cast<long double>(N);
+	}
+
+	return std::sqrtl(E_of_X_sq - E_of_X * E_of_X);
+}
+
+template <typename T>
+long double AverageAbs(const std::vector<T>& vec)
+{
+	long double E_of_X = 0;
+	std::size_t N = 0;
+
+	for (const auto& elem : vec)
+		E_of_X += (static_cast<long double>(std::abs(elem)) - E_of_X) / static_cast<long double>(++N);
+
+	return E_of_X;
+}
+
 template<class T>
 class CRunningStatistic
 {
@@ -26,8 +54,8 @@ public:
 			_min = value;
 		if (_max < value) 
 			_max = value;
-		_E_of_X += (static_cast<double>(value) - _E_of_X) / static_cast<double>(_N);
-		_E_of_X_sq += (static_cast<double>(value)*static_cast<double>(value) - _E_of_X_sq) / static_cast<double>(_N);
+		_E_of_X += (static_cast<long double>(value) - _E_of_X) / static_cast<long double>(_N);
+		_E_of_X_sq += (static_cast<long double>(value)*static_cast<long double>(value) - _E_of_X_sq) / static_cast<long double>(_N);
 
 		spinlock.clear(std::memory_order_release);
 	}
@@ -35,28 +63,31 @@ public:
 	inline unsigned long long N() const { return _N; }
 	inline unsigned long long size() const { return N(); }
 
-	inline double mu() const { return _E_of_X; }
-	inline double Average() const { return mu(); }
+	inline long double mu() const { return _E_of_X; }
+	inline long double Average() const { return mu(); }
 
-	inline double Var() const { return _E_of_X_sq - _E_of_X*_E_of_X; }
-	inline double Variance() const { return Var(); }
+	inline long double Var() const { return _E_of_X_sq - _E_of_X*_E_of_X; }
+	inline long double Variance() const { return Var(); }
 
-	inline double sigma() const { return std::sqrt(Var()); }
-	inline double StandardDeviation() const { return sigma(); }
+	inline long double sigma() const { return std::sqrtl(Var()); }
+	inline long double StandardDeviation() const { return sigma(); }
 
-	inline double RelativeError() const { return sigma()/mu(); }
+	inline long double deltasigma() const { return std::sqrtl(Var()) / std::sqrtl(2.0 * (static_cast<long double>(_N) + 1.0)); }
+	inline long double StandardDeviationError() const { return deltasigma(); }
 
-	inline double Min() const { return _min; }
-	inline double Max() const { return _max; }
+	inline long double RelativeError() const { return sigma()/mu(); }
+
+	inline long double Min() const { return _min; }
+	inline long double Max() const { return _max; }
 
 	CRunningStatistic& operator+=(const CRunningStatistic & rhs)
 	{
 		unsigned long long sum = this->_N + rhs._N;
 
-		this->_E_of_X = this->_E_of_X * (static_cast<double>(this->_N) / static_cast<double>(sum)) 
-					  + rhs._E_of_X * (static_cast<double>(rhs._N) / static_cast<double>(sum));
-		this->_E_of_X_sq = this->_E_of_X_sq * (static_cast<double>(this->_N) / static_cast<double>(sum))
-						 + rhs._E_of_X_sq * (static_cast<double>(rhs._N) / static_cast<double>(sum));
+		this->_E_of_X = this->_E_of_X * (static_cast<long double>(this->_N) / static_cast<long double>(sum)) 
+					  + rhs._E_of_X * (static_cast<long double>(rhs._N) / static_cast<long double>(sum));
+		this->_E_of_X_sq = this->_E_of_X_sq * (static_cast<long double>(this->_N) / static_cast<long double>(sum))
+						 + rhs._E_of_X_sq * (static_cast<long double>(rhs._N) / static_cast<long double>(sum));
 		this->_N = sum;
 		if (rhs._min < this->_min)
 			this->_min = rhs._min;
@@ -69,10 +100,10 @@ public:
 	{
 		RunningStatistic<T> res = RunningStatistic<T>();
 		res._N = this->_N + rhs._N;
-		res._E_of_X = this->_E_of_X * (static_cast<double>(this->_N) / static_cast<double>(res._N))
-					+ rhs._E_of_X * (static_cast<double>(rhs._N) / static_cast<double>(res._N));
-		res._E_of_X_sq = this->_E_of_X_sq * (static_cast<double>(this->_N) / static_cast<double>(res._N)) 
-					   + rhs._E_of_X_sq * (static_cast<double>(rhs._N) / static_cast<double>(res._N));
+		res._E_of_X = this->_E_of_X * (static_cast<long double>(this->_N) / static_cast<long double>(res._N))
+					+ rhs._E_of_X * (static_cast<long double>(rhs._N) / static_cast<long double>(res._N));
+		res._E_of_X_sq = this->_E_of_X_sq * (static_cast<long double>(this->_N) / static_cast<long double>(res._N)) 
+					   + rhs._E_of_X_sq * (static_cast<long double>(rhs._N) / static_cast<long double>(res._N));
 		res._min = (this->_min < rhs._min) ? this->_min : rhs._min;
 		res._max = (rhs._max < this->_max) ? this->_max : rhs._max;
 		return res;
@@ -81,8 +112,8 @@ public:
 private:
 	std::atomic_flag spinlock;
 	unsigned long long _N;
-	double _E_of_X;
-	double _E_of_X_sq;
+	long double _E_of_X;
+	long double _E_of_X_sq;
 	T _min;
 	T _max;
 };
@@ -105,9 +136,9 @@ public:
 		while (spinlock.test_and_set(std::memory_order_acquire)) ;
 
 		_N++;
-		const double x = static_cast<double>(_x);
-		const double y = static_cast<double>(_y);
-		const double N = static_cast<double>(_N);
+		const long double x = static_cast<long double>(_x);
+		const long double y = static_cast<long double>(_y);
+		const long double N = static_cast<long double>(_N);
 		_E_of_X += (x - _E_of_X) / N;
 		_E_of_Y += (y - _E_of_Y) / N;
 		_E_of_XY += (x * y - _E_of_XY) / N;
@@ -120,24 +151,24 @@ public:
 	inline unsigned long long N() const { return _N; }
 	inline unsigned long long size() const { return N(); }
 	
-	inline double b() const { return (_E_of_XY - _E_of_X * _E_of_Y) / (_E_of_X_sq - _E_of_X * _E_of_X); }
-	inline double a() const { return _E_of_Y - b() * _E_of_X; }
-	inline double R_sq() const { return (_E_of_XY - _E_of_X * _E_of_Y) * (_E_of_XY - _E_of_X * _E_of_Y) / (_E_of_X_sq - _E_of_X * _E_of_X) / (_E_of_Y_sq - _E_of_Y * _E_of_Y); }
+	inline long double b() const { return (_E_of_XY - _E_of_X * _E_of_Y) / (_E_of_X_sq - _E_of_X * _E_of_X); }
+	inline long double a() const { return _E_of_Y - b() * _E_of_X; }
+	inline long double R_sq() const { return (_E_of_XY - _E_of_X * _E_of_Y) * (_E_of_XY - _E_of_X * _E_of_Y) / (_E_of_X_sq - _E_of_X * _E_of_X) / (_E_of_Y_sq - _E_of_Y * _E_of_Y); }
 
 	CSimpleLinearRegression& operator+=(const CSimpleLinearRegression & rhs)
 	{
 		unsigned long long sum = this->_N + rhs._N;
 
-		this->_E_of_X = this->_E_of_X * (static_cast<double>(this->_N) / static_cast<double>(sum)) 
-					  +   rhs._E_of_X * (static_cast<double>(  rhs._N) / static_cast<double>(sum));
-		this->_E_of_Y = this->_E_of_Y * (static_cast<double>(this->_N) / static_cast<double>(sum)) 
-					  +   rhs._E_of_Y * (static_cast<double>(  rhs._N) / static_cast<double>(sum));
-		this->_E_of_XY = this->_E_of_XY * (static_cast<double>(this->_N) / static_cast<double>(sum)) 
-					   +   rhs._E_of_XY * (static_cast<double>(  rhs._N) / static_cast<double>(sum));
-		this->_E_of_X_sq = this->_E_of_X_sq * (static_cast<double>(this->_N) / static_cast<double>(sum))
-						 +   rhs._E_of_X_sq * (static_cast<double>(  rhs._N) / static_cast<double>(sum));
-		this->_E_of_Y_sq = this->_E_of_Y_sq * (static_cast<double>(this->_N) / static_cast<double>(sum))
-						 +   rhs._E_of_Y_sq * (static_cast<double>(  rhs._N) / static_cast<double>(sum));
+		this->_E_of_X = this->_E_of_X * (static_cast<long double>(this->_N) / static_cast<long double>(sum)) 
+					  +   rhs._E_of_X * (static_cast<long double>(  rhs._N) / static_cast<long double>(sum));
+		this->_E_of_Y = this->_E_of_Y * (static_cast<long double>(this->_N) / static_cast<long double>(sum)) 
+					  +   rhs._E_of_Y * (static_cast<long double>(  rhs._N) / static_cast<long double>(sum));
+		this->_E_of_XY = this->_E_of_XY * (static_cast<long double>(this->_N) / static_cast<long double>(sum)) 
+					   +   rhs._E_of_XY * (static_cast<long double>(  rhs._N) / static_cast<long double>(sum));
+		this->_E_of_X_sq = this->_E_of_X_sq * (static_cast<long double>(this->_N) / static_cast<long double>(sum))
+						 +   rhs._E_of_X_sq * (static_cast<long double>(  rhs._N) / static_cast<long double>(sum));
+		this->_E_of_Y_sq = this->_E_of_Y_sq * (static_cast<long double>(this->_N) / static_cast<long double>(sum))
+						 +   rhs._E_of_Y_sq * (static_cast<long double>(  rhs._N) / static_cast<long double>(sum));
 		this->_N = sum;
 
 		return *this;
@@ -146,25 +177,25 @@ public:
 	{
 		RunningStatistic<T> res = RunningStatistic<T>();
 		res._N = this->_N + rhs._N;
-		res._E_of_X = this->_E_of_X * (static_cast<double>(this->_N) / static_cast<double>(res._N))
-					+   rhs._E_of_X * (static_cast<double>(  rhs._N) / static_cast<double>(res._N));
-		res._E_of_Y = this->_E_of_Y * (static_cast<double>(this->_N) / static_cast<double>(res._N))
-					+   rhs._E_of_Y * (static_cast<double>(  rhs._N) / static_cast<double>(res._N));
-		res._E_of_XY = this->_E_of_XY * (static_cast<double>(this->_N) / static_cast<double>(res._N))
-					 +   rhs._E_of_XY * (static_cast<double>(  rhs._N) / static_cast<double>(res._N));
-		res._E_of_X_sq = this->_E_of_X_sq * (static_cast<double>(this->_N) / static_cast<double>(res._N)) 
-					   +   rhs._E_of_X_sq * (static_cast<double>(  rhs._N) / static_cast<double>(res._N));
-		res._E_of_Y_sq = this->_E_of_Y_sq * (static_cast<double>(this->_N) / static_cast<double>(res._N)) 
-					   +   rhs._E_of_Y_sq * (static_cast<double>(  rhs._N) / static_cast<double>(res._N));
+		res._E_of_X = this->_E_of_X * (static_cast<long double>(this->_N) / static_cast<long double>(res._N))
+					+   rhs._E_of_X * (static_cast<long double>(  rhs._N) / static_cast<long double>(res._N));
+		res._E_of_Y = this->_E_of_Y * (static_cast<long double>(this->_N) / static_cast<long double>(res._N))
+					+   rhs._E_of_Y * (static_cast<long double>(  rhs._N) / static_cast<long double>(res._N));
+		res._E_of_XY = this->_E_of_XY * (static_cast<long double>(this->_N) / static_cast<long double>(res._N))
+					 +   rhs._E_of_XY * (static_cast<long double>(  rhs._N) / static_cast<long double>(res._N));
+		res._E_of_X_sq = this->_E_of_X_sq * (static_cast<long double>(this->_N) / static_cast<long double>(res._N)) 
+					   +   rhs._E_of_X_sq * (static_cast<long double>(  rhs._N) / static_cast<long double>(res._N));
+		res._E_of_Y_sq = this->_E_of_Y_sq * (static_cast<long double>(this->_N) / static_cast<long double>(res._N)) 
+					   +   rhs._E_of_Y_sq * (static_cast<long double>(  rhs._N) / static_cast<long double>(res._N));
 		return res;
 	}
 
 private:
 	std::atomic_flag spinlock;
 	unsigned long long _N;
-	double _E_of_X;
-	double _E_of_Y;
-	double _E_of_XY;
-	double _E_of_X_sq;
-	double _E_of_Y_sq;
+	long double _E_of_X;
+	long double _E_of_Y;
+	long double _E_of_XY;
+	long double _E_of_X_sq;
+	long double _E_of_Y_sq;
 };

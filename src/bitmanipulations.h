@@ -61,6 +61,12 @@
 	#define HAS_PEXT // Parallel bits extract
 #endif
 
+// alignas work-around
+#if defined(_MSC_VER)
+#define alignas(A) __declspec(align(A))
+#elif (__GNUC__==4) && (__GNUC_MINOR__ <= 7) 
+#define alignas(A) __attribute__((aligned(A)))
+#endif
 
 // CACHE_LINE_ALIGNMENT
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)

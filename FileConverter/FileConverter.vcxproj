@@ -142,10 +142,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\datamanipulation.h" />
+    <ClInclude Include="..\src\utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\datamanipulation.cpp" />
     <ClCompile Include="..\src\fileconverter.cpp" />
+    <ClCompile Include="..\src\utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
