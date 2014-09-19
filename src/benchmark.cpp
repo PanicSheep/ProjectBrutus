@@ -850,13 +850,11 @@ int main(int argc, char* argv[])
 	//}
 	//return 0;
 
-
 	std::vector<std::string> FileNames;
 	int n = 10000;
 	bool v = false;
-	int conf = 45;
 	int depth = 0;
-	bool b_fforum = true;
+	bool b_fforum = false;
 	bool b_exact = false;
 
 	for (int i = 0; i < argc; ++i)
@@ -873,8 +871,6 @@ int main(int argc, char* argv[])
 			depth = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-v")
 			v = true;
-		else if (std::string(argv[i]) == "-conf")
-			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-fforum")
 			b_fforum = true;
 		else if (std::string(argv[i]) == "-exact")
@@ -884,21 +880,18 @@ int main(int argc, char* argv[])
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize(conf);
+	Features::Initialize();
 	Midgame::Initialize();
 	srand(time(NULL));
-
-	std::cout << Features::Elements << std::endl;
-	std::cout << Features::Names() << std::endl;
 
 	if (b_fforum){
 		PreheatCPU(2);
 		CHashTable * const ht = new CHashTable(24);
-		FForum_Benchmark("G:\\Reversi\\pos\\fforum-1-19.ps", true, ht);
+		FForum_Benchmark("pos\\fforum-1-19.ps", true, ht);
 		ht->print_stats();
-		FForum_Benchmark("G:\\Reversi\\pos\\fforum-20-39.ps", true, ht);
+		FForum_Benchmark("pos\\fforum-20-39.ps", true, ht);
 		ht->print_stats();
-		FForum_Benchmark("G:\\Reversi\\pos\\fforum-40-59.ps", true, ht);
+		FForum_Benchmark("pos\\fforum-40-59.ps", true, ht);
 		ht->print_stats();
 		delete ht;
 	}

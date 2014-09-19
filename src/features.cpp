@@ -1,9 +1,23 @@
-#include "features.h"
+#include"features.h"
 
-void For_each_configuration_in_pattern_do_fkt(const unsigned long long Pattern, std::function<void(const unsigned long long, const unsigned long long)> fkt);
+const bool PATTERN_L02X  = true;
+const bool PATTERN_L1    = true;
+const bool PATTERN_L2    = true;
+const bool PATTERN_L3    = true;
+const bool PATTERN_D4    = true;
+const bool PATTERN_D5    = true;
+const bool PATTERN_D6    = true;
+const bool PATTERN_D7    = true;
+const bool PATTERN_Comet = true;
+const bool PATTERN_Eplus = true;
+const bool PATTERN_C3p1  = false;
+const bool PATTERN_C3p2  = true;
+const bool PATTERN_Q0    = true;
+const bool PATTERN_B5  	 = true;
 
 namespace Features
 {
+	const unsigned char BOXES = 15;
 	const unsigned char BoxIndex[61] = {
 		99,         //  0
 		99, 99, 99, //  1,  2,  3
@@ -27,13 +41,40 @@ namespace Features
 		14, 14, 14, // 55, 56, 57
 		14, 14, 14, // 58, 59, 60
 	};
+	
+	unsigned short SumPow3[1024];
 
-	std::vector<FeatureMetaGroup*> FeatureList;
-	std::size_t Elements;
-	std::size_t FullSize;
-	std::size_t ReducedSize;
+	int ReducedSize = 0;
+	int NumberOfPattern = 0
+		+ (PATTERN_L02X ? 1 : 0)
+		+ (PATTERN_L1   ? 1 : 0)
+		+ (PATTERN_L2   ? 1 : 0)
+		+ (PATTERN_L3   ? 1 : 0)
+		+ (PATTERN_D4   ? 1 : 0)
+		+ (PATTERN_D5   ? 1 : 0)
+		+ (PATTERN_D6   ? 1 : 0)
+		+ (PATTERN_D7   ? 1 : 0)
+		+ (PATTERN_Comet? 1 : 0)
+		+ (PATTERN_Eplus? 1 : 0)
+		+ (PATTERN_C3p1 ? 1 : 0)
+		+ (PATTERN_C3p2 ? 1 : 0)
+		+ (PATTERN_Q0   ? 1 : 0)
+		+ (PATTERN_B5   ? 1 : 0);
 
-	unsigned short SumPow3[4096];
+	std::vector<CPattern_L02X > PatVecL02X (BOXES);
+	std::vector<CPattern_L1   > PatVecL1   (BOXES);
+	std::vector<CPattern_L2   > PatVecL2   (BOXES);
+	std::vector<CPattern_L3   > PatVecL3   (BOXES);
+	std::vector<CPattern_D4   > PatVecD4   (BOXES);
+	std::vector<CPattern_D5   > PatVecD5   (BOXES);
+	std::vector<CPattern_D6   > PatVecD6   (BOXES);
+	std::vector<CPattern_D7   > PatVecD7   (BOXES);
+	std::vector<CPattern_Comet> PatVecComet(BOXES);
+	std::vector<CPattern_Eplus> PatVecEplus(BOXES);
+	std::vector<CPattern_C3p1 > PatVecC3p1 (BOXES);
+	std::vector<CPattern_C3p2 > PatVecC3p2 (BOXES);
+	std::vector<CPattern_Q0   > PatVecQ0   (BOXES);
+	std::vector<CPattern_B5   > PatVecB5   (BOXES);
 
 	unsigned long long sumpow3(unsigned long long exp)
 	{
@@ -43,44 +84,6 @@ namespace Features
 			RemoveLSB(exp);
 		}
 		return sum;
-	}
-
-	unsigned long long sym_flip(const unsigned long long P, const int sym)
-	{
-		switch (sym)
-		{
-		case 1: return horizontal_flip(P);
-		case 2: return vertical_flip(P);
-		case 3: return diagonal_flip(P);
-		case 4: return codiagonal_flip(P);
-		case 5: return vertical_flip(horizontal_flip(P));
-		case 6: return diagonal_flip(horizontal_flip(P));
-		case 7: return codiagonal_flip(horizontal_flip(P));
-		default: return P;
-		}
-	}
-	
-	unsigned long long sym_flip_inv(const unsigned long long P, const int sym)
-	{
-		switch (sym)
-		{
-		case 1: return horizontal_flip(P);
-		case 2: return vertical_flip(P);
-		case 3: return diagonal_flip(P);
-		case 4: return codiagonal_flip(P);
-		case 5: return horizontal_flip(vertical_flip(P));
-		case 6: return horizontal_flip(diagonal_flip(P));
-		case 7: return horizontal_flip(codiagonal_flip(P));
-		default: return P;
-		}
-	}
-
-	unsigned long long Mirror(const unsigned long long B, const std::vector<int> & Generator)
-	{
-		unsigned long long ret = 0;
-		for (int sym : Generator)
-			ret |= sym_flip(B, sym);
-		return ret;
 	}
 
 	void For_each_configuration_in_pattern_do_fkt(const unsigned long long Pattern, std::function<void(const unsigned long long, const unsigned long long)> fkt)
@@ -102,267 +105,28 @@ namespace Features
 		}
 	}
 
-	std::string Names()
+	void Initialize()
 	{
-		std::string s;
-		for (const auto& it : FeatureList)
-			s.append(", " + it->Name());
-		return s.substr(2);
-	}
+		for (int i = 0; i < 1024; i++) SumPow3[i] = sumpow3(i);
 
-
-	template <>
-	class FeatureGroup<0x0102040810204080ULL> : public FeatureMetaGroup
-	{
-	private:
-		const unsigned long long m_BitPattern = 0x0102040810204080ULL;
-		const std::string m_Name;
-		int m_Elements;
-		int m_FullSize;
-		int m_ReducedSize;
-		unsigned long long EigenBits, NonEigenBits;
-		std::vector<int> m_Generators; //All the symmetries to genereate all congruent bit pattern.
-		std::vector<int> m_Symmetries; //All the symmetries in m_BitPattern. id is not part of that.
-		std::vector<unsigned long long> m_BitBoards;
-		std::vector<std::vector<float>> m_weights;
-	public:
-		inline unsigned long long BitPattern() const { return m_BitPattern; }
-		inline std::string Name() const { return m_Name; }
-		inline int Elements() const { return m_Elements; }
-		inline int FullSize() const { return m_FullSize; }
-		inline int ReducedSize() const { return m_ReducedSize; }
-
-		FeatureGroup(const std::string & name) : m_Name(name), m_FullSize(pow(3, PopCount(m_BitPattern)))
-		{
-			assert(PopCount(m_BitPattern) <= 12);
-			
-			m_Generators.push_back(0);
-			m_Generators.push_back(1);
-			m_Elements = m_Generators.size();
-
-			m_Symmetries.push_back(3);
-
-			EigenBits = 0ULL;
-			NonEigenBits = 0ULL;
-			unsigned long long tmpPattern = m_BitPattern;
-			unsigned long long LSB, tmp;
-			while (tmpPattern)
-			{
-				LSB = GetLSB(tmpPattern);
-				RemoveLSB(tmpPattern);
-				tmp = Mirror(LSB, m_Symmetries);
-				if (LSB & tmp)
-					EigenBits |= LSB;
-				else{
-					NonEigenBits |= LSB;
-					tmpPattern ^= tmp;
-				}
-			}
-
-			assert(EigenBits == 0);
-
-			m_ReducedSize = pow(3, PopCount(NonEigenBits & ~0x0000001818000000ULL)) 
-						  * pow(2, PopCount(NonEigenBits &  0x0000001818000000ULL));
-			m_ReducedSize = m_ReducedSize * (m_ReducedSize + 1) / 2;
-			m_ReducedSize *= pow(3, PopCount(EigenBits & ~0x0000001818000000ULL)) 
-						   * pow(2, PopCount(EigenBits &  0x0000001818000000ULL));
-			
-			//Initialize BitBoards
-			for (const auto& sym : m_Generators)
-				m_BitBoards.push_back(sym_flip(m_BitPattern, sym));
-
-			//Initialize weights
-			m_weights.resize(m_Elements * BOXES);
-			for (int i = 0; i < m_Elements * BOXES; ++i)
-				m_weights[i].resize(m_FullSize);
-			
-		}
-
-		void set_weights(std::vector<float>::const_iterator& weight_iter, const unsigned int BoxIndex)
-		{
-			unsigned long long tmpP, tmpO, tmpBitBoard;
-			int FullIndex;
-			int ReducedIndex;
-			float w;
-			int counter;
-			int * Array = new int[m_Elements];
-			
-			For_each_configuration_in_pattern_do_fkt(m_BitPattern,
-				[&](unsigned long long P, unsigned long long O)
-				{
-					FillConfigurationArray(P, O, Array);
-					ReducedIndex = Array[0];
-					w = *(weight_iter + ReducedIndex);
-					counter = 0;
-					for (const int sym : m_Generators)
-					{
-						tmpP = sym_flip(P, sym);
-						tmpO = sym_flip(O, sym);
-						tmpBitBoard = sym_flip(m_BitPattern, sym);
-						FullIndex = SumPow3[PExt(tmpP, tmpBitBoard)] + 2 * SumPow3[PExt(tmpO, tmpBitBoard)];
-						m_weights[BoxIndex * m_Elements + counter++][FullIndex] = w;
-					}
-				}
-			);
-
-			delete[] Array;
-			weight_iter += m_ReducedSize;
-		}
-
-		float score(const unsigned long long P, const unsigned long long O, const unsigned int BoxIndex) const
-		{
-			unsigned long long tmpP, tmpO, tmpBitBoard;
-			float result = 0;
-			int index;
-
-			for (int sym = 0; sym < m_Elements; ++sym)
-			{
-				tmpBitBoard = m_BitBoards[sym];
-				tmpP = P & tmpBitBoard;
-				tmpO = O & tmpBitBoard;
-				index = SumPow3[PExt(tmpP, tmpBitBoard)] + 2 * SumPow3[PExt(tmpO, tmpBitBoard)];
-				result += m_weights[BoxIndex * m_Elements + sym][index];
-			}
-			return result;
-		}
-
-		void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int * Array) const
-		{
-			int index;
-
-			// RoomForOptimization: pow(*, i) has to cast i from unsigned int to unsigned long long.
-			const unsigned int size1 = PopCount(NonEigenBits & ~0x0000001818000000ULL);
-			const unsigned int size2 = PopCount(NonEigenBits &  0x0000001818000000ULL);
-			const unsigned int size3 = PopCount(   EigenBits & ~0x0000001818000000ULL);
-			const unsigned int size4 = PopCount(   EigenBits &  0x0000001818000000ULL);
-			const int diagtmp = pow(3, PopCount(   EigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(   EigenBits & 0x0000001818000000ULL));
-			const int sidetmp = pow(3, PopCount(NonEigenBits & ~0x0000001818000000ULL)) * pow(2, PopCount(NonEigenBits & 0x0000001818000000ULL));
-			unsigned long long tmpP, tmpO, tmpPattern, LSB;
-			int indexA, indexB, indexD;
-			for (int sym : m_Generators)
-			{
-				tmpP = sym_flip(P, sym);
-				tmpO = sym_flip(O, sym);
-										
-				// Side A of non-eigen fields
-				indexA = 0;
-				tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
-				for (int i = 0; i < size1; ++i)
-				{
-					LSB = GetLSB(tmpPattern);
-					RemoveLSB(tmpPattern);
-					if (tmpP & LSB) indexA += 1 * pow(3, i);
-					if (tmpO & LSB) indexA += 2 * pow(3, i);
-				}
-				tmpPattern = NonEigenBits & 0x0000001818000000ULL;
-				for (int i = 0; i < size2; ++i)
-				{
-					LSB = GetLSB(tmpPattern);
-					RemoveLSB(tmpPattern);
-					if (tmpO & LSB) indexA += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
-				}
-					
-				// Side B of non-eigen fields
-				indexB = 0;
-				tmpPattern = NonEigenBits & ~0x0000001818000000ULL;
-				for (int i = 0; i < size1; ++i)
-				{
-					LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
-					RemoveLSB(tmpPattern);
-					if (tmpP & LSB) indexB += 1 * pow(3, i);
-					if (tmpO & LSB) indexB += 2 * pow(3, i);
-				}
-				tmpPattern = NonEigenBits & 0x0000001818000000ULL;
-				for (int i = 0; i < size2; ++i)
-				{
-					LSB = Mirror(GetLSB(tmpPattern), m_Symmetries);
-					RemoveLSB(tmpPattern);
-					if (tmpO & LSB) indexB += 1 * pow(2, i) * pow(3, size1); // RoomForOptimization: Move *pow(3, size1) out of loop.
-				}
-
-				// Eigen fields
-				indexD = 0;
-				tmpPattern = EigenBits & ~0x0000001818000000ULL;
-				for (unsigned int i = 0; i < size3; ++i)
-				{
-					LSB = GetLSB(tmpPattern);
-					RemoveLSB(tmpPattern);
-					if (tmpP & LSB) indexD += 1 * pow(3, i);
-					if (tmpO & LSB) indexD += 2 * pow(3, i);
-				}
-				tmpPattern = EigenBits & 0x0000001818000000ULL;
-				for (unsigned int i = 0; i < size4; ++i)
-				{
-					LSB = GetLSB(tmpPattern);
-					RemoveLSB(tmpPattern);
-					if (tmpO & LSB) indexD += 1 * pow(2, i) * pow(3, size3); // RoomForOptimization: Move *pow(3, size3) out of loop.
-				}
-
-				index = indexA > indexB ? diagtmp*(sidetmp*indexB+indexA - (((indexB+1)*indexB) >> 1)) + indexD : diagtmp*(sidetmp*indexA+indexB - (((indexA+1)*indexA) >> 1)) + indexD;
-					
-				*(Array++) = index;
-			}
-		}
-	};
-
-
-	void Initialize(const int conf)
-	{
-		for (int i = 0; i < 4096; i++) SumPow3[i] = sumpow3(i);
-
-		FeatureList.push_back(new FeatureGroup<0x00000000000042FFULL>("L0+2X"));
-		//FeatureList.push_back(new FeatureGroup<0x00000000000000FFULL>("L0"));
-		FeatureList.push_back(new FeatureGroup<0x000000000000FF00ULL>("L1"));
-		FeatureList.push_back(new FeatureGroup<0x0000000000FF0000ULL>("L2"));
-		FeatureList.push_back(new FeatureGroup<0x00000000FF000000ULL>("L3"));
-
-		if (conf & 0x001) FeatureList.push_back(new FeatureGroup<0x0000000001020408ULL>("D4"));
-		if (conf & 0x002) FeatureList.push_back(new FeatureGroup<0x0000000102040810ULL>("D5"));
-		FeatureList.push_back(new FeatureGroup<0x0000010204081020ULL>("D6"));
-		FeatureList.push_back(new FeatureGroup<0x0001020408102040ULL>("D7"));
-		//FeatureList.push_back(new FeatureGroup<0x0102040810204080ULL>("D8"));
-		//FeatureList.push_back(new FeatureGroup<0x0000000103060C18ULL>("D4+D5"));
+		if (PATTERN_L02X ) ReducedSize += CPattern_L02X ::ReducedSize;
+		if (PATTERN_L1   ) ReducedSize += CPattern_L1   ::ReducedSize;
+		if (PATTERN_L2   ) ReducedSize += CPattern_L2   ::ReducedSize;
+		if (PATTERN_L3   ) ReducedSize += CPattern_L3   ::ReducedSize;
+		if (PATTERN_D4   ) ReducedSize += CPattern_D4   ::ReducedSize;
+		if (PATTERN_D5   ) ReducedSize += CPattern_D5   ::ReducedSize;
+		if (PATTERN_D6   ) ReducedSize += CPattern_D6   ::ReducedSize;
+		if (PATTERN_D7   ) ReducedSize += CPattern_D7   ::ReducedSize;
+		if (PATTERN_Comet) ReducedSize += CPattern_Comet::ReducedSize;
+		if (PATTERN_Eplus) ReducedSize += CPattern_Eplus::ReducedSize;
+		if (PATTERN_C3p1 ) ReducedSize += CPattern_C3p1 ::ReducedSize;
+		if (PATTERN_C3p2 ) ReducedSize += CPattern_C3p2 ::ReducedSize;
+		if (PATTERN_Q0   ) ReducedSize += CPattern_Q0   ::ReducedSize;
+		if (PATTERN_B5   ) ReducedSize += CPattern_B5   ::ReducedSize;
 		
-		if (  conf & 0x004 ) FeatureList.push_back(new FeatureGroup<0x000000000101030FULL>("C3+1"));
-		if (!(conf & 0x004)) FeatureList.push_back(new FeatureGroup<0x000000010101031FULL>("C3+2"));
-		//FeatureList.push_back(new FeatureGroup<0x000001010101033FULL>("C3+3"));
-		//FeatureList.push_back(new FeatureGroup<0x000000000103070FULL>("C4"));
-		//FeatureList.push_back(new FeatureGroup<0x000000010103071FULL>("C4+1"));
-		
-		//FeatureList.push_back(new FeatureGroup<0x000000000000C3FFULL>("Barbell"));
-		if (conf & 0x008) FeatureList.push_back(new FeatureGroup<0x81000000000000FFULL>(":|"));
-		//FeatureList.push_back(new FeatureGroup<0x81000000000042FFULL>("L0+2X+2C"));
-		FeatureList.push_back(new FeatureGroup<0x00000000000003CBDLL>("E+"));
-		
-		FeatureList.push_back(new FeatureGroup<0x0000000000070707ULL>("Q0"));
-		//FeatureList.push_back(new FeatureGroup<0x000000000E0E0E00ULL>("Q1"));
-		//FeatureList.push_back(new FeatureGroup<0x0000001C1C1C0000ULL>("Q2"));
-		//FeatureList.push_back(new FeatureGroup<0x0000000000247E00ULL>("TT"));
-		//FeatureList.push_back(new FeatureGroup<0x00000000003C7E00ULL>("Py"));
-		
-		//FeatureList.push_back(new FeatureGroup<0x03010000000081C3ULL>("3L"));
-		if (conf & 0x010) FeatureList.push_back(new FeatureGroup<0x03010000000083C3ULL>("3L+"));
-		//FeatureList.push_back(new FeatureGroup<0x030300000000C3C3ULL>("3B"));
-		
-		//FeatureList.push_back(new FeatureGroup<0x8100000000010387ULL>("C3+Cs"));
-		//FeatureList.push_back(new FeatureGroup<0x810000000101038FULL>("C3+1+Cs"));
-		
-		if (  conf & 0x020 ) FeatureList.push_back(new FeatureGroup<0x8040201008040303ULL>("Comet"));
-		if (!(conf & 0x020)) FeatureList.push_back(new FeatureGroup<0x8040201008050307ULL>("Arrow"));
-		//FeatureList.push_back(new FeatureGroup<0x804020100905030FULL>("Anchor"));
-
-		//FeatureList.push_back(new FeatureGroup<0x0000000000000F0FULL>("B4"));
-		if (conf & 0x040) FeatureList.push_back(new FeatureGroup<0x0000000000001F1FULL>("B5"));
-		//FeatureList.push_back(new FeatureGroup<0x0000000000003F3FULL>("B6"));
-
-		Elements = 0;
-		FullSize = 0;
-		ReducedSize = 0;
-		for (const FeatureMetaGroup * const it : FeatureList) Elements += it->Elements();
-		for (const FeatureMetaGroup * const it : FeatureList) FullSize += it->FullSize();
-		for (const FeatureMetaGroup * const it : FeatureList) ReducedSize += it->ReducedSize();
-
 		std::vector<std::string> Filenames;
+
+		// Extract filenames form config file
 		std::string s;
 		for (int i = 0; i < BOXES; ++i)
 		{
@@ -371,7 +135,7 @@ namespace Features
 				Filenames.push_back(ConfigFile::Configurations[s]);
 		}
 
-		std::vector<float>::const_iterator v_float_citer;
+		// Read in weight files
 		std::vector<double> v_double;
 		for (std::size_t j = 0; j < Filenames.size(); ++j)
 		{
@@ -381,9 +145,21 @@ namespace Features
 				std::cerr << "ERROR: Weight's file " << Filenames[j] << " size (" << v_float.size() << ") does not match expected size (" << ReducedSize << ")." << std::endl;
 				continue;
 			}
-			v_float_citer = v_float.cbegin();
-			for (FeatureMetaGroup * const it : FeatureList)
-				it->set_weights(v_float_citer, j);
+			if (PATTERN_L02X ) { PatVecL02X [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecL02X [j].ReducedSize); }
+			if (PATTERN_L1   ) { PatVecL1   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecL1   [j].ReducedSize); }
+			if (PATTERN_L2   ) { PatVecL2   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecL2   [j].ReducedSize); }
+			if (PATTERN_L3   ) { PatVecL3   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecL3   [j].ReducedSize); }
+			if (PATTERN_D4   ) { PatVecD4   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecD4   [j].ReducedSize); }
+			if (PATTERN_D5   ) { PatVecD5   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecD5   [j].ReducedSize); }
+			if (PATTERN_D6   ) { PatVecD6   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecD6   [j].ReducedSize); }
+			if (PATTERN_D7   ) { PatVecD7   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecD7   [j].ReducedSize); }
+			if (PATTERN_Comet) { PatVecComet[j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecComet[j].ReducedSize); }
+			if (PATTERN_Eplus) { PatVecEplus[j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecEplus[j].ReducedSize); }
+			if (PATTERN_C3p1 ) { PatVecC3p1 [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecC3p1 [j].ReducedSize); }
+			if (PATTERN_C3p2 ) { PatVecC3p2 [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecC3p2 [j].ReducedSize); }
+			if (PATTERN_Q0   ) { PatVecQ0   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecQ0   [j].ReducedSize); }
+			if (PATTERN_B5   ) { PatVecB5   [j].set_weights(v_float); v_float.erase(v_float.begin(), v_float.begin() + PatVecB5   [j].ReducedSize); }
+			if (v_float.size() != 0) std::cerr << "ERROR: filesizes are wrong!" << std::endl;
 		}
 	}
 
@@ -393,41 +169,90 @@ namespace Features
 	}
 }
 
-void FillConfigurationArray(const unsigned long long P, const unsigned long long O, int * Array)
+void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec)
 {
-	using namespace Features;
-	int Offset = 0;
-	for (const FeatureMetaGroup * const it : FeatureList)
-	{
-		it->FillConfigurationArray(P, O, Array);
-		for (int i = 0; i < it->Elements(); ++i)
-			Array[i] += Offset;
-		Array += it->Elements();
-		Offset += it->ReducedSize();
-	}
+	vec.clear();
+	if (PATTERN_L02X ) Features::CPattern_L02X ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_L1   ) Features::CPattern_L1   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_L2   ) Features::CPattern_L2   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_L3   ) Features::CPattern_L3   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_D4   ) Features::CPattern_D4   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_D5   ) Features::CPattern_D5   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_D6   ) Features::CPattern_D6   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_D7   ) Features::CPattern_D7   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_Comet) Features::CPattern_Comet::FillConfigurationVec(P, O, vec);
+	if (PATTERN_Eplus) Features::CPattern_Eplus::FillConfigurationVec(P, O, vec);
+	if (PATTERN_C3p1 ) Features::CPattern_C3p1 ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_C3p2 ) Features::CPattern_C3p2 ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_Q0   ) Features::CPattern_Q0   ::FillConfigurationVec(P, O, vec);
+	if (PATTERN_B5   ) Features::CPattern_B5   ::FillConfigurationVec(P, O, vec);
 }
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O)
 {
-	const int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	const unsigned char BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
 	float sum = 0;
-
-	for (const Features::FeatureMetaGroup * const it : Features::FeatureList)
-		sum += it->score(P, O, BoxIndex);
-
+	if (PATTERN_L02X ) sum += Features::PatVecL02X [BoxIndex].score(P, O);
+	if (PATTERN_L1   ) sum += Features::PatVecL1   [BoxIndex].score(P, O);
+	if (PATTERN_L2   ) sum += Features::PatVecL2   [BoxIndex].score(P, O);
+	if (PATTERN_L3   ) sum += Features::PatVecL3   [BoxIndex].score(P, O);
+	if (PATTERN_D4   ) sum += Features::PatVecD4   [BoxIndex].score(P, O);
+	if (PATTERN_D5   ) sum += Features::PatVecD5   [BoxIndex].score(P, O);
+	if (PATTERN_D6   ) sum += Features::PatVecD6   [BoxIndex].score(P, O);
+	if (PATTERN_D7   ) sum += Features::PatVecD7   [BoxIndex].score(P, O);
+	if (PATTERN_Comet) sum += Features::PatVecComet[BoxIndex].score(P, O);
+	if (PATTERN_Eplus) sum += Features::PatVecEplus[BoxIndex].score(P, O);
+	if (PATTERN_C3p1 ) sum += Features::PatVecC3p1 [BoxIndex].score(P, O);
+	if (PATTERN_C3p2 ) sum += Features::PatVecC3p2 [BoxIndex].score(P, O);
+	if (PATTERN_Q0   ) sum += Features::PatVecQ0   [BoxIndex].score(P, O);
+	if (PATTERN_B5   ) sum += Features::PatVecB5   [BoxIndex].score(P, O);
 	return RoundInt(sum);
 }
-int EvaluateFeatures(const unsigned long long P, const unsigned long long O, float * Array)
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, std::vector<float>& scores)
 {
-	const int BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	const unsigned char BoxIndex = Features::BoxIndex[NumberOfEmptyStones(P, O)];
+	scores.clear();
+	if (PATTERN_L02X ) scores.push_back(Features::PatVecL02X [BoxIndex].score(P, O));
+	if (PATTERN_L1   ) scores.push_back(Features::PatVecL1   [BoxIndex].score(P, O));
+	if (PATTERN_L2   ) scores.push_back(Features::PatVecL2   [BoxIndex].score(P, O));
+	if (PATTERN_L3   ) scores.push_back(Features::PatVecL3   [BoxIndex].score(P, O));
+	if (PATTERN_D4   ) scores.push_back(Features::PatVecD4   [BoxIndex].score(P, O));
+	if (PATTERN_D5   ) scores.push_back(Features::PatVecD5   [BoxIndex].score(P, O));
+	if (PATTERN_D6   ) scores.push_back(Features::PatVecD6   [BoxIndex].score(P, O));
+	if (PATTERN_D7   ) scores.push_back(Features::PatVecD7   [BoxIndex].score(P, O));
+	if (PATTERN_Comet) scores.push_back(Features::PatVecComet[BoxIndex].score(P, O));
+	if (PATTERN_Eplus) scores.push_back(Features::PatVecEplus[BoxIndex].score(P, O));
+	if (PATTERN_C3p1 ) scores.push_back(Features::PatVecC3p1 [BoxIndex].score(P, O));
+	if (PATTERN_C3p2 ) scores.push_back(Features::PatVecC3p2 [BoxIndex].score(P, O));
+	if (PATTERN_Q0   ) scores.push_back(Features::PatVecQ0   [BoxIndex].score(P, O));
+	if (PATTERN_B5   ) scores.push_back(Features::PatVecB5   [BoxIndex].score(P, O));
 	float sum = 0;
-
-	for (const Features::FeatureMetaGroup * const it : Features::FeatureList)
-		sum += *Array++ = it->score(P, O, BoxIndex);
-
+	for (const auto& it : scores) sum += it;
 	return RoundInt(sum);
 }
-
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, Features::CIndexArray indexArray)
+{
+	return 0;
+}
+void FillConfigurationVecOffsetted(const unsigned long long P, const unsigned long long O, std::vector<int>& vec)
+{
+	int Offset = 0;
+	vec.clear();
+	if (PATTERN_L02X ) { Features::CPattern_L02X ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_L02X ::ReducedSize; }
+	if (PATTERN_L1   ) { Features::CPattern_L1   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_L1   ::ReducedSize; }
+	if (PATTERN_L2   ) { Features::CPattern_L2   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_L2   ::ReducedSize; }
+	if (PATTERN_L3   ) { Features::CPattern_L3   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_L3   ::ReducedSize; }
+	if (PATTERN_D4   ) { Features::CPattern_D4   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_D4   ::ReducedSize; }
+	if (PATTERN_D5   ) { Features::CPattern_D5   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_D5   ::ReducedSize; }
+	if (PATTERN_D6   ) { Features::CPattern_D6   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_D6   ::ReducedSize; }
+	if (PATTERN_D7   ) { Features::CPattern_D7   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_D7   ::ReducedSize; }
+	if (PATTERN_Comet) { Features::CPattern_Comet::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_Comet::ReducedSize; }
+	if (PATTERN_Eplus) { Features::CPattern_Eplus::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_Eplus::ReducedSize; }
+	if (PATTERN_C3p1 ) { Features::CPattern_C3p1 ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_C3p1 ::ReducedSize; }
+	if (PATTERN_C3p2 ) { Features::CPattern_C3p2 ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_C3p2 ::ReducedSize; }
+	if (PATTERN_Q0   ) { Features::CPattern_Q0   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_Q0   ::ReducedSize; }
+	if (PATTERN_B5   ) { Features::CPattern_B5   ::FillConfigurationVec(P, O, vec, Offset); Offset += Features::CPattern_B5   ::ReducedSize; }
+}
 
 //bool Congruent(const unsigned long long P1, const unsigned long long P2)
 //{

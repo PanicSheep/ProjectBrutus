@@ -38,17 +38,17 @@ void Load_Data(const std::vector<std::string>& Filenames, Matrix& A, std::vector
 
 	#pragma omp parallel
 	{
-		int* const Array = new int[Features::Elements];
+		std::vector<int> Indices;
 		std::map<Matrix::size_type, Matrix::value_type> map;
 		
 		#pragma omp for nowait schedule(static, 1024)
 		for (int i = 0; i < size; ++i)
 		{
 			map.clear();
-			FillConfigurationArray(M[i].P, M[i].O, Array);
+			FillConfigurationVecOffsetted(M[i].P, M[i].O, Indices);
 
-			for (unsigned int j = 0; j < Features::Elements; ++j)
-				map[Array[j]]++;
+			for (const auto & it : Indices)
+				map[it]++;
 
 			#pragma omp critical
 			{
@@ -58,8 +58,6 @@ void Load_Data(const std::vector<std::string>& Filenames, Matrix& A, std::vector
 				scores.push_back(M[i].score);
 			}
 		}
-
-		delete[] Array;
 	}
 }
 
@@ -194,7 +192,6 @@ void SolveInRAM(const std::vector<std::string>& FileNames, const std::string& fi
 	endTime = std::chrono::high_resolution_clock::now();
 	printf_s("done!\t %14s\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 
-	printf_s("Features: %s\n", Features::Names().c_str());
 	printf_s("Configurations: %d\n", Features::ReducedSize);
 	printf_s("Active configurations: %d\n", Number_of_Active_Configurations);
 	printf_s("Active percentage: %.2f%%\n\n", Number_of_Active_Configurations * 100.0 / Features::ReducedSize);
@@ -275,7 +272,6 @@ int main(int argc, char* argv[])
 	std::string file_start_x;
 	std::string file_end_x;
 	int Iterations = 100;
-	int conf = 0;
 	bool next = false;
 
 	for (int i = 0; i < argc; ++i) 
@@ -294,8 +290,6 @@ int main(int argc, char* argv[])
 			Iterations = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-n")
 			Threshold = atoi(argv[++i]);
-		else if (std::string(argv[i]) == "-conf")
-			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-next")
 			next = true;
 		else if (std::string(argv[i]) == "-h"){
@@ -306,16 +300,17 @@ int main(int argc, char* argv[])
 	
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize(conf);
+	Features::Initialize();
+	
 
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d6_1M.ps"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d7_1M.ps"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d8_1M.ps"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d9_1M.ps"));
 	//FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d10_1M.ps"));
-	//SolveInRAM(FileNames, file_start_x, std::string("G:\\Penis.b"), 50, 4);
+	//SolveInRAM(FileNames, file_start_x, std::string("G:\\Penis.b"), 50, 4, false);
 	//return 0;
-
+	
 	if (FileNames.size())
 		SolveInRAM(FileNames, file_start_x, file_end_x, Iterations, Threshold, next);
 

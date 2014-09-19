@@ -250,7 +250,6 @@ int main(int argc, char* argv[])
 	int d, D, s, S;
 	int n = 1000;
 	int bit = 24;
-	int conf;
 	bool v = false;
 	std::vector<CComparisonPair*> ComparisonPairs;
 	CComparisonPair* tmp;
@@ -277,8 +276,6 @@ int main(int argc, char* argv[])
 			bit = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-v")
 			v = true;
-		else if (std::string(argv[i]) == "-conf")
-			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-h"){
 			Print_help();
 			return 0;
@@ -443,46 +440,68 @@ int main(int argc, char* argv[])
 	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d18_1M.ps"));
 	//ComparisonPairs.push_back(tmp);
 
+	tmp = new CComparisonPair(0/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d7_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d8_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d9_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d10_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d11_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d12_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_10k.psp"));
+	tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_10k.psp"));
+	ComparisonPairs.push_back(tmp);
 
-	for (int D = 2; D < 17; ++D)
-		for (int d = 0; d < D; d+=2)
-		{
-			tmp = new CComparisonPair(d/*d*/, 0/*s*/, D/*D*/, 0/*S*/);
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d26_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d27_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d28_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d29_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d30_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d31_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d32_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d33_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d34_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d35_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d36_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d37_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d38_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d39_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d40_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d41_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d42_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d43_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d44_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d45_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d46_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d47_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d48_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d49_1M.psp"));
-			if ((d == 0) && (D % 2 == 1)) 
-				d--;
-			ComparisonPairs.push_back(tmp);
-		}
+
+	//for (int D = 2; D < 17; ++D)
+	//	for (int d = 0; d < D; d+=2)
+	//	{
+	//		tmp = new CComparisonPair(d/*d*/, 0/*s*/, D/*D*/, 0/*S*/);
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d26_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d27_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d28_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d29_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d30_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d31_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d32_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d33_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d34_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d35_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d36_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d37_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d38_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d39_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d40_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d41_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d42_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d43_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d44_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d45_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d46_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d47_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d48_1M.psp"));
+	//		tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d49_1M.psp"));
+	//		if ((d == 0) && (D % 2 == 1)) 
+	//			d--;
+	//		ComparisonPairs.push_back(tmp);
+	//	}
 
 	CHashTable* hashTable = new CHashTable(bit);
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize(conf);
+	Features::Initialize();
 	Midgame::Initialize();
 
 	std::cout << "ProbCut statistics started for n=" << n << std::endl;

@@ -25,7 +25,7 @@ public:
 	unsigned int n, m;
 	CMatrix(const unsigned int n, const unsigned int m) : n(n), m(m) { m_elements = new K[n*m]; }
 	~CMatrix() { delete[] m_elements; }
-	K& operator()(const unsigned int i, const unsigned int j) { return m_elements[i*m+j]; }
+	      K& operator()(const unsigned int i, const unsigned int j)       { return m_elements[i*m+j]; }
 	const K& operator()(const unsigned int i, const unsigned int j) const { return m_elements[i*m+j]; }
 	std::vector<K> operator*(const std::vector<K>& v) const
 	{
@@ -83,17 +83,7 @@ long double dot(const std::vector<K>& a, const std::vector<K>& b)
 }
 
 template <typename K>
-long double dot(const std::vector<K>& a)
-{ 
-	long double sum = 0.0;
-	const std::size_t size = a.size();
-	for (std::size_t i = 0; i < size; ++i)
-		sum += a[i] * a[i];
-	return sum;
-}
-
-template <typename K>
-long double norm(const std::vector<K>& a) { return std::sqrtl(dot(a)); }
+long double norm(const std::vector<K>& a) { return std::sqrtl(dot(a, a)); }
 
 template <typename K>
 std::vector<K> CG(const CMatrix<K>& A, const std::vector<K> b)
@@ -122,29 +112,26 @@ std::vector<K> CG(const CMatrix<K>& A, const std::vector<K> b)
 
 void PatternStatistics(std::vector<CPositionScore>& Positions)
 {
-	const std::size_t NumberOfPattern = Features::FeatureList.size();
-	CMatrix<double> X(Positions.size(), NumberOfPattern);
-	CMatrix<double> XTX(NumberOfPattern, NumberOfPattern);
+	CMatrix<double> X(Positions.size(), Features::NumberOfPattern);
+	CMatrix<double> XTX(Features::NumberOfPattern, Features::NumberOfPattern);
 	std::vector<double> Y(Positions.size());
-	std::vector<double> XTY(NumberOfPattern);
+	std::vector<double> XTY(Features::NumberOfPattern);
 	std::vector<double> err(Positions.size());
-	std::vector<double> Std(NumberOfPattern);
+	std::vector<double> Std(Features::NumberOfPattern);
 	std::vector<double> b;
 	std::vector<double> e;
 	long double sigma, s_sq;
 
-	float * scores = new float[NumberOfPattern];
+	std::vector<float> scores;
 
 	// Fill X and Y and e
 	for (unsigned int i = 0; i < Positions.size(); ++i)
 	{
 		Y[i] = EvaluateFeatures(Positions[i].P, Positions[i].O, scores);
 		err[i] = Y[i] - Positions[i].score;
-		for (unsigned int j = 0; j < NumberOfPattern; ++j)
+		for (unsigned int j = 0; j < Features::NumberOfPattern; ++j)
 			X(i, j) = scores[j];
 	}
-	
-	delete[] scores;
 
 	// Calculating standard deviation
 	sigma = StandardDeviation(err);
@@ -154,7 +141,7 @@ void PatternStatistics(std::vector<CPositionScore>& Positions)
 	printf("avg abs err: %3.3f\n\n", AverageAbs(err));
 	
 	// Calculate XTY = X^T * Y
-	for (unsigned int i = 0; i < NumberOfPattern; ++i)
+	for (unsigned int i = 0; i < Features::NumberOfPattern; ++i)
 	{
 		XTY[i] = 0;
 		for (unsigned int j = 0; j < Positions.size(); ++j)
@@ -162,8 +149,8 @@ void PatternStatistics(std::vector<CPositionScore>& Positions)
 	}
 
 	// Calculate XTX = X^T * X
-	for (unsigned int i = 0; i < NumberOfPattern; ++i)
-		for (unsigned int j = 0; j < NumberOfPattern; ++j)
+	for (unsigned int i = 0; i < Features::NumberOfPattern; ++i)
+		for (unsigned int j = 0; j < Features::NumberOfPattern; ++j)
 		{
 			XTX(i, j) = 0;
 			for (unsigned int k = 0; k < Positions.size(); ++k)
@@ -172,12 +159,12 @@ void PatternStatistics(std::vector<CPositionScore>& Positions)
 
 	b = CG(XTX, XTY);
 	e = Y - (X * b);
-	s_sq = dot(e, e) / static_cast<double>(Positions.size() - NumberOfPattern);
+	s_sq = dot(e, e) / static_cast<double>(Positions.size() - Features::NumberOfPattern);
 
 	// Calculating Std
-	for (unsigned int i = 0; i < NumberOfPattern; ++i)
+	for (unsigned int i = 0; i < Features::NumberOfPattern; ++i)
 	{
-		std::vector<double> unit(NumberOfPattern);
+		std::vector<double> unit(Features::NumberOfPattern);
 		for (auto& elem : unit) elem = 0;
 		unit[i] = 1;
 		Std[i] = s_sq * CG(XTX, unit)[i];
@@ -187,8 +174,21 @@ void PatternStatistics(std::vector<CPositionScore>& Positions)
 	printf(" Pattern  |    b    |    std    |     t     \n");
 	printf("----------+---------+-----------+-----------\n");
 
-	for (std::size_t i = 0; i < Features::FeatureList.size(); ++i)
-		printf(" %-9s| %1.5f | %1.2E | %1.2E \n", Features::FeatureList[i]->Name(), b[i], Std[i], b[i]/Std[i]);
+	int i = 0;
+	if(PATTERN_L02X ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "L0+2X", b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_L1   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "L1"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_L2   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "L2"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_L3   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "L3"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_D4   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "D4"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_D5   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "D5"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_D6   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "D6"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_D7   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "D7"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_Comet) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "Comet", b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_Eplus) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "E+"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_C3p1 ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "C3+1" , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_C3p2 ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "C3+2" , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_Q0   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "Q0"   , b[i], Std[i], b[i]/Std[i]); i++; }
+	if(PATTERN_B5   ) { printf(" %-9s| %1.5f | %1.2E | %1.2E \n", "B5"   , b[i], Std[i], b[i]/Std[i]); i++; }
 }
 
 void PatternStatistics(const std::vector<std::string>& FileNames, const int size, const bool verbose)
@@ -226,7 +226,6 @@ int main(int argc, char* argv[])
 	std::vector<std::string> FileNames;
 	int n = 10000;
 	bool v = false;
-	int conf = 0;
 
 	for (int i = 0; i < argc; ++i)
 	{
@@ -240,8 +239,6 @@ int main(int argc, char* argv[])
 			n = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-v")
 			v = true;
-		else if (std::string(argv[i]) == "-conf")
-			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-h"){
 			Print_help();
 			return 0;
@@ -250,7 +247,7 @@ int main(int argc, char* argv[])
 
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize(conf);
+	Features::Initialize();
 
 	//for (int i = 7; i < 8; ++i)
 	//	FileNames.push_back(std::string("G:\\Reversi\\pos\\rnd_d" + std::to_string(i) + "_1M.ps"));

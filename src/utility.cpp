@@ -41,38 +41,71 @@ unsigned long long AFFECTABLE(unsigned long long BitBoard)
 
 unsigned long long diagonal_flip(unsigned long long b)
 {
+	// \ # # # # # # #
+	// # \ # # # # # #
+	// # # \ # # # # #
+	// # # # \ # # # #
+	// # # # # \ # # #
+	// # # # # # \ # #
+	// # # # # # # \ #
+	// # # # # # # # \ 
 	unsigned long long t;
-	t  = (b ^ (b >> 7)) & 0x00aa00aa00aa00aaUL;
-	b ^=  t ^ (t << 7);
-	t  = (b ^ (b >> 14)) & 0x0000cccc0000ccccUL;
+	t  = (b ^ (b >>  7)) & 0x00AA00AA00AA00AAULL;
+	b ^=  t ^ (t <<  7);
+	t  = (b ^ (b >> 14)) & 0x0000CCCC0000CCCCULL;
 	b ^=  t ^ (t << 14);
-	t  = (b ^ (b >> 28)) & 0x00000000f0f0f0f0UL;
+	t  = (b ^ (b >> 28)) & 0x00000000F0F0F0F0ULL;
 	b ^=  t ^ (t << 28);
 	return b;
 }
 unsigned long long codiagonal_flip(unsigned long long b)
 {
+	// # # # # # # # /
+	// # # # # # # / #
+	// # # # # # / # #
+	// # # # # / # # #
+	// # # # / # # # #
+	// # # / # # # # #
+	// # / # # # # # #
+	// / # # # # # # #
 	unsigned long long t;
 	t  =  b ^ (b << 36);
-	b ^= (t ^ (b >> 36)) & 0xf0f0f0f00f0f0f0fULL;
-	t  = (b ^ (b << 18)) & 0xcccc0000cccc0000ULL;
+	b ^= (t ^ (b >> 36)) & 0xF0F0F0F00F0F0F0FULL;
+	t  = (b ^ (b << 18)) & 0xCCCC0000CCCC0000ULL;
 	b ^=  t ^ (t >> 18);
-	t  = (b ^ (b <<  9)) & 0xaa00aa00aa00aa00ULL;
+	t  = (b ^ (b <<  9)) & 0xAA00AA00AA00AA00ULL;
 	b ^=  t ^ (t >>  9);
 	return b;
 }
 unsigned long long vertical_flip(unsigned long long b)
 {
-	b = ((b >> 8) & 0x00FF00FF00FF00FFUL) | ((b << 8) & 0xFF00FF00FF00FF00UL);
-	b = ((b >> 16) & 0x0000FFFF0000FFFFUL) | ((b << 16) & 0xFFFF0000FFFF0000UL);
-	b = ((b >> 32) & 0x00000000FFFFFFFFUL) | ((b << 32) & 0xFFFFFFFF00000000UL);
+	// # # # # # # # #
+	// # # # # # # # #
+	// # # # # # # # #
+	// # # # # # # # #
+	// ---------------
+	// # # # # # # # #
+	// # # # # # # # #
+	// # # # # # # # #
+	// # # # # # # # #
+	b = ((b >>  8) & 0x00FF00FF00FF00FFULL) | ((b <<  8) & 0xFF00FF00FF00FF00ULL);
+	b = ((b >> 16) & 0x0000FFFF0000FFFFULL) | ((b << 16) & 0xFFFF0000FFFF0000ULL);
+	b = ((b >> 32) & 0x00000000FFFFFFFFULL) | ((b << 32) & 0xFFFFFFFF00000000ULL);
 	return b;
 }
 unsigned long long horizontal_flip(unsigned long long b)
 {
-	b = ((b >> 1) & 0x5555555555555555UL) | ((b << 1) & 0xAAAAAAAAAAAAAAAAUL);
-	b = ((b >> 2) & 0x3333333333333333UL) | ((b << 2) & 0xCCCCCCCCCCCCCCCCUL);
-	b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FUL) | ((b << 4) & 0xF0F0F0F0F0F0F0F0UL);
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	// # # # #|# # # #
+	b = ((b >> 1) & 0x5555555555555555ULL) | ((b << 1) & 0xAAAAAAAAAAAAAAAAULL);
+	b = ((b >> 2) & 0x3333333333333333ULL) | ((b << 2) & 0xCCCCCCCCCCCCCCCCULL);
+	b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((b << 4) & 0xF0F0F0F0F0F0F0F0ULL);
 	return b;
 }
 
@@ -80,9 +113,9 @@ std::string SCIENTIFIC_NOTATION(double Number)
 {
     char Notation[19] = "YZEPTGMk munpfazy";
 	std::stringstream sstm;
-    int exp = static_cast<int>(floor(log10(std::abs(Number)) / 3.0));
+    int exp = static_cast<int>(std::floor(std::log10(std::abs(Number)) / 3.0));
 		
-    Number /= std::pow(10., 3 * exp);
+    Number /= std::pow(10.0, 3 * exp);
 		
 	sstm << Notation[8 - exp] << Number;
 	return sstm.str();

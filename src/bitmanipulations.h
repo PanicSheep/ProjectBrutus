@@ -5,8 +5,8 @@
 // #####################################
 // ##    CPU specific optimizations   ##
 // #####################################
-#define YORKFIELD
-//#define HASWELL
+//#define YORKFIELD
+#define HASWELL
 
 //#define HAS_MMX
 //#define HAS_SSE

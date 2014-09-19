@@ -9,7 +9,6 @@ int main(int argc, char* argv[])
 	int s = 0;
 	int n = 10;
 	int t = 4;
-	int conf = 0;
 	bool v = false;
 	bool SkipSolved = true;
 	bool Save = true;
@@ -39,8 +38,6 @@ int main(int argc, char* argv[])
 			SkipSolved = false;
 		else if (std::string(argv[i]) == "-nosave")
 			Save = false;
-		else if (std::string(argv[i]) == "-conf")
-			conf = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-h"){
 			std::cout << "Solves a file of given reversi positions." << std::endl <<
 				"Arguments:" << std::endl <<
@@ -61,7 +58,7 @@ int main(int argc, char* argv[])
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
-	Features::Initialize(conf);
+	Features::Initialize();
 	Midgame::Initialize();
 
 	//Filename = std::string("C:\\Users\\Dominic\\Desktop\\edax\\4.3.2\\bin\\problem\\full-20.obf");
