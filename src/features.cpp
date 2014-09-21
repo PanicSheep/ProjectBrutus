@@ -10,8 +10,8 @@ const bool PATTERN_D6    = true;
 const bool PATTERN_D7    = true;
 const bool PATTERN_Comet = true;
 const bool PATTERN_Eplus = true;
-const bool PATTERN_C3p1  = false;
-const bool PATTERN_C3p2  = true;
+const bool PATTERN_C3p1  = true;
+const bool PATTERN_C3p2  = false;
 const bool PATTERN_Q0    = true;
 const bool PATTERN_B5  	 = true;
 

@@ -1086,7 +1086,7 @@ namespace Features
 	
 	class CPattern_B5
 	{
-		static const unsigned long long Pattern = 0x00000000000042FFULL;
+		static const unsigned long long Pattern = 0x0000000000001F1FULL;
 		static const unsigned long long PatternH = Flip<Pattern>::horizontal;
 		static const unsigned long long PatternV = Flip<Pattern>::vertical;
 		static const unsigned long long PatternD = Flip<Pattern>::diagonal;
@@ -1102,9 +1102,9 @@ namespace Features
 		static inline int ReducedPatternIndex2(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(vertical_flip(P), vertical_flip(O)); }
 		static inline int ReducedPatternIndex3(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(diagonal_flip(P), diagonal_flip(O)); }
 		static inline int ReducedPatternIndex4(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(codiagonal_flip(P), codiagonal_flip(O)); }
-		static inline int ReducedPatternIndex5(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(vertical_flip(horizontal_flip(P)), vertical_flip(horizontal_flip(O))); }
-		static inline int ReducedPatternIndex6(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(diagonal_flip(horizontal_flip(P)), diagonal_flip(horizontal_flip(O))); }
-		static inline int ReducedPatternIndex7(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(codiagonal_flip(horizontal_flip(P)), codiagonal_flip(horizontal_flip(O))); }
+		static inline int ReducedPatternIndex5(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(horizontal_flip(vertical_flip(P)), horizontal_flip(vertical_flip(O))); }
+		static inline int ReducedPatternIndex6(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(horizontal_flip(diagonal_flip(P)), horizontal_flip(diagonal_flip(O))); }
+		static inline int ReducedPatternIndex7(const unsigned long long P, const unsigned long long O) { return ReducedPatternIndex0(horizontal_flip(codiagonal_flip(P)), horizontal_flip(codiagonal_flip(O))); }
 
 	public:
 		static const int FullSize = POW_3_10;
