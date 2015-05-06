@@ -2,29 +2,21 @@
 #include "flip.h"
 #include "PossibleMoves.h"
 #include "utility.h"
-#include <emmintrin.h>
-#include <intrin.h>
 #include <utility>
 
-static const unsigned long long START_POSITION_P = 0x0000000810000000ULL; // Original
-static const unsigned long long START_POSITION_O = 0x0000001008000000ULL; // Original
-static const unsigned long long START_POSITION_ETH_P = 0x0000001800000000ULL; // ETH
-static const unsigned long long START_POSITION_ETH_O = 0x0000000018000000ULL; // ETH
+const uint64_t START_POSITION_P = 0x0000000810000000ULL;
+const uint64_t START_POSITION_O = 0x0000001008000000ULL;
+const uint64_t START_POSITION_ETH_P = 0x0000001800000000ULL;
+const uint64_t START_POSITION_ETH_O = 0x0000000018000000ULL;
 
-inline void ResetPosition(unsigned long long & P, unsigned long long & O, const bool ETH)
+inline void ResetPosition(uint64_t & P, uint64_t & O, const bool ETH)
 {
-	if (ETH){
-		P = START_POSITION_ETH_P;
-		O = START_POSITION_ETH_O;
-	}
-	else {
-		P = START_POSITION_P;
-		O = START_POSITION_O;
-	}
+	if (ETH) { P = START_POSITION_ETH_P; O = START_POSITION_ETH_O; }
+	else { P = START_POSITION_P; O = START_POSITION_O; }
 }
 
-inline unsigned long long NumberOfEmptyStones(const unsigned long long P, const unsigned long long O) { return PopCount(~(P | O)); }
-inline unsigned long long parity(unsigned long long E)
+inline uint64_t NumberOfEmptyStones(const uint64_t P, const uint64_t O) { return PopCount(~(P | O)); }
+inline uint64_t parity(uint64_t E)
 {
 	// 6x SHIFT, 4x XOR, 2x AND, 2x OR <==> 14 OPs
 	E ^= E >>  1;
@@ -36,12 +28,17 @@ inline unsigned long long parity(unsigned long long E)
 	E |= E >> 30;
 	return E & 0xFULL;
 }
-inline unsigned long long parity(const unsigned long long P, const unsigned long long O) { return parity(~(P | O)); }
-//unsigned long long PossibleMoves(const unsigned long long P, const unsigned long long O);
-void PossibleMoves(const unsigned long long P, const unsigned long long O, unsigned long long & PossibleMovesP, unsigned long long & PossibleMovesO);
-void PlayStone(unsigned long long & P, unsigned long long & O, const unsigned char coordinate);
+inline uint64_t parity(const uint64_t P, const uint64_t O) { return parity(~(P | O)); }
 
-inline unsigned long long StableStones_corner_and_co(const unsigned long long O)
+inline void PlayStone(uint64_t & P, uint64_t & O, const int move)
+{
+	uint64_t flipped = flip(P, O, move);
+	P ^= flipped ^ (1ULL << move);
+	O ^= flipped;
+	std::swap(P, O);
+}
+
+inline uint64_t StableStones_corner_and_co(const uint64_t O)
 {
 	// 5x AND, 4x SHIFT, 4x OR <==> 13 OPs
 	return (
@@ -52,27 +49,27 @@ inline unsigned long long StableStones_corner_and_co(const unsigned long long O)
 				  0x8100000000000081ULL
 			) & O;
 }
-inline unsigned long long StableStones_affectables(const unsigned long long P, const unsigned long long O) { return O & ~AFFECTABLE(~(P | O)); }
-unsigned long long StableStones_full_edges_second_order(const unsigned long long P, const unsigned long long O);
-unsigned long long StableStones_triangles(const unsigned long long O);
-unsigned long long StableStones_skyline(const unsigned long long O);
+inline uint64_t StableStones_affectables(const uint64_t P, const uint64_t O) { return O & ~AFFECTABLE(~(P | O)); }
+uint64_t StableStones_full_edges_second_order(const uint64_t P, const uint64_t O);
+uint64_t StableStones_triangles(const uint64_t O);
+uint64_t StableStones_skyline(const uint64_t O);
 
-inline unsigned long long StableStones(const unsigned long long P, const unsigned long long O)
+inline uint64_t StableStones(const uint64_t P, const uint64_t O)
 {
 	return StableStones_corner_and_co(O) | StableStones_full_edges_second_order(P, O) | StableStones_triangles(O) | StableStones_skyline(O);
 }
 
-inline unsigned long long SMEAR_BITBOARD(unsigned long long B)
+inline uint64_t SMEAR_BITBOARD(uint64_t B)
 {
 	// 4x SHIFT, 4x OR, 2x AND <==> 10 OPs
 	B |= (B >> 1) & 0x7F7F7F7F7F7F7F7FULL | (B << 1) & 0xFEFEFEFEFEFEFEFEULL;
 	return B | (B >> 8) | (B << 8);
 }
 
-inline unsigned long long PlayersBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P) & ~(P | O); } // 13 OPs
-inline unsigned long long OpponentsBoarder(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(O) & ~(P | O); } // 13 OPs
-inline unsigned long long Boarders(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(P | O) & ~(P | O); } // 14 OPs
+inline uint64_t PlayersBoarder(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(P) & ~(P | O); } // 13 OPs
+inline uint64_t OpponentsBoarder(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(O) & ~(P | O); } // 13 OPs
+inline uint64_t Boarders(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(P | O) & ~(P | O); } // 14 OPs
 
-inline unsigned long long PlayersExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & P; } // 13 OPs
-inline unsigned long long OpponentsExposed(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & O; } // 13 OPs
-inline unsigned long long Exposeds(const unsigned long long P, const unsigned long long O) { return SMEAR_BITBOARD(~(P | O)) & (P | O); } // 14 OPs
+inline uint64_t PlayersExposed(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(~(P | O)) & P; } // 13 OPs
+inline uint64_t OpponentsExposed(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(~(P | O)) & O; } // 13 OPs
+inline uint64_t Exposeds(const uint64_t P, const uint64_t O) { return SMEAR_BITBOARD(~(P | O)) & (P | O); } // 14 OPs
