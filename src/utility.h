@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <cmath>
 #include <iomanip>
 #include <string>
@@ -6,7 +7,6 @@
 #include <cassert>
 #include <chrono>
 #include <ctime>
-#include <emmintrin.h>
 #include <iostream>
 #include "bitmanipulations.h"
 
