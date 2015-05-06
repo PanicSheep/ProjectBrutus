@@ -11,22 +11,25 @@ const std::string CDataset_Edax::field[] = {
 	"H1", "G1", "F1", "E1", "D1", "C1", "B1", "A1"
 };
 
-CPositionScore::CPositionScore(const CDataset_Old&                that) : P(that.P), O(that.O), score(that.score) {}
+
+CPositionScore::CPositionScore(const CDataset_Position_Score&     that) : P(that.P), O(that.O), score(that.score) {}
 CPositionScore::CPositionScore(const CDataset_Position_Score_PV&  that) : P(that.P), O(that.O), score(that.score) {}
 CPositionScore::CPositionScore(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), score(that.BestScore()) {}
 CPositionScore::CPositionScore(const CDataset_Edax&               that) : P(that.P), O(that.O), score(that.BestScore()) {}
 
-CDataset_Position_Score::CDataset_Position_Score(const CDataset_Old&                that) : P(that.P), O(that.O), depth(that.depth), selectivity(DATASET_DEFAULT_selectivity), score(that.score) {}
+CPositionScoreDepthSelectivity::CPositionScoreDepthSelectivity(const CDataset_Position_Score&     that) : P(that.P), O(that.O), score(that.score),       depth(that.depth),        selectivity(that.selectivity) {}
+CPositionScoreDepthSelectivity::CPositionScoreDepthSelectivity(const CDataset_Position_Score_PV&  that) : P(that.P), O(that.O), score(that.score),       depth(that.depth),        selectivity(that.selectivity) {}
+CPositionScoreDepthSelectivity::CPositionScoreDepthSelectivity(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), score(that.BestScore()), depth(that.depth),        selectivity(that.selectivity) {}
+CPositionScoreDepthSelectivity::CPositionScoreDepthSelectivity(const CDataset_Edax&               that) : P(that.P), O(that.O), score(that.BestScore()), depth(DATASET_depth_END), selectivity(DATASET_DEFAULT_selectivity) {}
+
 CDataset_Position_Score::CDataset_Position_Score(const CDataset_Position_Score_PV&  that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity),            score(that.score) {}
 CDataset_Position_Score::CDataset_Position_Score(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), depth(that.depth), selectivity(that.selectivity),            score(that.BestScore()) {}
 CDataset_Position_Score::CDataset_Position_Score(const CDataset_Edax&               that) : P(that.P), O(that.O),                    selectivity(DATASET_DEFAULT_selectivity), score(that.BestScore()) { depth = (score == DATASET_DEFAULT_score) ? DATASET_DEFAULT_depth : DATASET_depth_END; }
 
-CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Old&                that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(DATASET_DEFAULT_selectivity), score(that.score)       { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
 CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Position_Score&     that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(that.selectivity),            score(that.score)       { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; }
 CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Position_FullScore& that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(that.selectivity),            score(that.BestScore()) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; PV[0] = that.BestMove(); }
 CDataset_Position_Score_PV::CDataset_Position_Score_PV(const CDataset_Edax&               that) : P(that.P), O(that.O), depth((that.BestScore() == DATASET_DEFAULT_score) ? DATASET_DEFAULT_depth : DATASET_depth_END), selectivity(DATASET_DEFAULT_selectivity), score(that.BestScore()) { for (int i = 0; i < 5; i++) PV[i] = DATASET_DEFAULT_PV; PV[0] = that.BestMove(); }
 
-CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Old&               that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(DATASET_DEFAULT_selectivity) { for (int i = 0; i < 64; ++i) score[i] = DATASET_DEFAULT_score; score[36] = that.score; }
 CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Position_Score&    that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(that.selectivity)            { for (int i = 0; i < 64; ++i) score[i] = DATASET_DEFAULT_score; score[36] = that.score; }
 CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Position_Score_PV& that) : P(that.P), O(that.O), depth(that.depth),                                                                              selectivity(that.selectivity)            { for (int i = 0; i < 64; ++i) score[i] = DATASET_DEFAULT_score; score[36] = that.score; }
 CDataset_Position_FullScore::CDataset_Position_FullScore(const CDataset_Edax&              that) : P(that.P), O(that.O), depth((that.BestScore() == DATASET_DEFAULT_score) ? DATASET_DEFAULT_depth : DATASET_depth_END), selectivity(DATASET_DEFAULT_selectivity) { for (int i = 0; i < 64; ++i) score[i] = that.score[i]; }
@@ -38,16 +41,19 @@ CDataset_Edax::CDataset_Edax(std::string line)
 	size_t pos = 0;
 
 	Reset();
-
 	P = 0;
 	O = 0;
-	for (unsigned int i = 0; i < 64; ++i){
+
+	for (unsigned int i = 0; i < 64; ++i)
+	{
 		if (line.substr(i, 1) == "X") P |= 0x8000000000000000ULL >> i;
 		if (line.substr(i, 1) == "O") O |= 0x8000000000000000ULL >> i;
 	}
-	if (line.substr(65, 1) == "O") std::swap(P, O);
+	if (line.substr(65, 1) == "O")
+		std::swap(P, O);
 
-	while ((pos = line.find(delimiter)) != std::string::npos) {
+	while ((pos = line.find(delimiter)) != std::string::npos)
+	{
 		token = line.substr(0, pos);
 		line.erase(0, pos + delimiter.length());
 
@@ -86,86 +92,129 @@ std::string CDataset_Edax::to_string() const
 	return s;
 }
 
-
-template<> std::vector<CDataset_Edax> read_vector2(const std::string & filename, std::size_t size)
+namespace DataManipulation
 {
-	FILE* file;
-	fopen_s(&file, filename.c_str(), "r");
-	if (!file){
-		std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
-		throw "File could not be opened.";
-		return std::vector<CDataset_Edax>();
+	template<> std::vector<CDataset_Edax> read_vector2(const std::string & filename, std::size_t size)
+	{
+		FILE* file;
+		fopen_s(&file, filename.c_str(), "r");
+		if (!file){
+			std::cerr << "ERROR: File '" << filename << "' could not be opened!" << std::endl;
+			throw "File could not be opened.";
+			return std::vector<CDataset_Edax>();
+		}
+
+		const std::size_t N = 4 * 1024;
+		std::vector<CDataset_Edax> vector;
+		char DataArray[N];
+		while (size-- && fgets(DataArray, N, file))
+			vector.push_back(CDataset_Edax(std::string(DataArray)));
+
+		fclose(file);
+		return vector;
 	}
 
-	const std::size_t N = 4 * 1024;
-	std::vector<CDataset_Edax> vector;
-	char DataArray[N];
-	while (size-- && fgets(DataArray, N, file))
-		vector.push_back(CDataset_Edax(std::string(DataArray)));
-
-	fclose(file);
-	return vector;
-}
-
-template<> std::vector<CPosition> read_vector2(const std::string & filename, std::size_t size)
-{
-	std::vector<CPosition> ret;
-	std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
-	switch (Ending_to_DataType(ending))
+	template<> std::vector<CPosition> read_vector2(const std::string & filename, std::size_t size)
 	{
-		case DataType::Position_Score:
+		std::vector<CPosition> ret;
+		std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
+		switch (Ending_to_DataType(ending))
 		{
-			std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
-			for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
-			break;
-		}
-		case DataType::Position_Score_PV:
-		{
-			std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
-			for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
-			break;
-		}
-		case DataType::Position_FullScore:
-		{
-			std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
-			for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
-			break;
-		}
-	}
-	return ret;
-}
-
-template<> std::vector<CPositionScore> read_vector2(const std::string & filename, std::size_t size)
-{
-	std::vector<CPositionScore> ret;
-	std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
-	switch (Ending_to_DataType(ending))
-	{
-		case DataType::Position_Score:
-		{
-			std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
-			for (const auto& pos : vec) ret.push_back(CPositionScore(pos.P, pos.O, pos.score));
-			break;
-		}
-		case DataType::Position_Score_PV:
-		{
-			std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
-			for (const auto& pos : vec) ret.push_back(CPositionScore(pos.P, pos.O, pos.score));
-			break;
-		}
-		case DataType::Position_FullScore:
-		{
-			std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
-			for (const auto& pos : vec)
+			case DataType::Position_Score:
 			{
-				signed char score = DATASET_DEFAULT_score;
-				for (int i = 0; i < 64; ++i) if (pos.score[i] > score) score = pos.score[i];
-				ret.push_back(CPositionScore(pos.P, pos.O, score));
+				std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
+				break;
 			}
-			break;
+			case DataType::Position_Score_PV:
+			{
+				std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
+				break;
+			}
+			case DataType::Position_FullScore:
+			{
+				std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
+				break;
+			}
+			case DataType::Edax:
+			{
+				std::vector<CDataset_Edax              > vec = read_vector<CDataset_Edax              >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPosition(pos.P, pos.O));
+				break;
+			}
 		}
+		return ret;
 	}
-	return ret;
+
+	template<> std::vector<CPositionScore> read_vector2(const std::string & filename, std::size_t size)
+	{
+		std::vector<CPositionScore> ret;
+		std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
+		switch (Ending_to_DataType(ending))
+		{
+			case DataType::Position_Score:
+			{
+				std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScore(pos));
+				break;
+			}
+			case DataType::Position_Score_PV:
+			{
+				std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScore(pos));
+				break;
+			}
+			case DataType::Position_FullScore:
+			{
+				std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScore(pos));
+				break;
+			}
+			case DataType::Edax:
+			{
+				std::vector<CDataset_Edax              > vec = read_vector<CDataset_Edax              >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScore(pos));
+				break;
+			}
+		}
+		return ret;
+	}
+	
+	template<> std::vector<CPositionScoreDepthSelectivity> read_vector2(const std::string & filename, std::size_t size)
+	{
+		std::vector<CPositionScoreDepthSelectivity> ret;
+		std::string ending = filename.substr(filename.rfind(".") + 1, filename.length());
+		switch (Ending_to_DataType(ending))
+		{
+			case DataType::Position_Score:
+			{
+				std::vector<CDataset_Position_Score    > vec = read_vector<CDataset_Position_Score    >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScoreDepthSelectivity(pos));
+				break;
+			}
+			case DataType::Position_Score_PV:
+			{
+				std::vector<CDataset_Position_Score_PV > vec = read_vector<CDataset_Position_Score_PV >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScoreDepthSelectivity(pos));
+				break;
+			}
+			case DataType::Position_FullScore:
+			{
+				std::vector<CDataset_Position_FullScore> vec = read_vector<CDataset_Position_FullScore>(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScoreDepthSelectivity(pos));
+				break;
+			}
+			case DataType::Edax:
+			{
+				std::vector<CDataset_Edax              > vec = read_vector<CDataset_Edax              >(filename, size);
+				for (const auto& pos : vec) ret.push_back(CPositionScoreDepthSelectivity(pos));
+				break;
+			}
+		}
+		return ret;
+	}
 }
 
 template<>

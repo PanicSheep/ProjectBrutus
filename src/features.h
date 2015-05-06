@@ -8,48 +8,74 @@
 #include <vector>
 #include <map>
 
-extern const bool PATTERN_L02X  ;
-extern const bool PATTERN_L1    ;
-extern const bool PATTERN_L2    ;
-extern const bool PATTERN_L3    ;
-extern const bool PATTERN_D4    ;
-extern const bool PATTERN_D5    ;
-extern const bool PATTERN_D6    ;
-extern const bool PATTERN_D7    ;
-extern const bool PATTERN_Comet ;
-extern const bool PATTERN_Eplus ;
-extern const bool PATTERN_C3p1  ;
-extern const bool PATTERN_C3p2  ;
-extern const bool PATTERN_Q0    ;
-extern const bool PATTERN_B5    ;
+static const bool PATTERN_L02X  = true;
+static const bool PATTERN_L1    = true;
+static const bool PATTERN_L2    = true;
+static const bool PATTERN_L3    = true;
+static const bool PATTERN_D4    = true;
+static const bool PATTERN_D5    = true;
+static const bool PATTERN_D6    = true;
+static const bool PATTERN_D7    = true;
+static const bool PATTERN_Comet = true;
+static const bool PATTERN_Eplus = true;
+static const bool PATTERN_C3p1  = false;
+static const bool PATTERN_C3p2  = true;
+static const bool PATTERN_Q0    = true;
+static const bool PATTERN_B5    = true;
 
 namespace Features
 {
+	
+	const int NumberOfPatternWithSymmetrie = 0
+		+ (PATTERN_L02X ? 4 : 0)
+		+ (PATTERN_L1   ? 4 : 0)
+		+ (PATTERN_L2   ? 4 : 0)
+		+ (PATTERN_L3   ? 4 : 0)
+		+ (PATTERN_D4   ? 4 : 0)
+		+ (PATTERN_D5   ? 4 : 0)
+		+ (PATTERN_D6   ? 4 : 0)
+		+ (PATTERN_D7   ? 4 : 0)
+		+ (PATTERN_Comet? 4 : 0)
+		+ (PATTERN_Eplus? 4 : 0)
+		+ (PATTERN_C3p1 ? 4 : 0)
+		+ (PATTERN_C3p2 ? 4 : 0)
+		+ (PATTERN_Q0   ? 4 : 0)
+		+ (PATTERN_B5   ? 8 : 0);
+
+	class CIndexArray
+	{
+	public:
+		unsigned long long BitBoard;
+		std::vector<int> Indices;
+		CIndexArray(const unsigned long long BitBoard) : BitBoard(BitBoard), Indices(std::vector<int>(NumberOfPatternWithSymmetrie)) {}
+		CIndexArray(const CIndexArray& o) : BitBoard(BitBoard), Indices(o.Indices) {}
+	};
+
+	// Template metaprogramming hack
 	template <unsigned long long b>
 	class Flip
 	{
-	public:
-		static const unsigned long long          c = ((b >> 1) & 0x5555555555555555ULL) | ((b << 1) & 0xAAAAAAAAAAAAAAAAULL);
-		static const unsigned long long          d = ((c >> 2) & 0x3333333333333333ULL) | ((c << 2) & 0xCCCCCCCCCCCCCCCCULL);
-		static const unsigned long long horizontal = ((d >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((d << 4) & 0xF0F0F0F0F0F0F0F0ULL);
+		private: static const unsigned long long          c = ((b >> 1) & 0x5555555555555555ULL) | ((b << 1) & 0xAAAAAAAAAAAAAAAAULL);
+		private: static const unsigned long long          d = ((c >> 2) & 0x3333333333333333ULL) | ((c << 2) & 0xCCCCCCCCCCCCCCCCULL);
+		public:  static const unsigned long long horizontal = ((d >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((d << 4) & 0xF0F0F0F0F0F0F0F0ULL);
 		
-		static const unsigned long long          e = ((b >>  8) & 0x00FF00FF00FF00FFULL) | ((b <<  8) & 0xFF00FF00FF00FF00ULL);
-		static const unsigned long long          f = ((e >> 16) & 0x0000FFFF0000FFFFULL) | ((e << 16) & 0xFFFF0000FFFF0000ULL);
-		static const unsigned long long vertical   = ((f >> 32) & 0x00000000FFFFFFFFULL) | ((f << 32) & 0xFFFFFFFF00000000ULL);
+		private: static const unsigned long long          e = ((b >>  8) & 0x00FF00FF00FF00FFULL) | ((b <<  8) & 0xFF00FF00FF00FF00ULL);
+		private: static const unsigned long long          f = ((e >> 16) & 0x0000FFFF0000FFFFULL) | ((e << 16) & 0xFFFF0000FFFF0000ULL);
+		public:	 static const unsigned long long vertical   = ((f >> 32) & 0x00000000FFFFFFFFULL) | ((f << 32) & 0xFFFFFFFF00000000ULL);
 		
-		static const unsigned long long          g =    (b ^ (b >>  7)) & 0x00AA00AA00AA00AAULL;
-		static const unsigned long long          h = b ^ g ^ (g <<  7);
-		static const unsigned long long          i =    (h ^ (h >> 14)) & 0x0000CCCC0000CCCCULL;
-		static const unsigned long long          j = h ^ i ^ (i << 14);
-		static const unsigned long long          k =    (j ^ (j >> 28)) & 0x00000000F0F0F0F0ULL;
-		static const unsigned long long diagonal   = j ^ k ^ (k << 28);
+		private: static const unsigned long long          g =    (b ^ (b >>  7)) & 0x00AA00AA00AA00AAULL;
+		private: static const unsigned long long          h = b ^ g ^ (g <<  7);
+		private: static const unsigned long long          i =    (h ^ (h >> 14)) & 0x0000CCCC0000CCCCULL;
+		private: static const unsigned long long          j = h ^ i ^ (i << 14);
+		private: static const unsigned long long          k =    (j ^ (j >> 28)) & 0x00000000F0F0F0F0ULL;
+		public:  static const unsigned long long diagonal   = j ^ k ^ (k << 28);
 		
-		static const unsigned long long          l =      b ^ (b << 36);
-		static const unsigned long long          m = b ^ (l ^ (b >> 36)) & 0xF0F0F0F00F0F0F0FULL;
-		static const unsigned long long          n =     (m ^ (m << 18)) & 0xCCCC0000CCCC0000ULL;
-		static const unsigned long long          o = m ^  n ^ (n >> 18);
-		static const unsigned long long          p =     (o ^ (o <<  9)) & 0xAA00AA00AA00AA00ULL;
-		static const unsigned long long codiagonal = o ^  p ^ (p >>  9);
+		private: static const unsigned long long          l =      b ^ (b << 36);
+		private: static const unsigned long long          m = b ^ (l ^ (b >> 36)) & 0xF0F0F0F00F0F0F0FULL;
+		private: static const unsigned long long          n =     (m ^ (m << 18)) & 0xCCCC0000CCCC0000ULL;
+		private: static const unsigned long long          o = m ^  n ^ (n >> 18);
+		private: static const unsigned long long          p =     (o ^ (o <<  9)) & 0xAA00AA00AA00AA00ULL;
+		public:  static const unsigned long long codiagonal = o ^  p ^ (p >>  9);
 	};
 	
 	const int POW_2_0 = 1;
@@ -77,8 +103,6 @@ namespace Features
 	const int POW_3_10 = 3 * POW_3_9;
 	
 	extern unsigned short SumPow3[1024];
-	extern int ReducedSize;
-	extern int NumberOfPattern;
 	
 	inline unsigned short FullPatternIndex(const unsigned long long P, const unsigned long long O, const unsigned long long mask) { return SumPow3[PExt(P, mask)] + (SumPow3[PExt(O, mask)] << 1); }
 
@@ -86,14 +110,7 @@ namespace Features
 	void Initialize();
 	void Finalize();
 
-	class CIndexArray
-	{
-	public:
-		unsigned long long BitBoard;
-		std::vector<int> Indices;
-	};
-	
-	
+
 	class CPattern_L02X
 	{
 		static const int halfSize = POW_3_5;
@@ -175,7 +192,36 @@ namespace Features
 				 + m_weights[2][FullPatternIndex(P, O, PatternV)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternD)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_P+0) << 1)]
+				 + m_weights[1][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+1) + (*(Indices_P+1) << 1)]
+				 + m_weights[2][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+2) + (*(Indices_P+2) << 1)]
+				 + m_weights[3][(diff & PatternD) ? FullPatternIndex(new_P, new_O, PatternD) : *(Indices_P+3) + (*(Indices_P+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
 	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternC) *(Indices_P+1) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_P & PatternD) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternC) *(Indices_O+1) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV)];
+			if (diff_O & PatternD) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD)];
+		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -236,6 +282,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternC)]
 				 + m_weights[FullPatternIndex(P, O, PatternV)]
 				 + m_weights[FullPatternIndex(P, O, PatternD)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternD) ? FullPatternIndex(new_P, new_O, PatternD) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternC) *(Indices_P+1) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_P & PatternD) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternC) *(Indices_O+1) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV)];
+			if (diff_O & PatternD) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD)];
 		}
 	
 
@@ -299,6 +375,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternV)]
 				 + m_weights[FullPatternIndex(P, O, PatternD)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternD) ? FullPatternIndex(new_P, new_O, PatternD) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternC) *(Indices_P+1) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_P & PatternD) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternC) *(Indices_O+1) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV)];
+			if (diff_O & PatternD) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD)];
+		}
 	
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -361,7 +467,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternV)]
 				 + m_weights[FullPatternIndex(P, O, PatternD)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternD) ? FullPatternIndex(new_P, new_O, PatternD) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
 	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternC) *(Indices_P+1) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_P & PatternD) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternC) *(Indices_O+1) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV)];
+			if (diff_O & PatternD) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD)];
+		}
 
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -422,6 +557,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternH)]
 				 + m_weights[FullPatternIndex(P, O, PatternC)]
 				 + m_weights[FullPatternIndex(P, O, PatternV)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
 		}
 	
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -486,6 +651,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternC)]
 				 + m_weights[FullPatternIndex(P, O, PatternV)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
+		}
 	
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -546,6 +741,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternH)]
 				 + m_weights[FullPatternIndex(P, O, PatternC)]
 				 + m_weights[FullPatternIndex(P, O, PatternV)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
 		}
 	
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -609,6 +834,36 @@ namespace Features
 				 + m_weights[FullPatternIndex(P, O, PatternH)]
 				 + m_weights[FullPatternIndex(P, O, PatternC)]
 				 + m_weights[FullPatternIndex(P, O, PatternV)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
 		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -703,6 +958,36 @@ namespace Features
 				 + m_weights[2][FullPatternIndex(P, O, PatternC)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternV)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
+		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -793,6 +1078,36 @@ namespace Features
 				 + m_weights[1][FullPatternIndex(P, O, PatternC)]
 				 + m_weights[2][FullPatternIndex(P, O, PatternV)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternD)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternD) ? FullPatternIndex(new_P, new_O, PatternD) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternC) *(Indices_P+1) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_P & PatternD) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternC) *(Indices_O+1) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV)];
+			if (diff_O & PatternD) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD)];
 		}
 	
 
@@ -888,6 +1203,36 @@ namespace Features
 				 + m_weights[2][FullPatternIndex(P, O, PatternC)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternV)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
+		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -981,6 +1326,36 @@ namespace Features
 				 + m_weights[2][FullPatternIndex(P, O, PatternC)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternV)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
+		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -1073,6 +1448,36 @@ namespace Features
 				 + m_weights[1][FullPatternIndex(P, O, PatternH)]
 				 + m_weights[2][FullPatternIndex(P, O, PatternC)]
 				 + m_weights[3][FullPatternIndex(P, O, PatternV)];
+		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern ) ? FullPatternIndex(new_P, new_O, Pattern ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternH) ? FullPatternIndex(new_P, new_O, PatternH) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternC) ? FullPatternIndex(new_P, new_O, PatternC) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternV) ? FullPatternIndex(new_P, new_O, PatternV) : *(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern )];
+			if (diff_P & PatternH) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH)];
+			if (diff_P & PatternC) *(Indices_P+2) = SumPow3[PExt(new_P, PatternC)];
+			if (diff_P & PatternV) *(Indices_P+3) = SumPow3[PExt(new_P, PatternV)];
+			if (diff_O & Pattern ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern )];
+			if (diff_O & PatternH) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH)];
+			if (diff_O & PatternC) *(Indices_O+2) = SumPow3[PExt(new_O, PatternC)];
+			if (diff_O & PatternV) *(Indices_O+3) = SumPow3[PExt(new_O, PatternV)];
 		}
 
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
@@ -1199,6 +1604,52 @@ namespace Features
 				 + m_weights[6][FullPatternIndex(P, O, PatternHD)]
 				 + m_weights[7][FullPatternIndex(P, O, PatternHC)];
 		}
+		inline float score(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			unsigned long long diff = (new_P ^ old_P) | (new_O ^ old_O);
+
+			return m_weights[0][(diff & Pattern  ) ? FullPatternIndex(new_P, new_O, Pattern  ) : *(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][(diff & PatternH ) ? FullPatternIndex(new_P, new_O, PatternH ) : *(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][(diff & PatternV ) ? FullPatternIndex(new_P, new_O, PatternV ) : *(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][(diff & PatternD ) ? FullPatternIndex(new_P, new_O, PatternD ) : *(Indices_P+3) + (*(Indices_O+3) << 1)]
+				 + m_weights[4][(diff & PatternC ) ? FullPatternIndex(new_P, new_O, PatternC ) : *(Indices_P+4) + (*(Indices_O+4) << 1)]
+				 + m_weights[5][(diff & PatternHV) ? FullPatternIndex(new_P, new_O, PatternHV) : *(Indices_P+5) + (*(Indices_O+5) << 1)]
+				 + m_weights[6][(diff & PatternHD) ? FullPatternIndex(new_P, new_O, PatternHD) : *(Indices_P+6) + (*(Indices_O+6) << 1)]
+				 + m_weights[7][(diff & PatternHC) ? FullPatternIndex(new_P, new_O, PatternHC) : *(Indices_P+7) + (*(Indices_O+7) << 1)];
+		}
+		inline float score(const std::vector<int>::const_iterator& Indices_P, const std::vector<int>::const_iterator& Indices_O) const
+		{
+			return m_weights[0][*(Indices_P+0) + (*(Indices_O+0) << 1)]
+				 + m_weights[1][*(Indices_P+1) + (*(Indices_O+1) << 1)]
+				 + m_weights[2][*(Indices_P+2) + (*(Indices_O+2) << 1)]
+				 + m_weights[3][*(Indices_P+3) + (*(Indices_O+3) << 1)]
+				 + m_weights[4][*(Indices_P+4) + (*(Indices_O+4) << 1)]
+				 + m_weights[5][*(Indices_P+5) + (*(Indices_O+5) << 1)]
+				 + m_weights[6][*(Indices_P+6) + (*(Indices_O+6) << 1)]
+				 + m_weights[7][*(Indices_P+7) + (*(Indices_O+7) << 1)];
+		}
+	
+		static void UpdateIndexVec(const unsigned long long new_P, const unsigned long long new_O, const unsigned long long old_P, const unsigned long long old_O, std::vector<int>::iterator& Indices_P, std::vector<int>::iterator& Indices_O)
+		{
+			unsigned long long diff_P = new_P ^ old_P;
+			unsigned long long diff_O = new_O ^ old_O;
+			if (diff_P & Pattern  ) *(Indices_P+0) = SumPow3[PExt(new_P, Pattern  )];
+			if (diff_P & PatternH ) *(Indices_P+1) = SumPow3[PExt(new_P, PatternH )];
+			if (diff_P & PatternV ) *(Indices_P+2) = SumPow3[PExt(new_P, PatternV )];
+			if (diff_P & PatternD ) *(Indices_P+3) = SumPow3[PExt(new_P, PatternD )];
+			if (diff_P & PatternC ) *(Indices_P+4) = SumPow3[PExt(new_P, PatternC )];
+			if (diff_P & PatternHV) *(Indices_P+5) = SumPow3[PExt(new_P, PatternHV)];
+			if (diff_P & PatternHD) *(Indices_P+6) = SumPow3[PExt(new_P, PatternHD)];
+			if (diff_P & PatternHC) *(Indices_P+7) = SumPow3[PExt(new_P, PatternHC)];
+			if (diff_O & Pattern  ) *(Indices_O+0) = SumPow3[PExt(new_O, Pattern  )];
+			if (diff_O & PatternH ) *(Indices_O+1) = SumPow3[PExt(new_O, PatternH )];
+			if (diff_O & PatternV ) *(Indices_O+2) = SumPow3[PExt(new_O, PatternV )];
+			if (diff_O & PatternD ) *(Indices_O+3) = SumPow3[PExt(new_O, PatternD )];
+			if (diff_O & PatternC ) *(Indices_O+4) = SumPow3[PExt(new_O, PatternC )];
+			if (diff_O & PatternHV) *(Indices_O+5) = SumPow3[PExt(new_O, PatternHV)];
+			if (diff_O & PatternHD) *(Indices_P+6) = SumPow3[PExt(new_O, PatternHD)];
+			if (diff_O & PatternHC) *(Indices_P+7) = SumPow3[PExt(new_O, PatternHC)];
+		}
 	
 		static void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec, int Offset = 0)
 		{
@@ -1212,13 +1663,48 @@ namespace Features
 			vec.push_back(ReducedPatternIndex7(P, O) + Offset);
 		}
 	};
+
+	
+	const int ReducedSize = 0
+		+ (PATTERN_L02X  ? CPattern_L02X ::ReducedSize : 0)
+		+ (PATTERN_L1    ? CPattern_L1   ::ReducedSize : 0)
+		+ (PATTERN_L2    ? CPattern_L2   ::ReducedSize : 0)
+		+ (PATTERN_L3    ? CPattern_L3   ::ReducedSize : 0)
+		+ (PATTERN_D4    ? CPattern_D4   ::ReducedSize : 0)
+		+ (PATTERN_D5    ? CPattern_D5   ::ReducedSize : 0)
+		+ (PATTERN_D6    ? CPattern_D6   ::ReducedSize : 0)
+		+ (PATTERN_D7    ? CPattern_D7   ::ReducedSize : 0)
+		+ (PATTERN_Comet ? CPattern_Comet::ReducedSize : 0)
+		+ (PATTERN_Eplus ? CPattern_Eplus::ReducedSize : 0)
+		+ (PATTERN_C3p1  ? CPattern_C3p1 ::ReducedSize : 0)
+		+ (PATTERN_C3p2  ? CPattern_C3p2 ::ReducedSize : 0)
+		+ (PATTERN_Q0    ? CPattern_Q0   ::ReducedSize : 0)
+		+ (PATTERN_B5    ? CPattern_B5   ::ReducedSize : 0);
+	const int NumberOfPattern = 0
+		+ (PATTERN_L02X ? 1 : 0)
+		+ (PATTERN_L1   ? 1 : 0)
+		+ (PATTERN_L2   ? 1 : 0)
+		+ (PATTERN_L3   ? 1 : 0)
+		+ (PATTERN_D4   ? 1 : 0)
+		+ (PATTERN_D5   ? 1 : 0)
+		+ (PATTERN_D6   ? 1 : 0)
+		+ (PATTERN_D7   ? 1 : 0)
+		+ (PATTERN_Comet? 1 : 0)
+		+ (PATTERN_Eplus? 1 : 0)
+		+ (PATTERN_C3p1 ? 1 : 0)
+		+ (PATTERN_C3p2 ? 1 : 0)
+		+ (PATTERN_Q0   ? 1 : 0)
+		+ (PATTERN_B5   ? 1 : 0);
 }
 
-void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec);
 
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O);
 int EvaluateFeatures(const unsigned long long P, const unsigned long long O, std::vector<float>& scores);
-int EvaluateFeatures(const unsigned long long P, const unsigned long long O, Features::CIndexArray indexArray);
+int EvaluateFeatures(const unsigned long long P, const unsigned long long O, const Features::CIndexArray& Indices_P, const Features::CIndexArray& Indices_O);
+int EvaluateFeatures(const unsigned long long empties, const Features::CIndexArray& Indices_P, const Features::CIndexArray& Indices_O);
+void UpdateIndexVec(const unsigned long long P, const unsigned long long O, Features::CIndexArray& Indices_P, Features::CIndexArray& Indices_O);
+
+void FillConfigurationVec(const unsigned long long P, const unsigned long long O, std::vector<int>& vec);
 void FillConfigurationVecOffsetted(const unsigned long long P, const unsigned long long O, std::vector<int>& vec);
 
 //bool Test_All_Features();

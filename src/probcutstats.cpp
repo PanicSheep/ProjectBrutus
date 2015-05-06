@@ -8,225 +8,148 @@
 #include "search.h"
 #include "statistics.h"
 #include "utility.h"
-#include <atomic>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <iostream>
+#include <map>
+#include <omp.h>
 #include <string>
 #include <vector>
-#include <omp.h>
-#include <Windows.h>
+
+// empties depth Depth
+struct CEDD
+{
+	unsigned int empties, depth, Depth;
+	CEDD() = delete;
+	CEDD(const unsigned int empties, const unsigned int depth, const unsigned int Depth) : empties(empties), depth(depth), Depth(Depth) {}
+
+	inline bool operator< (const CEDD& other) const 
+	{ 
+		return (this->Depth <  other.Depth) 
+		   || ((this->Depth == other.Depth) && (this->depth <  other.depth)) 
+		   || ((this->Depth == other.Depth) && (this->depth == other.depth) && (this->empties < other.empties)); 
+	}
+};
 
 class CComparisonPair
 {
 public:
-	std::vector<std::string> FileNames;
-	int d, s, D, S;
 	std::atomic<unsigned long long> occurences[129][129];
-	CSimpleLinearRegression<int> LinReg;
 
-	CComparisonPair() = delete;
-	CComparisonPair(const CComparisonPair& that) = delete;
-	CComparisonPair(int d, const int s, const int D, const int S) : FileNames(FileNames), d(d), s(s), D(D), S(S)
+	CComparisonPair()
 	{
 		for (int i = 0; i < 129; ++i)
 			for (int j = 0; j < 129; ++j)
 				occurences[i][j].store(0);
 	}
 
-	void Add(const std::string & FileName) { FileNames.push_back(FileName); }
-
-	bool Contains(const std::string & FileName) const
-	{
-		for (std::string filename : FileNames)
-			if (FileName.compare(filename) == 0)
-				return true;
-		return false;
-	}
+	void Add(const int score, const int Score) { occurences[score+64][Score+64].fetch_add(1, std::memory_order_relaxed); }
 };
 
-struct CSearchDepths
-{
-	bool depth[128][7];
-	int score[128][7];
-	CSearchDepths()
-	{
-		for (int d = 0; d < 128; ++d)
-			for (int s = 0; s < 7; ++s)
-				depth[d][s] = false;
-	}
-	CSearchDepths(std::vector<CComparisonPair*>& ComparisonPairs, std::string & FileName)
-	{
-		for (int d = 0; d < 128; ++d)
-			for (int s = 0; s < 7; ++s)
-				depth[d][s] = false;
-		for (CComparisonPair* Pair : ComparisonPairs)
-			if (Pair->Contains(FileName))
-			{
-				depth[Pair->d][Pair->s] = true;
-				depth[Pair->D][Pair->S] = true;
-			}
-	}
+std::map<CEDD, CSimpleLinearRegression<int>> LinReg;
+std::map<CEDD, CComparisonPair> CompPair;
 
-	void Distribute(std::vector<CComparisonPair*>& ComparisonPairs, std::string FileName)
-	{
-		for (CComparisonPair* Pair : ComparisonPairs)
-			if (Pair->Contains(FileName))
-			{
-				Pair->occurences[score[Pair->D][Pair->S]+64][score[Pair->d][Pair->s]+64].fetch_add(1, std::memory_order_relaxed);
-				Pair->LinReg.Add(score[Pair->d][Pair->s], score[Pair->D][Pair->S]);
-			}
-	}
-};
-
-std::vector<std::string> FileNames(std::vector<CComparisonPair*>& ComparisonPairs)
+inline void Add(const unsigned int empties, const unsigned int depth, const unsigned int Depth, const int score, const int Score)
 {
-	std::vector<std::string> tmp;
-	for (CComparisonPair* Pair : ComparisonPairs)
-		tmp.insert(tmp.end(), Pair->FileNames.begin(), Pair->FileNames.end());
-	std::sort(tmp.begin(), tmp.end());
-	tmp.erase(std::unique(tmp.begin(), tmp.end()), tmp.end());
-	return tmp;
+	CEDD edd(empties, depth, Depth);
+	LinReg[edd].Add(score, Score);
+	CompPair[edd].Add(score, Score);
 }
 
-std::vector<CDataset_Position_Score> LoadData(const std::string & filename)
+
+void AddStats(const std::string& filename, CHashTable* hashTable, const int Depth, int size)
 {
-	std::vector<CDataset_Old> tmp_OLD;
-	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
-	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
-	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
-	std::vector<CDataset_Position_Score> Data;
-	std::string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
-
-	switch (Ending_to_DataType(Ending))
-	{
-	case DataType::Old:
-		tmp_OLD = read_vector<CDataset_Old>(filename);
-		for (auto& item : tmp_OLD)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_OLD.clear();
-		break;
-	case DataType::Position_Score:
-		tmp_POSITON_SCORE = read_vector<CDataset_Position_Score>(filename);
-		for (auto& item : tmp_POSITON_SCORE)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_SCORE.clear();
-		break;
-	case DataType::Position_Score_PV:
-		tmp_POSITON_SCORE_PV = read_vector<CDataset_Position_Score_PV>(filename);
-		for (auto& item : tmp_POSITON_SCORE_PV)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_SCORE_PV.clear();
-		break;
-	case DataType::Position_FullScore:
-		tmp_POSITON_FULL_SCORE = read_vector<CDataset_Position_FullScore>(filename);
-		for (auto& item : tmp_POSITON_FULL_SCORE)
-			Data.push_back(static_cast<CDataset_Position_Score>(item));
-		tmp_POSITON_FULL_SCORE.clear();
-		break;
-	}
-
-	return Data;
-}
-
-void CalcStats(std::vector<CComparisonPair*>& ComparisonPairs, CHashTable* hashTable, const int size, const bool contour_plot_data)
-{
-	std::vector<CDataset_Position_Score> data;
+	std::vector<CPositionScore> data = read_vector<CPositionScore>(filename, size);
+	size = data.size();
+	std::vector<unsigned int> depths;
 	std::atomic<unsigned long long> counter;
 	std::chrono::high_resolution_clock::time_point TimePoint;
+	const int empties = NumberOfEmptyStones(data[0].P, data[0].O);
 
-	std::vector<std::string> filenames = FileNames(ComparisonPairs);
+	std::cerr << "Processing file: " << filename << std::endl;
+	std::cerr << "\r" << progressbar_percentage(50, 0);
+	TimePoint = std::chrono::high_resolution_clock::now();
+	counter = 0;
 
-	for (auto& filename : filenames)
+	// Fill list of search depths
+	for (int i = 0; (i <= Depth) && (i <= empties - 10); ++i)
+		depths.push_back(i);
+	if (Depth >= empties)
+		depths.push_back(empties);
+
+	#pragma omp parallel for schedule(dynamic, 1)
+	for (int i = 0; i < size; ++i)
 	{
-		std::cerr << "Processing file: " << filename << std::endl;
-		std::cerr << "\r" << progressbar_percentage(50, 0);
-		TimePoint = std::chrono::high_resolution_clock::now();
-		counter = 0;
-		data = LoadData(filename);
-		#pragma omp parallel
-		{
-			CSearch search;
-			CSearchDepths searchdepths(ComparisonPairs, filename);
-			#pragma omp for schedule(dynamic, 1)
-			for (int i = 0; i < size; ++i)
-			{
-				for (int d = 0; d <= 127; ++d)
-				{
-					for (int s = 6; s >= 0; --s)
-					{
-						if (d == CSearch::END && s == 0 && searchdepths.depth[CSearch::END][0])
-							searchdepths.score[CSearch::END][0] = data[i].score;
-						else if (searchdepths.depth[d][s])
-						{
-							search = CSearch(data[i].P, data[i].O, -64, 64, d, s, hashTable, 0);
-							search.Evaluate();
-							searchdepths.score[d][s] = search.score;
-						}
-					}
-				}
-				hashTable->AdvanceDate();
-
-				searchdepths.Distribute(ComparisonPairs, filename);
-
-				counter.fetch_add(1, std::memory_order_relaxed);
-				#pragma omp critical
-				{
-					if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - TimePoint).count() > 1000)
-					{
-						std::cerr << "\r" << progressbar_percentage(50, counter / static_cast<double>(size));
-						TimePoint = std::chrono::high_resolution_clock::now();
-					}
-				}
+		CSearch search;
+		std::vector<int> scores(129);
+		for (auto d : depths){
+			if (d == empties)
+				scores[d] = data[i].score;
+			else{
+				search = CSearch(data[i].P, data[i].O, -64, 64, d, 0, hashTable, 0);
+				search.Evaluate();
+				scores[d] = search.score;
 			}
 		}
-		std::cerr << "\r" << progressbar_percentage(50, 1) << std::endl;
-	}
+		hashTable->AdvanceDate();
 
-	std::cout << std::endl << "############\n" << std::endl;
-	
-	printf("  D  |  d  |  R_sq  | CCutOffLimits\n");
-	printf("-----+-----+--------+---------------\n");
+		for (auto D = depths.cbegin(); D != depths.cend(); ++D)
+			for (auto d = depths.cbegin(); d != D; ++d)
+				if ((*d == 0) || (*d % 2 == *D % 2))
+					Add(empties, *d, *D, scores[*d], scores[*D]);
+		
+		counter.fetch_add(1, std::memory_order_relaxed);
+		#pragma omp critical
+		{
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - TimePoint).count() > 1000)
+			{
+				std::cerr << "\r" << progressbar_percentage(50, counter / static_cast<double>(size));
+				TimePoint = std::chrono::high_resolution_clock::now();
+			}
+		}
+	}
+	std::cerr << "\r" << progressbar_percentage(50, 1) << std::endl << std::endl;
+}
+
+void PrintStats()
+{
 	unsigned long long N;
 	double a, b, value, Sum_X, Sum_X_sq;
-	for (auto& Pair : ComparisonPairs)
+
+	printf("probcut| E| D| d| |       a |      b |  sigma | delta s|\n");
+	printf("-------+--+--+--+-+---------+--------+--------+--------+-----\n");
+
+	for (const auto& item : LinReg)
 	{
 		Sum_X = 0;
 		Sum_X_sq = 0;
 		N = 0;
-		a = Pair->LinReg.a();
-		b = Pair->LinReg.b();
-		//std::cout << "Depths: " << Pair->d << "(" << Pair->s << ")" << " " << Pair->D << "(" << Pair->S << ")" << std::endl;
+		a = item.second.a();
+		b = item.second.b();
 		for (int i = 0; i < 129; i++){
 			for (int j = 0; j < 129; j++)
 			{
 				value = a + b * (j-64) - (i-64);
-				N += Pair->occurences[i][j];
-				Sum_X += Pair->occurences[i][j] * value;
-				Sum_X_sq += Pair->occurences[i][j] * value * value;
+				N += CompPair[item.first].occurences[i][j];
+				Sum_X += CompPair[item.first].occurences[i][j] * value;
+				Sum_X_sq += CompPair[item.first].occurences[i][j] * value * value;
 			}
 		}
 		Sum_X /= static_cast<double>(N);
 		Sum_X_sq /= static_cast<double>(N);
-		printf("%2u(%1u)|%2u(%1u)|%6.6f| CCutOffLimits(%2u, %2u, % 6.6ff, %6.6ff, %6.6ff),\n", Pair->D, Pair->S, Pair->d, Pair->s, Pair->LinReg.R_sq(), Pair->D, Pair->d, a, b, std::sqrt(Sum_X_sq - Sum_X * Sum_X));
+		printf("probcut %02u %02u %02u = % 6.6f %6.6f %6.6f %6.6f %s\n", item.first.empties, item.first.Depth == CSearch::END ? item.first.empties : item.first.Depth, item.first.depth, 
+			a, b, std::sqrt(Sum_X_sq - Sum_X * Sum_X), std::sqrt(Sum_X_sq - Sum_X * Sum_X) / std::sqrtl(2.0 * (static_cast<long double>(N) + 1.0)), 
+			(2 * std::floor(item.first.Depth * 0.25) + (item.first.Depth & 1) == item.first.depth) ? "true" : "false");
 	}
+}
 
-	std::cout << std::endl << "############" << std::endl;
-
-	if (contour_plot_data)
-	{
-		for (auto& Pair : ComparisonPairs)
-		{
-			std::cout << std::endl;
-			std::cout << "Depths: " << Pair->d << "(" << Pair->s << ")" << " " << Pair->D << "(" << Pair->S << ")" << std::endl;
-			for (int l = 0; l <= 128; ++l)
-			{
-				for (int m = 0; m <= 128; ++m)
-					std::cout << Pair->occurences[l][m] << "\t";
-				std::cout << std::endl;
-			}
-		}
-	}
+void CalcStats(const std::vector<std::string>& FileNames, const int d, const int n, const int bit, const bool verbose)
+{
+	CHashTable* hashTable = new CHashTable(bit);
+	for (auto filename : FileNames)
+		AddStats(filename, hashTable, d, n);
+	delete hashTable;
 }
 
 void Print_help()
@@ -234,8 +157,7 @@ void Print_help()
 	std::cout << std::endl << "Calculates ProbCut statistics." << std::endl
 						   << "Attributes:" << std::endl
 						   << "-f\tposition files." << std::endl
-						   << "-d\treduced depth." << std::endl
-						   << "-D\tnon reduced depth." << std::endl 
+						   << "-d\tdepth." << std::endl
 						   << "-n\tnumber of positions." << std::endl
 						   << "-bit\tbit size of hash table." << std::endl
 						   << "-v\tverbose." << std::endl
@@ -244,15 +166,11 @@ void Print_help()
 
 int main(int argc, char* argv[])
 {
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-
 	std::vector<std::string> FileNames;
-	int d, D, s, S;
+	int d;
 	int n = 1000;
 	int bit = 24;
-	bool v = false;
-	std::vector<CComparisonPair*> ComparisonPairs;
-	CComparisonPair* tmp;
+	bool verbose = false;
 
 	for (int i = 0; i < argc; ++i)
 	{
@@ -264,242 +182,18 @@ int main(int argc, char* argv[])
 		}
 		else if (std::string(argv[i]) == "-d")
 			d = atoi(argv[++i]);
-		else if (std::string(argv[i]) == "-s")
-			s = atoi(argv[++i]);
-		else if (std::string(argv[i]) == "-D")
-			D = atoi(argv[++i]);
-		else if (std::string(argv[i]) == "-S")
-			S = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-n")
 			n = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-bit")
 			bit = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-v")
-			v = true;
+			verbose = true;
 		else if (std::string(argv[i]) == "-h"){
 			Print_help();
 			return 0;
 		}
 	}
-	
-	//tmp = new CComparisonPair(d/*d*/, s/*s*/, D/*D*/, S/*S*/);
 
-	//for (auto& filename : FileNames)
-	//	tmp->Add(filename);
-
-	//ComparisonPairs.push_back(tmp);
-
-
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d9_1M.b"));
-
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d13_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d14_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d15_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d16_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d17_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d18_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d19_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d20_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d21_1M.b"));
-	////FileNames.push_back(std::string("F:\\Reversi\\pos\\rnd_d22_1M.b"));
-	////d = 8;
-	////n = 100000;
-	//CComparisonPair* tmp;
-
-	//////for (int s = 6; s >= 0; s--)
-	//////	for (int S = 6; S >= 0; S--)
-	//		for (int D = CSearch::END; D <= CSearch::END; D++)
-	//			for (int d = 0; d <= 0; d+=2)
-	//			{
-	//				tmp = new CComparisonPair(d/*d*/, 0/*s*/, D/*D*/, 0/*S*/);
-	//				//tmp->Add(std::string("G:\\Reversi\\pos\\rnd_d10_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d11_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d12_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_1M.ps"));
-	//				tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_10M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d26_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d27_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d28_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d29_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d30_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d31_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d32_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d33_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d34_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d35_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d36_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d37_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d38_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d39_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d40_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d41_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d42_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d43_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d44_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d45_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d46_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d47_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d48_1M.ps"));
-	//				//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d49_1M.ps"));
-	//				ComparisonPairs.push_back(tmp);
-	//				//if ((d == 0) && (D % 2 == 1)) 
-	//				//	d--;
-	//			}
-	////n = 1000;
-	////v = false;
-
-	//tmp = new CComparisonPair(16/*d*/, 6/*s*/, 16/*D*/, 0/*S*/);
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d23_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d24_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d25_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d26_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d27_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d28_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d29_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d30_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d31_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d32_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d33_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d34_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d35_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d36_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d37_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d38_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d39_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d40_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d41_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d42_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d43_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d44_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d45_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d46_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d47_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d48_1M.ps"));
-	//tmp->Add(std::string("F:\\Reversi\\pos\\rnd_d49_1M.ps"));
-	//ComparisonPairs.push_back(tmp);
-
-	//for (int d = 2; d < 7; d++)
-	//{
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d13_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d14_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d15_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d16_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d17_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d18_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d19_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d20_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d21_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-
-	//	tmp = new CComparisonPair(d/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//	tmp->Add(std::string("pos\\rnd_d22_1M.ps"));
-	//	ComparisonPairs.push_back(tmp);
-	//}
-
-	//tmp = new CComparisonPair(CSearch::END/*d*/, 6/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d17_1M.ps"));
-	//ComparisonPairs.push_back(tmp);
-	//
-	//tmp = new CComparisonPair(CSearch::END/*d*/, 6/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//tmp->Add(std::string("G:\\Reversi2\\pos\\rnd_d18_1M.ps"));
-	//ComparisonPairs.push_back(tmp);
-
-	//tmp = new CComparisonPair(0/*d*/, 0/*s*/, CSearch::END/*D*/, 0/*S*/);
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d7_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d8_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d9_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d10_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d11_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d12_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d13_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d14_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d15_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d16_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d17_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d18_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d19_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d20_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d21_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d22_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_10k.psp"));
-	//tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_10k.psp"));
-	//ComparisonPairs.push_back(tmp);
-
-
-	for (int D = 2; D < 17; ++D)
-		for (int d = 0; d < D; d+=2)
-		{
-			tmp = new CComparisonPair(d/*d*/, 0/*s*/, D/*D*/, 0/*S*/);
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d23_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d24_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d25_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d26_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d27_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d28_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d29_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d30_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d31_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d32_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d33_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d34_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d35_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d36_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d37_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d38_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d39_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d40_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d41_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d42_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d43_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d44_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d45_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d46_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d47_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d48_1M.psp"));
-			tmp->Add(std::string("C:\\Reversi\\pos\\rnd_d49_1M.psp"));
-			if ((d == 0) && (D % 2 == 1)) 
-				d--;
-			ComparisonPairs.push_back(tmp);
-		}
-
-	CHashTable* hashTable = new CHashTable(bit);
 	ConfigFile::Initialize(argv[0], std::string("ProjectBrutus.ini"));
 	Features::Initialize();
 	Midgame::Initialize();
@@ -507,16 +201,14 @@ int main(int argc, char* argv[])
 	std::cout << "ProbCut statistics started for n=" << n << std::endl;
 	std::cout << "Start time: " << DateTimeNow() << std::endl;
 	
-
-	//CompareToExactNumEmpty(FileNames, d, n, false);
-	//CompareToExact(FileNames, d, n, false);
 	std::chrono::high_resolution_clock::time_point startTime, endTime;
 	startTime = std::chrono::high_resolution_clock::now();
-	CalcStats(ComparisonPairs, hashTable, n, v);
+	CalcStats(FileNames, d, n, bit, verbose);
+	PrintStats();
 	endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	std::cout << "End time: " << DateTimeNow() << std::endl;
-	std::cout << "Computation time: " << time_format(duration) << std::endl;
+	std::cout << std::endl << "End time: " << DateTimeNow() 
+		<< "Computation time: " << time_format(duration) << std::endl;
 
 	Features::Finalize();
 	return 0;

@@ -169,61 +169,29 @@ void Stats(const vector<string>& FileNames, bool b_Progress, bool b_Histogram, b
 
 void Progress(const string & filename)
 {
-	vector<CDataset_Old> tmp_OLD;
-	vector<CDataset_Position_Score> tmp_POSITON_SCORE;
-	vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
-	vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
-	string Ending = filename.substr(filename.rfind(".") + 1, filename.length());
 	vector<size_t> depth(256);
-
-	switch (Ending_to_DataType(Ending))
-	{
-		case DataType::Old:
-			tmp_OLD = read_vector<CDataset_Old>(filename);
-			for (auto& item : tmp_OLD)
-				depth[item.depth + 1]++;
-			tmp_OLD.clear();
-			break;
-		case DataType::Position_Score:
-			tmp_POSITON_SCORE = read_vector<CDataset_Position_Score>(filename);
-			for (auto& item : tmp_POSITON_SCORE)
-				depth[item.depth + 1]++;
-			tmp_POSITON_SCORE.clear();
-			break;
-		case DataType::Position_Score_PV:
-			tmp_POSITON_SCORE_PV = read_vector<CDataset_Position_Score_PV>(filename);
-			for (auto& item : tmp_POSITON_SCORE_PV)
-				depth[item.depth + 1]++;
-			tmp_POSITON_SCORE_PV.clear();
-			break;
-		case DataType::Position_FullScore:
-			tmp_POSITON_FULL_SCORE = read_vector<CDataset_Position_FullScore>(filename);
-			for (auto& item : tmp_POSITON_FULL_SCORE)
-				depth[item.depth + 1]++;
-			tmp_POSITON_FULL_SCORE.clear();
-			break;
-	}
+	vector<CPositionScoreDepthSelectivity> vec = read_vector<CPositionScoreDepthSelectivity>(filename);
+	for (const auto& pos : vec)
+		depth[pos.depth + 1]++;
 
 	cout << "Progress of " << filename << ":\n";
-	for (int i = 0; i <= SCHAR_MAX; ++i){
+	for (int i = 0; i <= SCHAR_MAX; ++i)
 		if (depth[i])
-			cout << i-1 << "\t" << depth[i] << "\n";
-	}
+			cout << i-1 << "\t" << ThousandsSeparator(depth[i]) << "\n";
+
 	if (depth[SCHAR_MAX+1])
-		cout << "Exact\t" << depth[SCHAR_MAX+1] << "\n";
+		cout << "Exact\t" << ThousandsSeparator(depth[SCHAR_MAX+1]) << "\n";
 }
 
 void CountUnique(const string & filename)
 {
-	set<CPosition> PositionSet;
 	vector<CPosition> Pos = read_vector<CPosition>(filename);
-	PositionSet.insert(Pos.begin(), Pos.end());
-	cout << "Number of unique positions in " << filename << ":\t" << PositionSet.size() << endl;
+	set<CPosition> PositionSet(Pos.begin(), Pos.end());
+	cout << "Number of unique positions in " << filename << ":\t" << ThousandsSeparator(PositionSet.size()) << endl;
 }
 
 void Reset(const string & filename)
 {
-	vector<CDataset_Old> tmp_OLD;
 	vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
 	vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
@@ -231,13 +199,6 @@ void Reset(const string & filename)
 
 	switch (Ending_to_DataType(Ending))
 	{
-	case DataType::Old:
-		tmp_OLD = read_vector<CDataset_Old>(filename);
-		for (auto& item : tmp_OLD)
-			item.Reset();
-		write_to_file(filename, tmp_OLD);
-		tmp_OLD.clear();
-		break;
 	case DataType::Position_Score:
 		tmp_POSITON_SCORE = read_vector<CDataset_Position_Score>(filename);
 		for (auto& item : tmp_POSITON_SCORE)
@@ -265,7 +226,6 @@ void Reset(const string & filename)
 
 void Mix(const string & filename)
 {
-	vector<CDataset_Old> tmp_OLD;
 	vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
 	vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
@@ -273,12 +233,6 @@ void Mix(const string & filename)
 
 	switch (Ending_to_DataType(Ending))
 	{
-	case DataType::Old:
-		tmp_OLD = read_vector<CDataset_Old>(filename);
-		std::random_shuffle(tmp_OLD.begin(), tmp_OLD.end());
-		write_to_file(filename, tmp_OLD);
-		tmp_OLD.clear();
-		break;
 	case DataType::Position_Score:
 		tmp_POSITON_SCORE = read_vector<CDataset_Position_Score>(filename);
 		std::random_shuffle(tmp_POSITON_SCORE.begin(), tmp_POSITON_SCORE.end());
@@ -303,7 +257,6 @@ void Mix(const string & filename)
 
 void Peek(const string & filename, const std::size_t start, const std::size_t num)
 {
-	vector<CDataset_Old> tmp_OLD;
 	vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
 	vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
@@ -312,18 +265,6 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 	cout << "Peek on " << filename << ":\n";
 	switch (Ending_to_DataType(Ending))
 	{
-	case DataType::Old:
-		printf("    #    |                            Position                            |depth|score\n");
-		printf("---------+----------------------------------------------------------------+-----+-----\n");
-		tmp_OLD = read_vector<CDataset_Old>(filename);
-		for (std::size_t i = start; i < start+num; i++){
-			if (tmp_OLD[i].depth == SCHAR_MAX)
-				printf("%9u|%64s| END | %+2.2d \n", i, board(tmp_OLD[i].P, tmp_OLD[i].O).c_str(), tmp_OLD[i].score);
-			else
-				printf("%9u|%64s| %3.3d | %+2.2d \n", i, board(tmp_OLD[i].P, tmp_OLD[i].O).c_str(), tmp_OLD[i].depth, tmp_OLD[i].score);
-		}
-		tmp_OLD.clear();
-		break;
 	case DataType::Position_Score:
 		printf("    #    |                            Position                            |depth|selectivity|score\n");
 		printf("---------+----------------------------------------------------------------+-----+-----------+-----\n");
@@ -385,6 +326,7 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 }
 
 
+// Tests that no field is taken by both parties and the number of empty fields is correct
 void Test(const string & filename, int Empties)
 {
 	int counter = 0;
@@ -476,10 +418,10 @@ int main(int argc, char* argv[])
 	bool b_Reset = false;
 	bool b_Mix = false;
 	bool b_Fix = false;
-	bool b_Peek = false;
-	bool b_New = false;
-	bool b_Perft = false;
 	bool b_Test = false;
+	bool b_Peek = false;
+	bool b_Perft = false;
+	bool b_New = false;
 	int Empties;
 	int N;
 	int perft_depth;
@@ -494,37 +436,26 @@ int main(int argc, char* argv[])
 				FileNames.push_back(string(argv[i++]));
 			--i;
 		}
-		else if (string(argv[i]) == "-progress")
-			b_Progress = true;
-		else if (string(argv[i]) == "-histogram")
-			b_Histogram = true;
-		else if (string(argv[i]) == "-char")
-			b_Characteristics = true;
-		else if (string(argv[i]) == "-uniques")
-			b_Unique = true;
-		else if (string(argv[i]) == "-mix")
-			b_Mix = true;
-		else if (string(argv[i]) == "-fix")
-			b_Fix = true;
-		else if (string(argv[i]) == "-test")
-			b_Test = true;
+		else if (string(argv[i]) == "-progress")	b_Progress = true;
+		else if (string(argv[i]) == "-histogram")	b_Histogram = true;
+		else if (string(argv[i]) == "-char")		b_Characteristics = true;
+		else if (string(argv[i]) == "-uniques")		b_Unique = true;
+		else if (string(argv[i]) == "-reset")		b_Reset = true;
+		else if (string(argv[i]) == "-mix")			b_Mix = true;
+		else if (string(argv[i]) == "-fix")			b_Fix = true;
+		else if (string(argv[i]) == "-test")		b_Test = true;
 		else if (string(argv[i]) == "-peek"){
 			b_Peek = true;
 			peek_start = atoi(argv[++i]);
 			peek_num = atoi(argv[++i]);
 		}
-		else if (string(argv[i]) == "-reset")
-			b_Reset = true;
 		else if (string(argv[i]) == "-perft"){
 			b_Perft = true;
 			perft_depth = atoi(argv[++i]);
 		}
-		else if (string(argv[i]) == "-new")
-			b_New = true;
-		else if (string(argv[i]) == "-e")
-			Empties = atoi(argv[++i]);
-		else if (string(argv[i]) == "-N")
-			N = atoi(argv[++i]);
+		else if (string(argv[i]) == "-new")			b_New = true;
+		else if (string(argv[i]) == "-e")			Empties = atoi(argv[++i]);
+		else if (string(argv[i]) == "-N")			N = atoi(argv[++i]);
 		else if (string(argv[i]) == "-h"){
 			cout << "Calculates statistics for given file of positions.\n" <<
 					"Arguments:\n" <<
@@ -533,9 +464,12 @@ int main(int argc, char* argv[])
 					"-histogram\tShows the histographic distribution.\n" <<
 					"-char\tShows the characteristic parameters of the distribution.\n" <<
 					"-uniques\tShows the number of unique positions.\n" <<
-					"-mix\tMix the positions.\n" <<
-					"-peek\tPeek on positions. -peek [start] [num]\n" <<
 					"-reset\tResets the score and depth of all positions.\n" <<
+					"-mix\tMix the positions.\n" <<
+					"-fix\tFix the positions.\n" <<
+					"-test\tTest the positions.\n" <<
+					"-peek\tPeek on positions. -peek [start] [num]\n" <<
+					"-perf\t\n" <<
 					"-new\tGenerate new random positions using -e and -N.\n" <<
 					"-e\tNumber of empty fields in each position.\n" <<
 					"-N\tNumber of positions to generate.\n" <<
@@ -544,43 +478,14 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if (b_New)
-		for (const string & filename : FileNames)
-			GenerateRandomPositions(filename, N, Empties, true);
-
-	if (b_Reset)
-		for (const string & filename : FileNames)
-			Reset(filename);
-
-	if (b_Test)
-		for (const string & filename : FileNames)
-			Test(filename, Empties);
-
-	if (b_Fix)
-		for (const string & filename : FileNames)
-			Fix(filename, Empties);
-
-	if (b_Mix)
-		for (const string & filename : FileNames)
-			Mix(filename);
-
-	if (b_Peek){
-		for (const string & filename : FileNames)
-			Peek(filename, peek_start, peek_num);
-		return 0;
-	}
-
-	if (b_Perft){
-		for (const string & filename : FileNames)
-			GeneratePerftPositions(filename, perft_depth, true);
-		return 0;
-	}
-
-	if (b_Unique){
-		for (const string & filename : FileNames)
-			CountUnique(filename);
-		return 0;
-	}
+	if (b_New)		for (const string & filename : FileNames) GenerateRandomPositions(filename, N, Empties, true);
+	if (b_Reset)	for (const string & filename : FileNames) Reset(filename);
+	if (b_Test)		for (const string & filename : FileNames) Test(filename, Empties);
+	if (b_Fix)		for (const string & filename : FileNames) Fix(filename, Empties);
+	if (b_Mix)		for (const string & filename : FileNames) Mix(filename);
+	if (b_Peek)		for (const string & filename : FileNames) Peek(filename, peek_start, peek_num);
+	if (b_Perft)	for (const string & filename : FileNames) GeneratePerftPositions(filename, perft_depth, true);
+	if (b_Unique)	for (const string & filename : FileNames) CountUnique(filename);
 	if (b_Progress && !b_Histogram && !b_Characteristics) //Only progress
 	{
 		for (const string & filename : FileNames)

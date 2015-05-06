@@ -206,7 +206,7 @@ namespace Endgame
 
 	int NegaMax_1(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, const unsigned char x)
 	{
-		int Score, FlipCount, Max;
+		int Score, FlipCount;
 		Score = (PopCount(P) << 1) - 62; // PopCount(P) - PopCount(O) + 1
 
 		++NodeCounter;

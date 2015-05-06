@@ -35,7 +35,6 @@ void Convert(const std::string & s_input, const std::string & s_output)
 
 	switch (Ending_to_DataType(ending_input))
 	{
-	case DataType::Old:                return Convert_1<CDataset_Old               >(s_input, s_output);
 	case DataType::Position_Score:     return Convert_1<CDataset_Position_Score    >(s_input, s_output);
 	case DataType::Position_Score_PV:  return Convert_1<CDataset_Position_Score_PV >(s_input, s_output);
 	case DataType::Position_FullScore: return Convert_1<CDataset_Position_FullScore>(s_input, s_output);

@@ -1,10 +1,10 @@
 #include <algorithm>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 #include "datamanipulation.h"
 #include "generatepositions.h"
-#include "statistics.h"
 #include "position.h"
-#include "search.h"
+#include "selectivity.h"
+#include "statistics.h"

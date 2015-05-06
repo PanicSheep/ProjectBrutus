@@ -4,19 +4,19 @@
 class CBigNode
 {
 	unsigned long long m_P, m_O;
-	char m_depth;
+	signed char m_depth;
 
 public:
 	CBigNode() : m_P(0), m_O(0), m_depth(-1) {}
 
-	void Update(const unsigned long long P, const unsigned long long O, const int depth){
+	void Update(const unsigned long long P, const unsigned long long O, const signed char depth){
 		if (((P != m_P) || (O != m_O)) && (depth > m_depth)){
 			m_P = P;
 			m_O = O;
 			m_depth = depth;
 		}
 	}
-	bool LookUp(const unsigned long long P, const unsigned long long O, const int depth) { return (P == m_P) && (O == m_O) && (depth == m_depth); }
+	bool LookUp(const unsigned long long P, const unsigned long long O, const signed char depth) { return (P == m_P) && (O == m_O) && (depth == m_depth); }
 	void Clear(){
 		m_P = 0;
 		m_O = 0;
@@ -33,15 +33,11 @@ public:
 	~CHashTable() { delete[] m_table; }
 	void Update(const unsigned long long P, const unsigned long long O, const unsigned long long depth){ m_table[Hash(P, O)].Update(P, O, depth); }
 	bool LookUp(const unsigned long long P, const unsigned long long O, const unsigned long long depth){ return m_table[Hash(P, O)].LookUp(P, O, depth); }
-
-	void Clear(){
-		for (std::size_t i = 0; i < (1ULL << Bits); i++)
-			m_table[i].Clear();
-	}
+	void Clear() { for (std::size_t i = 0; i < (1ULL << Bits); i++) m_table[i].Clear(); }
 private:
-	NodeType* m_table;
 	const unsigned int Bits;
 	const unsigned int BitShift;
+	NodeType* m_table;
 
 	inline std::size_t Hash(unsigned long long P, unsigned long long O) const
 	{
@@ -121,11 +117,9 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 
 	endTime = std::chrono::high_resolution_clock::now(); //Stop Time
 
-	std::vector<CDataset_Old> tmp_OLD;
 	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
 	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
-	CDataset_Old data_OLD;
 	CDataset_Position_Score data_POSITON_SCORE;
 	CDataset_Position_Score_PV data_POSITON_SCORE_PV;
 	CDataset_Position_FullScore data_POSITON_FULL_SCORE;
@@ -133,17 +127,6 @@ void GenerateRandomPositions(const std::string & filename, const unsigned long l
 
 	switch (Ending_to_DataType(Ending))
 	{
-	case DataType::Old:
-		for (auto& it : PositionSet){
-			data_OLD.Reset();
-			data_OLD.P = it.P;
-			data_OLD.O = it.O;
-			tmp_OLD.push_back(data_OLD);
-		}
-		std::random_shuffle(tmp_OLD.begin(), tmp_OLD.end());
-		write_to_file(filename, tmp_OLD);
-		tmp_OLD.clear();
-		break;
 	case DataType::Position_Score:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE.Reset();
@@ -239,11 +222,9 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 	std::cout << "Perft(" << (int)depth << "): " << PositionSet.size() << std::endl;
 	std::cout << time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)) << std::endl;
 
-	std::vector<CDataset_Old> tmp_OLD;
 	std::vector<CDataset_Position_Score> tmp_POSITON_SCORE;
 	std::vector<CDataset_Position_Score_PV> tmp_POSITON_SCORE_PV;
 	std::vector<CDataset_Position_FullScore> tmp_POSITON_FULL_SCORE;
-	CDataset_Old data_OLD;
 	CDataset_Position_Score data_POSITON_SCORE;
 	CDataset_Position_Score_PV data_POSITON_SCORE_PV;
 	CDataset_Position_FullScore data_POSITON_FULL_SCORE;
@@ -251,16 +232,6 @@ void GeneratePerftPositions(const std::string & filename, const char depth, cons
 
 	switch (Ending_to_DataType(Ending))
 	{
-	case DataType::Old:
-		for (auto& it : PositionSet){
-			data_OLD.Reset();
-			data_OLD.P = it.P;
-			data_OLD.O = it.O;
-			tmp_OLD.push_back(data_OLD);
-		}
-		write_to_file(filename, tmp_OLD);
-		tmp_OLD.clear();
-		break;
 	case DataType::Position_Score:
 		for (auto& it : PositionSet){
 			data_POSITON_SCORE.Reset();

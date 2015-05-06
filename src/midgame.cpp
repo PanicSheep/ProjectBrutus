@@ -2,83 +2,86 @@
 
 namespace Midgame
 {
-	std::vector<CCutOffLimits> MPC_table;
+	std::vector<std::pair<int, int>> MPC_aviable; // MPC_aviable(Depth, depth)
+	bool MPC_actives[64][64]; // MPC_actives[Depth][depth]
+	std::vector<CProbCuts> MPC_table[64][64]; // MPC_table[empties][Depth]
 	float mu;
 
 	void Initialize()
 	{
 		float a, b, sigma;
 		bool InUse;
-		std::string s;
+		std::string s_key, s_value;
+		
 		for (int D = 0; D < 64; D++)
-			for (int d = 0; d < D; d++)
+			for (int d = 0; d < 64; d++)
 			{
-				s = "probcut ";
-				if (D < 10) s += "0";
-				s += std::to_string(D) + " ";
-				if (d < 10) s += "0";
-				s += std::to_string(d);
+				s_key = "probcut ";
+				if (D < 10) s_key += "0";
+				s_key += std::to_string(D) + " ";
+				if (d < 10) s_key += "0";
+				s_key += std::to_string(d);
 
-				if (ConfigFile::Configurations.count(s))
+				if (ConfigFile::Configurations.count(s_key))
 				{
-					s = ConfigFile::Configurations[s];
-					b = atof(s.substr(0, 9).c_str());
-					a = atof(s.substr(10, 8).c_str());
-					sigma = atof(s.substr(19, 8).c_str());
-					InUse = (s.substr(28, 1) == "t");
-					MPC_table.push_back(CCutOffLimits(D, d, b, a, sigma, InUse));
+					MPC_aviable.push_back(std::pair<int, int>(D, d));
+					s_value = ConfigFile::Configurations[s_key];
+					MPC_actives[D][d] = (s_value.substr(0, 1) == "t");
 				}
+				else
+					MPC_actives[D][d] = false;
 			}
 
-		s = ConfigFile::Configurations["probcut mu"];
-		mu = std::stoi(s);
+		for (int empties = 0; empties < 64; empties++)
+			for (int D = 0; D < 64; D++)
+				for (int d = 0; d < D; d++)
+				{
+					s_key = "probcut ";
+					if (empties < 10) s_key += "0";
+					s_key += std::to_string(empties) + " ";
+					if (D < 10) s_key += "0";
+					s_key += std::to_string(D) + " ";
+					if (d < 10) s_key += "0";
+					s_key += std::to_string(d);
+
+					if (ConfigFile::Configurations.count(s_key))
+					{
+						s_value = ConfigFile::Configurations[s_key];
+						a = atof(s_value.substr(0, 8).c_str());
+						b = atof(s_value.substr(9, 9).c_str());
+						sigma = atof(s_value.substr(19, 8).c_str());
+						MPC_table[empties][D].push_back(CProbCuts(d, a, b, sigma));
+					}
+				}
+
+		s_value = ConfigFile::Configurations["probcut mu"];
+		mu = std::stoi(s_value);
 	}
 
-	void Change_MPC_table(CCutOffLimits * pair)
+	float sigma(const int D, const int d, const int E)
 	{
-		pair->InUse = !pair->InUse;
-	}
-	void Change_MPC_table(int D, int d)
-	{
-		for (auto& it : MPC_table)
-			if ((it.D == D) && (it.d == D))
-				it.InUse = !it.InUse;
-	}
-	void Change_MPC_table(int D, int d, bool InUse)
-	{
-		for (auto& it : MPC_table)
-			if ((it.D == D) && (it.d == D))
-				it.InUse = InUse;
+		const double a = -0.2660;
+		const double b =  0.9934;
+		const double c =  0.3136;
+		const double e = -0.0253;
+		const double f =  2.0925;
+		return (exp(a*d) + b) * (e*E + f) * pow((D - d), c);
 	}
 
-	double sigma(int D, int d)
+	bool MPC(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, unsigned char Depth, unsigned char selectivity, int & value)
 	{
-		//const double a = -1.337;
-		//const double b = -3.885;
-		//const double c = 0.09345;
-		//const double e = 6.958;
-		//return (a * d + b) * exp(-c * D) + e;
-		const double a = 1.58;
-		const double b = 0.1526;
-		const double c = 1.835;
-		const double e = 1.243;
-		const double f = 0.9589;
-		return ((a*exp(-b*d) + c)*pow((D - d), e)) / (D - d + f);
-	}
-
-	bool MPC(CSearch & search, const unsigned long long P, const unsigned long long O, int alpha, signed char depth, unsigned char selectivity, int & value)
-	{
-		if (selectivity == 0 || depth < 4)
+		if (selectivity == 0 || Depth < 4)
 			return false;
 
+		int empties = NumberOfEmptyStones(P, O);
 		int zero_eval, small_depth;
 		const int beta = alpha + 1;
 		int probcut_error, eval_error;
-        int probcut_depth, probcut_alpha, probcut_beta;
+        int depth, probcut_alpha, probcut_beta;
         int eval_beta, eval_alpha;
         int score;
-		double folded_sigma;
-		double t = SelectivityTable[selectivity].T;
+		float folded_sigma;
+		float t = SelectivityTable[selectivity].T;
 
 		++search.NodeCounter;
 		zero_eval = EvaluateFeatures(P, O);
@@ -87,101 +90,59 @@ namespace Midgame
 			return false;
 		search.probCutLevel++;
 
-		//if (depth > 16)
-		//{
-		//	probcut_depth = (depth / 4) * 2 + (depth & 1) - 4;
-		//	while (probcut_depth <= (depth / 4) * 2 + (depth & 1))
-		//	{
-		//		probcut_error = t * sigma(depth, probcut_depth) + 0.5;
-		//		folded_sigma = std::sqrt(sigma(probcut_depth, 0) * sigma(probcut_depth, 0) + sigma(depth, probcut_depth) * sigma(depth, probcut_depth));
-		//		eval_error = t * folded_sigma + 0.5;
-
-		//		eval_beta = beta - eval_error;
-		//		probcut_beta = beta + probcut_error;
-		//		probcut_alpha = probcut_beta - 1;
-
-		//		if (zero_eval - mu * t * folded_sigma >= beta && probcut_beta <= 64)
-		//		//if (zero_eval >= eval_beta && probcut_beta <= 64)
-		//		{
-		//			score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-		//			if (score >= probcut_beta){
-		//				//printf("Upper cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound - 1, value);
-		//				value = beta;
-		//				return true;
-		//			}
-		//		}
-
-		//		eval_alpha = alpha + eval_error;
-		//		probcut_alpha = alpha - probcut_error;
-		//		if (zero_eval + mu * folded_sigma < alpha && probcut_alpha >= -64)
-		//		//if (zero_eval < eval_alpha && probcut_alpha >= -64)
-		//		{
-		//			score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-		//			if (score <= probcut_alpha){
-		//				//printf("Lower cut at %d/%d, with alpha=%d, bound=%d, value=%d\n", depth, small_depth, alpha, bound, value);
-		//				value = alpha;
-		//				return true;
-		//			}
-		//		}
-
-		//		probcut_depth += 2;
-		//	}
-		//}
-		//else
-		{
-			for (int i = 0; i < MPC_table.size(); i++)
-				if (MPC_table[i].InUse && (depth == MPC_table[i].D))
+		for (auto it : MPC_table[empties][Depth])
+			if (MPC_actives[Depth][it.depth])
+			{
+				depth = it.depth;
+				if (depth == 0)
 				{
-					if (MPC_table[i].d == 0)
-					{
-						if (zero_eval >= (beta + t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f){
-							value = beta;
-							search.probCutLevel--;
-							return true;
-						}
-						if (zero_eval <= (alpha - t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f){
-							value = alpha;
-							search.probCutLevel--;
-							return true;
-						}
+					if (zero_eval >= (beta + t * it.sigma - it.b) / it.a + 0.5f){
+						value = beta;
+						search.probCutLevel--;
+						return true;
 					}
-
-					probcut_depth = MPC_table[i].d;
-					//probcut_error = t * sigma(depth, probcut_depth) + 0.5;
-					//eval_error = t * sigma(probcut_depth, 0) + 0.5;
-					//printf("eval_error:%d\n", eval_error);
-					//eval_error = 0;
-
-					//eval_beta = beta - eval_error;
-					folded_sigma = std::sqrt(sigma(probcut_depth, 0) * sigma(probcut_depth, 0) + sigma(depth, probcut_depth) * sigma(depth, probcut_depth));
-					probcut_beta = (beta + t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f;
-					probcut_alpha = probcut_beta - 1;
-
-					if (zero_eval >= beta + mu * t * folded_sigma + 0.5f && probcut_beta <= 64)
-					{
-						score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-						if (score >= probcut_beta){
-							//printf("Upper cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound-1, value);
-							value = beta;
-							search.probCutLevel--;
-							return true;
-						}
-					}
-
-					//eval_alpha = alpha + eval_error;
-					probcut_alpha = (alpha - t * MPC_table[i].sigma - MPC_table[i].b) / MPC_table[i].a + 0.5f;
-					if (zero_eval <= alpha - mu * t * folded_sigma + 0.5f && probcut_alpha >= -64)
-					{
-						score = ZWS(search, P, O, probcut_alpha, probcut_depth, selectivity);
-						if (score <= probcut_alpha){
-							//printf("Lower cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound, value);
-							value = alpha;
-							search.probCutLevel--;
-							return true;
-						}
+					if (zero_eval <= (alpha - t * it.sigma - it.b) / it.a + 0.5f){
+						value = alpha;
+						search.probCutLevel--;
+						return true;
 					}
 				}
-		}
+
+				//probcut_error = t * sigma(depth, depth) + 0.5;
+				//eval_error = t * sigma(depth, 0) + 0.5;
+				//printf("eval_error:%d\n", eval_error);
+				//eval_error = 0;
+
+				//eval_beta = beta - eval_error;
+				folded_sigma = std::sqrt(sigma(depth, 0, empties) * sigma(depth, 0, empties) + sigma(Depth, depth, empties) * sigma(Depth, depth, empties));
+				probcut_beta = (beta + t * it.sigma - it.b) / it.a + 0.5f;
+				probcut_alpha = probcut_beta - 1;
+
+				if (zero_eval >= beta + mu * t * folded_sigma + 0.5f && probcut_beta <= 64)
+				{
+					score = ZWS(search, P, O, probcut_alpha, depth, selectivity);
+					if (score >= probcut_beta){
+						//printf("Upper cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound-1, value);
+						value = beta;
+						search.probCutLevel--;
+						return true;
+					}
+				}
+
+				//eval_alpha = alpha + eval_error;
+				probcut_alpha = (alpha - t * it.sigma - it.b) / it.a + 0.5f;
+				if (zero_eval <= alpha - mu * t * folded_sigma + 0.5f && probcut_alpha >= -64)
+				{
+					score = ZWS(search, P, O, probcut_alpha, depth, selectivity);
+					if (score <= probcut_alpha){
+						//printf("Lower cut at %d(%d), with alpha=%d, bound=%d, value=%d\n", depth, MPC_table[i].d, alpha, bound, value);
+						value = alpha;
+						search.probCutLevel--;
+						return true;
+					}
+				}
+			}
+
 		search.probCutLevel--;
 		return false;
 	}
@@ -222,6 +183,11 @@ namespace Midgame
 		++NodeCounter;
 		return (EvaluateFeatures(P, O) > alpha) ? alpha+1 : alpha;
 	}
+	int ZWS_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, const Features::CIndexArray& Index_P, const Features::CIndexArray& Index_O)
+	{
+		++NodeCounter;
+		return (EvaluateFeatures(P, O, Index_P, Index_O) > alpha) ? alpha+1 : alpha;
+	}
 	int ZWS_1(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha)
 	{
 		unsigned char Move;
@@ -252,6 +218,40 @@ namespace Midgame
 
 		return alpha;
 	}
+	int ZWS_1(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha, const Features::CIndexArray& Index_P, const Features::CIndexArray& Index_O)
+	{
+		unsigned char Move;
+		unsigned long long flipped;
+		unsigned long long BitBoardPossible = PossibleMoves(P, O);
+
+		++NodeCounter;
+
+		if (!BitBoardPossible)
+		{
+			BitBoardPossible = PossibleMoves(O, P);
+			if (BitBoardPossible)
+				return -ZWS_1(O, P, NodeCounter, -alpha-1, Index_O, Index_P);
+			else{ //Game is over
+				++NodeCounter; 
+				return (EvaluateGameOver(P, NumberOfEmptyStones(P, O)) > alpha) ? alpha+1 : alpha;
+			}
+		}
+
+		//Features::CIndexArray newIndex_P(Index_P);
+		//Features::CIndexArray newIndex_O(Index_O);
+		//UpdateIndexVec(P, O, newIndex_P, newIndex_O);
+		
+		while (BitBoardPossible)
+		{
+			Move = BitScanLSB(BitBoardPossible);
+			RemoveLSB(BitBoardPossible);
+			flipped = flip(P, O, Move);
+			if (-ZWS_0(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -alpha-1, Index_O, Index_P) > alpha)
+				return alpha+1;
+		}
+
+		return alpha;
+	}
 	int ZWS_2(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha)
 	{
 		unsigned char Move;
@@ -271,12 +271,15 @@ namespace Midgame
 			}
 		}
 
+		Features::CIndexArray Index_P(P);
+		Features::CIndexArray Index_O(O);
+
 		while (BitBoardPossible)
 		{
 			Move = BitScanLSB(BitBoardPossible);
 			RemoveLSB(BitBoardPossible);
 			flipped = flip(P, O, Move);
-			if (-ZWS_1(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -alpha-1) > alpha)
+			if (-ZWS_1(O ^ flipped, P ^ (1ULL << Move) ^ flipped, NodeCounter, -alpha-1, Index_O, Index_P) > alpha)
 				return alpha+1;
 		}
 		return alpha;

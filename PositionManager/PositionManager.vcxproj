@@ -160,7 +160,7 @@
     <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\positionmanager.h" />
     <ClInclude Include="..\src\PossibleMoves.h" />
-    <ClInclude Include="..\src\search.h" />
+    <ClInclude Include="..\src\selectivity.h" />
     <ClInclude Include="..\src\statistics.h" />
     <ClInclude Include="..\src\utility.h" />
   </ItemGroup>

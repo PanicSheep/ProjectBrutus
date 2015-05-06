@@ -47,8 +47,16 @@ struct CCutOffLimits
 	CCutOffLimits(const unsigned char D, const unsigned char d, const float b, const float a, const float sigma, const bool InUse) : D(D), d(d), b(b), a(a), sigma(sigma), InUse(InUse) {}
 };
 
+struct CProbCuts
+{
+	unsigned char depth;
+	float a, b, sigma;
+	CProbCuts(const unsigned char depth, const float a, const float b, const float sigma) : depth(depth), a(a), b(b), sigma(sigma) {}
+};
+
 namespace Endgame
 {
+	extern std::vector<std::pair<int, int>> MPC_aviable;
 	extern std::vector<CCutOffLimits> MPC_table;
 	extern float mu;
 
@@ -67,12 +75,13 @@ namespace Endgame
 
 namespace Midgame
 {
-	extern std::vector<CCutOffLimits> MPC_table;
+	extern std::vector<std::pair<int, int>> MPC_aviable; // MPC_aviable(Depth, depth)
+	extern bool MPC_actives[64][64]; // MPC_actives[Depth][depth]
+	extern std::vector<CProbCuts> MPC_table[64][64]; // MPC_table[empties][Depth]
 	void Initialize();
-	double sigma(int D, int d);
-	void Change_MPC_table(CCutOffLimits * pair);
-	void Change_MPC_table(int D, int d);
-	void Change_MPC_table(int D, int d, bool InUse);
+	float sigma(const int D, const int d, const int E);
+	inline void Change_MPC_actives(const int D, const int d) { MPC_actives[D][d] = !MPC_actives[D][d]; }
+	inline void Change_MPC_actives(const int D, const int d, const bool InUse) { MPC_actives[D][d] = InUse; }
 
 	int ZWS_0(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha);
 	int ZWS_1(const unsigned long long P, const unsigned long long O, unsigned long long & NodeCounter, int alpha);
