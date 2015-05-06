@@ -132,6 +132,14 @@ void CTwoNode::Clear()
 	spinlock.clear(std::memory_order_release);
 }
 
+void CHashTable::Clear(){
+	UpdateCounter = 0;
+	LookUpCounter = 0;
+	RefreshCounter = 0;
+	HitCounter = 0;
+	for (std::size_t i = 0; i < (1ULL << Bits); i++) table[i].Clear();
+}
+
 void CHashTable::Save(const std::string & filename) const
 {
 	FILE* file;
@@ -160,4 +168,18 @@ void CHashTable::Load(const std::string & filename)
 	fread(table, sizeof(NodeType), 1ULL << Bits, file);
 
 	fclose(file);
+}
+
+void CHashTable::print_stats(){
+	printf("Updates: %d\nLookUps: %d\nRefreshs: %d\nHits: %d\nHit rate: %2.1f%%\n", UpdateCounter, LookUpCounter, RefreshCounter, HitCounter, static_cast<float>(HitCounter * 100) / static_cast<float>(LookUpCounter));
+	uint64_t counter[3] = {0,0,0};
+	int num;
+	for (std::size_t i = 0; i < (1ULL << Bits); i++){
+		num = 0;
+		if ((table[i].m_P1 != 0) || (table[i].m_O1 != 0)) num++;
+		if ((table[i].m_P2 != 0) || (table[i].m_O2 != 0)) num++;
+		counter[num]++;
+	}
+	float total = counter[0] + counter[1] + counter[2];
+	printf("Empty Nodes : %2.1f%%\n1 Entry Nodes : %2.1f%%\n2 Entry Nodes : %2.1f%%\n", counter[0] / total * 100, counter[1] / total * 100, counter[2] / total * 100);
 }
