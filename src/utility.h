@@ -138,10 +138,8 @@ inline std::string time_format(const std::chrono::duration<std::chrono::system_c
 std::string short_time_format(std::chrono::duration<long long, std::pico> duration);
 std::string board1D(const uint64_t P, const uint64_t O);
 std::string board2D(const uint64_t P, const uint64_t O);
-void print_board(const uint64_t, const uint64_t);
-void print_board(const uint64_t P, const uint64_t O, const uint64_t PossibleMoves);
-void print_progressbar(const int width, const float fraction);
+std::string board2D(const uint64_t P, const uint64_t O, const uint64_t PossibleMoves);
 std::string progressbar_percentage(const int width, const float fraction);
 std::string ThousandsSeparator(uint64_t n);
 std::string DateTimeNow();
-long long pow(long long base, uint64_t exp);
+long long pow(long long base, unsigned long long exp);
