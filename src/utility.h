@@ -19,11 +19,6 @@ inline int RoundInt(const float  f) { return static_cast<int>(std::roundf(f)); }
 //inline int RoundInt(double d) { int i = static_cast<int>(d); return i + (d - i >= .5 ) - (d - i <= -.5 ); }
 //inline int RoundInt(float  f) { int i = static_cast<int>(f); return i + (f - i >= .5f) - (f - i <= -.5f); }
 
-const uint64_t START_POSITION_P = 0x0000000810000000ULL;
-const uint64_t START_POSITION_O = 0x0000001008000000ULL;
-const uint64_t START_POSITION_ETH_P = 0x0000001800000000ULL;
-const uint64_t START_POSITION_ETH_O = 0x0000000018000000ULL;
-
 static const std::string field_name[65] = {
 	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
 	"A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",
