@@ -62,6 +62,8 @@
 	#define HAS_SSE4_2
 	#define HAS_AVX
 	#define HAS_AVX2
+	#define HAS_POPCNT
+	#define HAS_LZCNT
 #endif
 #ifdef HASWELL_DT
 	#define HAS_MMX
@@ -75,6 +77,8 @@
 	#define HAS_AVX2
 	#define HAS_BMI1
 	#define HAS_BMI2
+	#define HAS_POPCNT
+	#define HAS_LZCNT
 #endif
 #ifdef VISHERA
 	#define HAS_MMX
@@ -92,16 +96,13 @@
 #endif
 
 // CPU instruction implications
-#ifdef HAS_SSE4_2
-	#define HAS_POPCNT // Population count
-#endif
 #ifdef HAS_BMI1
-	#define HAS_BEXTR // Bit Field Extract
-	#define HAS_BLSI // Extract Lowest Set Isolated Bit (x & -x)
-	#define HAS_BLSMASK // Get mask up to lowest set bit (x ^ (x - 1))
-	#define HAS_BLSR // Reset lowest set bit (x & (x - 1))
-	#define HAS_LZCNT // Leading Zero Count
-	#define HAS_TZCNT // Trailing Zero Count
+	#define HAS_BEXTR	// Bit Field Extract
+	#define HAS_BLSI	// Extract Lowest Set Isolated Bit	(x & -x)
+	#define HAS_BLSMASK	// Get mask up to lowest set bit	(x ^ (x - 1))
+	#define HAS_BLSR	// Reset lowest set bit			(x & (x - 1))
+	#define HAS_LZCNT	// Leading Zero Count
+	#define HAS_TZCNT	// Trailing Zero Count
 #endif
 #ifdef HAS_BMI2
 	#define HAS_BZHI // Zero high bits starting with specified bit position
@@ -112,6 +113,19 @@
 	#define HAS_POPCNT // Population count
 	#define HAS_LZCNT // Leading Zero Count
 #endif
+#ifdef HAS_TBM
+	#define HAS_BEXTR	// Bit Field Extract
+	#define HAS_BLCFILL	// Fill from lowest clear bit			( x &  (x + 1))
+	#define HAS_BLCI	// Isolate lowest clear bit			( x | ~(x + 1))
+	#define HAS_BLCIC	// Isolate lowest clear bit and complement	(~x &  (x + 1))
+	#define HAS_BLCMASK	// Mask from lowest clear bit			( x ^  (x + 1))
+	#define HAS_BLCS	// Set lowest clear bit				( x |  (x + 1))
+	#define HAS_BLSFILL	// Fill from lowest set bit			( x |  (x - 1))
+	#define HAS_BLSIC	// Isolate lowest set bit and complement	(~x |  (x - 1))
+	#define HAS_T1MSKC	// Inverse mask from trailing ones		(~x |  (x + 1))
+	#define HAS_TZMSK	// Mask from trailing zeros			(~x &  (x - 1))
+#endif
+
 
 // alignas work-around
 #if (__GNUC__ == 4) && (__GNUC_MINOR__ <= 7)
@@ -249,6 +263,42 @@ FORCE_INLINE void RemoveMSB(uint64_t & b) { b ^= GetMSB(b); }
 	FORCE_INLINE uint64_t BZHI(const uint64_t src, const uint64_t index) { return _bzhi_u64(src, index); }
 #else
 	FORCE_INLINE uint64_t BZHI(const uint64_t src, const uint64_t index) { return src & ((1ULL << index) - 1); }
+#endif
+
+#ifdef HAS_BLCFILL
+#else
+#endif
+
+#ifdef HAS_BLCI
+#else
+#endif
+
+#ifdef HAS_BLCIC
+#else
+#endif
+
+#ifdef HAS_BLCMASK
+#else
+#endif
+
+#ifdef HAS_BLCS
+#else
+#endif
+
+#ifdef HAS_BLSFILL
+#else
+#endif
+
+#ifdef HAS_BLSIC
+#else
+#endif
+
+#ifdef HAS_T1MSKC
+#else
+#endif
+
+#ifdef HAS_TZMSK
+#else
 #endif
 
 
