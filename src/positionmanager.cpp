@@ -271,9 +271,9 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 		tmp_POSITON_SCORE = read_vector<CDataset_Position_Score>(filename);
 		for (std::size_t i = start; i < start+num; i++){
 			if (tmp_POSITON_SCORE[i].depth == SCHAR_MAX)
-				printf("%9u|%64s| END |   %5s%%  | %+2.2d \n", i, board(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
+				printf("%9u|%64s| END |   %5s%%  | %+2.2d \n", i, board1D(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
 			else
-				printf("%9u|%64s| %3.3d |   %5s%%  | %+2.2d \n", i, board(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), tmp_POSITON_SCORE[i].depth, SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
+				printf("%9u|%64s| %3.3d |   %5s%%  | %+2.2d \n", i, board1D(tmp_POSITON_SCORE[i].P, tmp_POSITON_SCORE[i].O).c_str(), tmp_POSITON_SCORE[i].depth, SelectivityTable[tmp_POSITON_SCORE[i].selectivity], tmp_POSITON_SCORE[i].score);
 		}
 		tmp_POSITON_SCORE.clear();
 		break;
@@ -284,7 +284,7 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 		for (std::size_t i = start; i < start+num; i++){
 			if (tmp_POSITON_SCORE_PV[i].depth == SCHAR_MAX)
 				printf("%9u|%64s| END |   %5s%%  | %+2.2d | %2s %2s %2s %2s %2s \n", i,
-					board(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
+					board1D(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
 					SelectivityTable[tmp_POSITON_SCORE_PV[i].selectivity],
 					tmp_POSITON_SCORE_PV[i].score,
 					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[0]),
@@ -294,7 +294,7 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 					FIELD_NAME(tmp_POSITON_SCORE_PV[i].PV[4]));
 			else
 				printf("%9u|%64s| %3.3d |   %5s%%  | %+2.2d | %2s %2s %2s %2s %2s \n", i, 
-					board(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
+					board1D(tmp_POSITON_SCORE_PV[i].P, tmp_POSITON_SCORE_PV[i].O).c_str(),
 					tmp_POSITON_SCORE_PV[i].depth, 
 					SelectivityTable[tmp_POSITON_SCORE_PV[i].selectivity], 
 					tmp_POSITON_SCORE_PV[i].score, 
@@ -312,9 +312,9 @@ void Peek(const string & filename, const std::size_t start, const std::size_t nu
 		tmp_POSITON_FULL_SCORE = read_vector<CDataset_Position_FullScore>(filename);
 		for (std::size_t i = start; i < start+num; i++){
 			if (tmp_POSITON_FULL_SCORE[i].depth == SCHAR_MAX)
-				printf("%9u|%64s| END |   %5s%%  |", i, board(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
+				printf("%9u|%64s| END |   %5s%%  |", i, board1D(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
 			else
-				printf("%9u|%64s| %3.3d |   %5s%%  |", i, board(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), tmp_POSITON_FULL_SCORE[i].depth, SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
+				printf("%9u|%64s| %3.3d |   %5s%%  |", i, board1D(tmp_POSITON_FULL_SCORE[i].P, tmp_POSITON_FULL_SCORE[i].O).c_str(), tmp_POSITON_FULL_SCORE[i].depth, SelectivityTable[tmp_POSITON_FULL_SCORE[i].selectivity]);
 			for (int j = 0; j < 64; j++)
 				if (tmp_POSITON_FULL_SCORE[i].score[j] != SCHAR_MIN)
 					printf(" %2s:%2.2d", FIELD_NAME(j), tmp_POSITON_FULL_SCORE[i].score[j]);

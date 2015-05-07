@@ -52,7 +52,7 @@ unsigned long long v_line(int C)
 	}
 }
 
-void print_board(const unsigned long long P, const unsigned long long O)
+void print_board1D(const unsigned long long P, const unsigned long long O)
 {
 	for (int i = 0; i < 8; i++)
 	{

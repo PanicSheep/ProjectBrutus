@@ -186,127 +186,6 @@ void FForum_Benchmark(std::string filename, bool verbose, CHashTable* hashTable)
 		printf(       "%s nodes in %s (%s N/s).\n\n", ThousandsSeparator(OverallNodeCounter), time_format(time_span).c_str(), ThousandsSeparator(OverallNodeCounter*1000/time_span.count()));
 }
 
-void PossibleMoves_Benchmark(const int N)
-{
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = PossibleMoves(a, b);
-		b = PossibleMoves(a, b);
-		a = PossibleMoves(a, b);
-		b = PossibleMoves(a, b);
-		a = PossibleMoves(a, b);
-		b = PossibleMoves(a, b);
-		a = PossibleMoves(a, b);
-		b = PossibleMoves(a, b);
-		a = PossibleMoves(a, b);
-		b = PossibleMoves(a, b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("PossibleMoves  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("PossibleMoves  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void PossibleMoves2_Benchmark(const int N)
-{
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	unsigned long long c, d;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		PossibleMoves(a, b, c, d);
-		PossibleMoves(c, d, a, b);
-		PossibleMoves(a, b, c, d);
-		PossibleMoves(c, d, a, b);
-		PossibleMoves(a, b, c, d);
-		PossibleMoves(c, d, a, b);
-		PossibleMoves(a, b, c, d);
-		PossibleMoves(c, d, a, b);
-		PossibleMoves(a, b, c, d);
-		PossibleMoves(c, d, a, b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("PossibleMoves2 | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("PossibleMoves2 | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void PlayStone_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
-	std::vector<unsigned char> c(N+9);
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < N+9; i++) c[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		PlayStone(a, b, c[i  ]);
-		PlayStone(a, b, c[i+1]);
-		PlayStone(a, b, c[i+2]);
-		PlayStone(a, b, c[i+3]);
-		PlayStone(a, b, c[i+4]);
-		PlayStone(a, b, c[i+5]);
-		PlayStone(a, b, c[i+6]);
-		PlayStone(a, b, c[i+7]);
-		PlayStone(a, b, c[i+8]);
-		PlayStone(a, b, c[i+9]);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("PlayStone      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("PlayStone      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-//void TryPlayStone_Benchmark(const int N)
-//{
-//	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
-//	std::vector<unsigned char> c(N+9);
-//	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-//	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-//	std::chrono::high_resolution_clock::time_point startTime, endTime;
-//
-//	for (int i = 0; i < N+9; i++) c[i] = rnd();
-//
-//	startTime = std::chrono::high_resolution_clock::now();
-//	for (int i = 0; i < N; i++)
-//	{
-//		TryPlayStone(a, b, c[i  ]);
-//		TryPlayStone(a, b, c[i+1]);
-//		TryPlayStone(a, b, c[i+2]);
-//		TryPlayStone(a, b, c[i+3]);
-//		TryPlayStone(a, b, c[i+4]);
-//		TryPlayStone(a, b, c[i+5]);
-//		TryPlayStone(a, b, c[i+6]);
-//		TryPlayStone(a, b, c[i+7]);
-//		TryPlayStone(a, b, c[i+8]);
-//		TryPlayStone(a, b, c[i+9]);
-//	}
-//	endTime = std::chrono::high_resolution_clock::now();
-//	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-//	if (a) //Prevent dead code elimination.
-//		printf("TryPlayStone   | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-//	else
-//		printf("TryPlayStone   | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-//}
-
 void Flip_Benchmark(const int N)
 {
 	auto rnd = std::bind(std::uniform_int_distribution<int>(0, 63), std::mt19937_64(N));
@@ -371,340 +250,6 @@ void Count_last_flip_Benchmark(const int N)
 		printf("Count last flip| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
 
-void PopCount_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = PopCount(b[a]);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-		a = PopCount(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("PopCount      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("PopCount      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void PopCount_max15_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = PopCount_max15(b[a]);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-		a = PopCount_max15(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("PopCount_max15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("PopCount_max15| %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void Parity_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = parity(b[a]);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-		a = parity(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("Parity         | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("Parity         | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void BitScanLSB_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(1ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = BitScanLSB(b[a]);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-		a = BitScanLSB(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("BitScanLSB  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("BitScanLSB  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void RemoveLSB_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(1ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	std::vector<unsigned long long> a(N);
-	unsigned long long b = 0ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < N; i++) a[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		b |= a[i];
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-		RemoveLSB(b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (b) //Prevent dead code elimination.
-		printf("RemoveLSB    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("RemoveLSB    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_corner_and_co_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones_corner_and_co(b[a % 64]);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-		a = StableStones_corner_and_co(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("corner and co  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("corner and co  | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_affectables_Benchmark(const int N)
-{
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones_affectables(a, b);
-		b = StableStones_affectables(a, b);
-		a = StableStones_affectables(a, b);
-		b = StableStones_affectables(a, b);
-		a = StableStones_affectables(a, b);
-		b = StableStones_affectables(a, b);
-		a = StableStones_affectables(a, b);
-		b = StableStones_affectables(a, b);
-		a = StableStones_affectables(a, b);
-		b = StableStones_affectables(a, b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("affectables    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("affectables    | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_full_edges_second_order_Benchmark(const int N)
-{
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones_full_edges_second_order(a, b);
-		b = StableStones_full_edges_second_order(a, b);
-		a = StableStones_full_edges_second_order(a, b);
-		b = StableStones_full_edges_second_order(a, b);
-		a = StableStones_full_edges_second_order(a, b);
-		b = StableStones_full_edges_second_order(a, b);
-		a = StableStones_full_edges_second_order(a, b);
-		b = StableStones_full_edges_second_order(a, b);
-		a = StableStones_full_edges_second_order(a, b);
-		b = StableStones_full_edges_second_order(a, b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("full_edges     | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("full_edges     | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_triangles_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones_triangles(b[a % 64]);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-		a = StableStones_triangles(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("triangles      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("triangles      | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_skyline_Benchmark(const int N)
-{
-	auto rnd = std::bind(std::uniform_int_distribution<unsigned long long>(0ULL, 0xFFFFFFFFFFFFFFFFULL), std::mt19937_64(N));
-	unsigned long long b[64];
-	unsigned long long a = 0;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	for (int i = 0; i < 64; i++) b[i] = rnd();
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones_skyline(b[a % 64]);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-		a = StableStones_skyline(a);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("skyline        | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("skyline        | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
-void StableStones_Benchmark(const int N)
-{
-	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
-	unsigned long long b = 0x0569871035164909ULL & ~0x9601656461938970ULL;
-	std::chrono::high_resolution_clock::time_point startTime, endTime;
-
-	startTime = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < N; i++)
-	{
-		a = StableStones(a, b);
-		b = StableStones(a, b);
-		a = StableStones(a, b);
-		b = StableStones(a, b);
-		a = StableStones(a, b);
-		b = StableStones(a, b);
-		a = StableStones(a, b);
-		b = StableStones(a, b);
-		a = StableStones(a, b);
-		b = StableStones(a, b);
-	}
-	endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-	if (a) //Prevent dead code elimination.
-		printf("StableStones   | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-	else
-		printf("StableStones   | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
-}
-
 void EvaluateFeatures_Benchmark(const int N)
 {
 	unsigned long long a = 0x0569871035164909ULL &  0x9601656461938970ULL;
@@ -732,7 +277,6 @@ void EvaluateFeatures_Benchmark(const int N)
 	else
 		printf("EvalFeatures   | %6.1f | %14s\n", static_cast<double>(duration.count()) / N / 10 * 1000000, time_format(duration));
 }
-
 
 unsigned long long Solve(const int d, CDataset_Position_Score* DataArray, const unsigned long long size)
 {
@@ -859,8 +403,8 @@ int main(int argc, char* argv[])
 	//int n = 10000;
 	//bool v = false;
 	//int depth = 0;
-	//bool b_fforum = false;
-	//bool b_exact = false;
+	bool b_fforum = false;
+	bool b_exact = false;
 
 	//for (int i = 0; i < argc; ++i)
 	//{
@@ -877,9 +421,9 @@ int main(int argc, char* argv[])
 	//	else if (std::string(argv[i]) == "-v")
 	//		v = true;
 	//	else if (std::string(argv[i]) == "-fforum")
-	//		b_fforum = true;
+			b_fforum = true;
 	//	else if (std::string(argv[i]) == "-exact")
-	//		b_exact = true;
+			//b_exact = true;
 	//}
 
 	//SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
@@ -889,24 +433,24 @@ int main(int argc, char* argv[])
 	Midgame::Initialize();
 	srand(time(NULL));
 
-	//if (b_fforum){
-	//	PreheatCPU(2);
-	//	CHashTable * const ht = new CHashTable(24);
-	//	FForum_Benchmark("pos\\fforum-1-19.ps", true, ht);
-	//	ht->print_stats();
-	//	FForum_Benchmark("pos\\fforum-20-39.ps", true, ht);
-	//	ht->print_stats();
-	//	FForum_Benchmark("pos\\fforum-40-59.ps", true, ht);
-	//	ht->print_stats();
-	//	delete ht;
-	//}
-	//if (b_exact){
-	//	PreheatCPU(2);
-	//	CHashTable * ht = new CHashTable(24);
-	//	CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
-	//	s.Evaluate(true);
-	//	delete ht;
-	//}
+	if (b_fforum){
+		PreheatCPU(2);
+		CHashTable * const ht = new CHashTable(24);
+		FForum_Benchmark("pos\\fforum-1-19.ps", true, ht);
+		ht->print_stats();
+		FForum_Benchmark("pos\\fforum-20-39.ps", true, ht);
+		ht->print_stats();
+		FForum_Benchmark("pos\\fforum-40-59.ps", true, ht);
+		ht->print_stats();
+		delete ht;
+	}
+	if (b_exact){
+		PreheatCPU(2);
+		CHashTable * ht = new CHashTable(24);
+		CSearch s(START_POSITION_ETH_P, START_POSITION_ETH_O, -64, 64, ht, 5);
+		s.Evaluate(true);
+		delete ht;
+	}
 
 	//CHashTable * const ht = new CHashTable(24);
 	//unsigned long long NodeCounter;
@@ -1149,7 +693,7 @@ int main(int argc, char* argv[])
 
 	//while (HasMoves(P, O) || HasMoves(O, P))
 	//{
-	//	print_board(P, O, PossibleMoves(P, O));
+	//	print_board1D(P, O, PossibleMoves(P, O));
 	//	//Human
 	//	if (!HasMoves(P, O))
 	//	{
@@ -1172,7 +716,7 @@ int main(int argc, char* argv[])
 	//	if (!HasMoves(P, O) && !HasMoves(O, P))
 	//		break;
 
-	//	print_board(O, P, PossibleMoves(P, O));
+	//	print_board1D(O, P, PossibleMoves(P, O));
 	//	//Machine
 	//	if (!HasMoves(P, O))
 	//	{

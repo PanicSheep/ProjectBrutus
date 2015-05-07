@@ -133,33 +133,32 @@ public:
 	template <class T>
 	std::vector<T> ATAx(const std::vector<T>& x) const
 	{
-		//const long long n = size();
-		//const long long m = Features::ReducedSize;
+		ASSERT(_m == x.size());
+		ASSERT(_n == x.size());
+		std::vector<T> result(_m);
+		#pragma omp parallel
+		{
+			T tmp;
+			std::vector<T> local_result(_m);
 
-		//std::vector<T> result(m);
-		//#pragma omp parallel
-		//{
-		//	T tmp;
-		//	std::vector<T> local_result(m);
+			#pragma omp for nowait schedule(static, 1024)
+			for (long long i = 0; i < _n; ++i)
+			{
+				tmp = 0;
+				for (SizeType j = row_starts[i]; j < row_starts[i + 1]; ++j)
+					tmp += static_cast<T>(data[j]) * x[col_indices[j]];
+				for (SizeType j = row_starts[i]; j < row_starts[i + 1]; ++j) // This equals A'*x
+					local_result[col_indices[j]] += static_cast<T>(data[j]) * tmp;
+			}
 
-		//	#pragma omp for nowait schedule(static, 1024)
-		//	for (long long i = 0; i < n; ++i)
-		//	{
-		//		tmp = 0;
-		//		for (SizeType j = row_starts[i]; j < row_starts[i + 1]; ++j) // This equals A*x
-		//			tmp += static_cast<T>(data[j]) * x[col_indices[j]];
-		//		for (SizeType j = row_starts[i]; j < row_starts[i + 1]; ++j) // This equals AT*(A*x)
-		//			local_result[col_indices[j]] += static_cast<T>(data[j]) * tmp;
-		//	}
-
-		//	#pragma omp critical
-		//	{
-		//		for (std::size_t i = 0; i < m; ++i)
-		//			result[i] += local_result[i];
-		//	}
-		//}
-		//return result;
-		return ATx(this->operator*(x));
+			#pragma omp critical
+			{
+				for (std::size_t i = 0; i < _m; ++i)
+					result[i] += local_result[i];
+			}
+		}
+		return result;
+		//return ATx(this->operator*(x));
 	}
 };
 

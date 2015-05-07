@@ -210,8 +210,8 @@ void SolveInRAM(const std::vector<std::string>& FileNames, const std::string& fi
 	endTime = std::chrono::high_resolution_clock::now();
 	printf_s("done!\t\t %14s\n\n", time_format(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)).c_str());
 
-	printf_s(" it | norm(res) | avg(abs(err)) |  avg(err)  |  stdev(err)  |      time     \n");
-	printf_s("----+-----------+---------------+------------+--------------+---------------\n");
+	printf_s(" it | norm(res) | avg(abs(err)) |  avg(err)  |  stdev(err)  |       time      \n");
+	printf_s("----+-----------+---------------+------------+--------------+-----------------\n");
 	
 	res = norm(r);
 	DoStatsMuSigma(A, x, scores, mu, sigma, avg_abs_err);

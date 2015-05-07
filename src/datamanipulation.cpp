@@ -84,7 +84,7 @@ unsigned char CDataset_Edax::BestMove() const
 std::string CDataset_Edax::to_string() const
 {
 	std::string s;
-	s.append(board(P, O));
+	s.append(board1D(P, O));
 	s.append(" X;");
 	for (int i = 0; i < 64; ++i)
 		if (score[i] != DATASET_DEFAULT_score)

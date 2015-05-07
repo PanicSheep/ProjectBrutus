@@ -106,14 +106,14 @@ void CSearch::print_result(const int num_width, const int num, const bool verbos
 	if (num_width)
 	{
 		if (verbose)
-			printf("%*d|%s|%s| %+2.2d | %s | %*s | %*s | %s \n", num_width, num, board(P, O).c_str(), DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
+			printf("%*d|%s|%s| %+2.2d | %s | %*s | %*s | %s \n", num_width, num, board1D(P, O).c_str(), DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
 		else
 			printf("%*d|%s| %+2.2d | %s | %*s | %*s | %s \n", num_width, num, DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
 	}
 	else
 	{
 		if (verbose)
-			printf("%s|%s| %+2.2d | %s | %*s | %*s | %s \n", board(P, O).c_str(), DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
+			printf("%s|%s| %+2.2d | %s | %*s | %*s | %s \n", board1D(P, O).c_str(), DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
 		else
 			printf("%s| %+2.2d | %s | %*s | %*s | %s \n", DepthSelectivity(depth, selectivity).c_str(), score, time_format(duration).c_str(), width_Nodes, ThousandsSeparator(NodeCounter).c_str(), width_nps, (duration.count() == 0 ? " " : ThousandsSeparator(NpS).c_str()), GetPV().c_str());
 	}
@@ -124,7 +124,7 @@ void CSearch::print_result(const int num_width, const int num, const bool verbos
 	//
 	//// baord
 	//if (verbose)
-	//	s.append(board(P, O)).append("|");
+	//	s.append(board1D(P, O)).append("|");
 
 	//// depth
 	//s.append(DepthSelectivity(depth, selectivity)).append("|");

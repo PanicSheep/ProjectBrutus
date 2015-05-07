@@ -23,6 +23,7 @@
 //#define YORKFIELD
 //#define HASWELL_ULT
 //#define HASWELL_DT
+//#define VISHERA
 
 //#define HAS_MMX
 //#define HAS_SSE
@@ -31,10 +32,13 @@
 //#define HAS_SSSE3
 //#define HAS_SSE4_1
 //#define HAS_SSE4_2
+//#define HAS_SSE4a
 //#define HAS_AVX
 //#define HAS_AVX2
 //#define HAS_BMI1
 //#define HAS_BMI2
+//#define HAS_ABM
+//#define HAS_TBM
 
 #define CACHE_LINE_SIZE 64
 // #####################################
@@ -72,21 +76,41 @@
 	#define HAS_BMI1
 	#define HAS_BMI2
 #endif
+#ifdef VISHERA
+	#define HAS_MMX
+	#define HAS_SSE
+	#define HAS_SSE2
+	#define HAS_SSE3
+	#define HAS_SSSE3
+	#define HAS_SSE4_1
+	#define HAS_SSE4_2
+	#define HAS_SSE4a
+	#define HAS_AVX
+	#define HAS_BMI1
+	#define HAS_ABM
+	#define HAS_TBM
+#endif
 
 // CPU instruction implications
-#if defined(HAS_SSE4_2)
+#ifdef HAS_SSE4_2
 	#define HAS_POPCNT // Population count
 #endif
-#if defined(HAS_BMI1)
+#ifdef HAS_BMI1
 	#define HAS_BEXTR // Bit Field Extract
 	#define HAS_BLSI // Extract Lowest Set Isolated Bit (x & -x)
 	#define HAS_BLSMASK // Get mask up to lowest set bit (x ^ (x - 1))
 	#define HAS_BLSR // Reset lowest set bit (x & (x - 1))
-	#define HAS_LZCNT
+	#define HAS_LZCNT // Leading Zero Count
+	#define HAS_TZCNT // Trailing Zero Count
 #endif
-#if defined(HAS_BMI2)
+#ifdef HAS_BMI2
+	#define HAS_BZHI // Zero high bits starting with specified bit position
 	#define HAS_PDEP // Parallel bits deposit
 	#define HAS_PEXT // Parallel bits extract
+#endif
+#ifdef HAS_ABM
+	#define HAS_POPCNT // Population count
+	#define HAS_LZCNT // Leading Zero Count
 #endif
 
 // alignas work-around
@@ -148,24 +172,18 @@
 
 // Count Leading Zeros
 #if defined(_MSC_VER)
-	#ifdef HAS_LZCNT
-		FORCE_INLINE uint64_t CountLeadingZeros(const uint64_t mask) { return __lzcnt64(mask); }
-		FORCE_INLINE uint32_t CountLeadingZeros(const uint32_t mask) { return __lzcnt  (mask); }
-	#else
-		FORCE_INLINE uint64_t CountLeadingZeros(const uint64_t mask) { return 63 - BitScanMSB(mask); }
-		FORCE_INLINE uint32_t CountLeadingZeros(const uint32_t mask) { return 31 - BitScanMSB(mask); }
-	#endif
+	FORCE_INLINE uint64_t CountLeadingZeros(const uint64_t mask) { return _lzcnt_u64(mask); }
+	FORCE_INLINE uint32_t CountLeadingZeros(const uint32_t mask) { return _lzcnt_u32(mask); }
 #elif defined(__GNUC__)
-		FORCE_INLINE uint64_t CountLeadingZeros(const uint64_t mask) { return __builtin_clzll(mask); }
-		FORCE_INLINE uint32_t CountLeadingZeros(const uint32_t mask) { return __builtin_clz  (mask); }
+	FORCE_INLINE uint64_t CountLeadingZeros(const uint64_t mask) { return __builtin_clzll(mask); }
+	FORCE_INLINE uint32_t CountLeadingZeros(const uint32_t mask) { return __builtin_clz  (mask); }
 #endif
-		template <typename T> FORCE_INLINE T clz(const T mask) { return CountLeadingZeros(mask); }
+	template <typename T> FORCE_INLINE T clz(const T mask) { return CountLeadingZeros(mask); }
 
 // Count Trailing Zeros
-// OUT: result for mask == 0 is undefined
 #if defined(_MSC_VER)
-	FORCE_INLINE uint64_t CountTrailingZeros(const uint64_t mask) { return BitScanLSB(mask); }
-	FORCE_INLINE uint32_t CountTrailingZeros(const uint32_t mask) { return BitScanLSB(mask); }
+	FORCE_INLINE uint64_t CountTrailingZeros(const uint64_t mask) { return _tzcnt_u64(mask); }
+	FORCE_INLINE uint32_t CountTrailingZeros(const uint32_t mask) { return _tzcnt_u32(mask); }
 #elif defined(__GNUC__)
 	FORCE_INLINE uint64_t CountTrailingZeros(const uint64_t mask) { return __builtin_ctzll(mask); }
 	FORCE_INLINE uint32_t CountTrailingZeros(const uint32_t mask) { return __builtin_ctz  (mask); }
@@ -219,7 +237,7 @@ FORCE_INLINE void RemoveMSB(uint64_t & b) { b ^= GetMSB(b); }
 
 
 // BExtr
-#ifdef HAS_BEXTR
+#if defined(HAS_BEXTR) || defined(HAS_TBM)
 	FORCE_INLINE uint64_t BExtr(const uint64_t src, const unsigned int start, unsigned int len) { return _bextr_u64(src, start, len); }
 #else
 	FORCE_INLINE uint64_t BExtr(const uint64_t src, const unsigned int start, unsigned int len) { return (src >> start) & ((1ULL << len)-1); }

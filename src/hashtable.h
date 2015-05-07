@@ -74,7 +74,7 @@ public:
 	void Clear();
 	void Save(const std::string & filename) const;
 	void Load(const std::string & filename);
-	void print_stats():
+	void print_stats();
 
 private:
 	NodeType* table;
